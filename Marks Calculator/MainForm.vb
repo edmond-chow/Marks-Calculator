@@ -10,6 +10,11 @@ Public Class FrmMain
 #Region "Fields"
 
     ''' <summary>
+    ''' 用來存儲目前數據的容器
+    ''' </summary>
+    Private Temp As Record
+
+    ''' <summary>
     ''' 用來存儲多筆數據的容器
     ''' </summary>
     Private ReadOnly Data As List(Of Record)
@@ -23,6 +28,7 @@ Public Class FrmMain
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
+        Temp = New Record(True)
         Data = New List(Of Record)()
     End Sub
 
@@ -31,23 +37,23 @@ Public Class FrmMain
 #Region "Properties"
 
     ''' <summary>
-    ''' 表示數據欄位相應的 Record（可以是輸入中的數據）
+    ''' 表示數據欄位相應的 Record
     ''' </summary>
     ''' <returns></returns>
-    Private ReadOnly Property TempRecord As Record
+    Private ReadOnly Property InputedRecord As Record
         Get
             Return New Record(TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
         End Get
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目在 Data 中相應的 Record（可以是輸入中的數據）
+    ''' 表示 LstRecords 已選取項目相應的 Record
     ''' </summary>
     ''' <returns></returns>
     Private ReadOnly Property SelectedRecord As Record
         Get
             If LstRecords.SelectedIndex = 0 Then
-                Return InputRecord
+                Return Temp
             End If
             Return Data.Where(
                 Function(record As Record) As Boolean
@@ -57,27 +63,22 @@ Public Class FrmMain
         End Get
     End Property
 
-    ''' <summary>
-    ''' 表示輸入中的數據相應的 Record（即 Data 中首個元素）
-    ''' </summary>
-    ''' <returns></returns>
-    Private Property InputRecord As Record
-        Get
-            Return Data.Item(0)
-        End Get
-        Set(value As Record)
-            Data.Item(0) = value
-        End Set
-    End Property
-
 #End Region
 
 #Region "Enumerations"
 
     ''' <summary>
-    ''' 一個枚舉代表控制項正在輸入
+    ''' 代表控制項正在輸入數據
     ''' </summary>
     Private Enum IsTyping
+        Yes = 1
+        No = 2
+    End Enum
+
+    ''' <summary>
+    ''' 代表控制項正在插入數據
+    ''' </summary>
+    Private Enum IsAdding
         Yes = 1
         No = 2
     End Enum
@@ -86,7 +87,7 @@ Public Class FrmMain
 
 #Region "Methods"
 
-    Private Sub GetResult()
+    Private Sub GetInputs()
         TxtName.Text = SelectedRecord.StudentName
         TxtInputTest.Text = SelectedRecord.TestMarks.ToString()
         TxtInputQuizzes.Text = SelectedRecord.QuizzesMarks.ToString()
@@ -94,12 +95,12 @@ Public Class FrmMain
         TxtInputExam.Text = SelectedRecord.ExamMarks.ToString()
     End Sub
 
-    Private Sub ShowResult()
-        If InputRecord.IsReal Then
-            TxtResultCA.Text = InputRecord.CAMarks.ToString()
-            TxtResultModule.Text = InputRecord.ModuleMarks.ToString()
-            TxtReusltGrade.Text = InputRecord.ModuleGrade.ToString()
-            TxtReusltRemarks.Text = InputRecord.Remarks.ToString()
+    Private Sub ShowResult(Result As Record)
+        If Result.IsReal Then
+            TxtResultCA.Text = Result.CAMarks.ToString()
+            TxtResultModule.Text = Result.ModuleMarks.ToString()
+            TxtReusltGrade.Text = Result.ModuleGrade.ToString()
+            TxtReusltRemarks.Text = Result.Remarks.ToString()
         Else
             TxtResultCA.Text = "[Error Input]"
             TxtResultModule.Text = "[Error Input]"
@@ -109,43 +110,43 @@ Public Class FrmMain
     End Sub
 
     Private Sub ShowStatistics()
-        TxtStatisticsNo.Text = (Data.Count - 1).ToString()
+        TxtStatisticsNo.Text = Data.Count.ToString()
         TxtStatisticsA.Text = Data.LongCount(
-            Function(record As Record) As Boolean
-                Return record.ModuleGrade = "A"
+            Function(Record As Record) As Boolean
+                Return Record.ModuleGrade = "A"
             End Function
         ).ToString()
         TxtStatisticsB.Text = Data.LongCount(
-            Function(record As Record) As Boolean
-                Return record.ModuleGrade = "B"
+            Function(Record As Record) As Boolean
+                Return Record.ModuleGrade = "B"
             End Function
         ).ToString()
         TxtStatisticsC.Text = Data.LongCount(
-            Function(record As Record) As Boolean
-                Return record.ModuleGrade = "C"
+            Function(Record As Record) As Boolean
+                Return Record.ModuleGrade = "C"
             End Function
         ).ToString()
-        TxtStatisticsD.Text = Data.LongCount(
-            Function(record As Record) As Boolean
-                Return record.ModuleGrade = "D"
+        TxtStatisticsF.Text = Data.LongCount(
+            Function(Record As Record) As Boolean
+                Return Record.ModuleGrade = "F"
             End Function
         ).ToString()
-        Dim N As Double = Data.Skip(1).LongCount()
+        Dim N As Double = Data.LongCount()
         If N = 0 Then
             TxtStatisticsAv.Text = "[NaN]"
             TxtStatisticsSd.Text = "[NaN]"
             Return
         End If
-        Dim Av As Double = Data.Skip(1).Sum(
-            Function(record As Record) As Double
-                Return record.ModuleMarks
+        Dim Av As Double = Data.Sum(
+            Function(Record As Record) As Double
+                Return Record.ModuleMarks
             End Function
         ) / N
         TxtStatisticsAv.Text = Av.ToString()
         Dim Sd As Double = Math.Sqrt(
-            Data.Skip(1).Sum(
-                Function(record As Record) As Double
-                    Return (record.ModuleMarks - Av) ^ 2
+            Data.Sum(
+                Function(Record As Record) As Double
+                    Return (Record.ModuleMarks - Av) ^ 2
                 End Function
             ) / N
         )
@@ -155,17 +156,18 @@ Public Class FrmMain
     Private Sub RecordsSearch()
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
-        For Each record As Record In Data.Skip(1)
+        For Each Record As Record In Data
             Dim IsMatched As Boolean = False
             Try
-                If (ChkRecordsSearch.Checked = False AndAlso record.StudentName.IndexOf(TxtRecordsSearch.Text) <> -1) _
-                OrElse Regex.IsMatch(record.StudentName, TxtRecordsSearch.Text) Then
-                    IsMatched = True
+                If ChkRecordsSearch.Checked Then
+                    IsMatched = Regex.IsMatch(Record.StudentName, TxtRecordsSearch.Text)
+                Else
+                    IsMatched = Record.StudentName.IndexOf(TxtRecordsSearch.Text) <> -1
                 End If
             Catch ex As Exception
             End Try
             If IsMatched Then
-                LstRecords.Items.Add(record.StudentName)
+                LstRecords.Items.Add(Record.StudentName)
             End If
         Next
         LstRecords.SelectedIndex = 0
@@ -181,46 +183,46 @@ Public Class FrmMain
         LblInputMain.Text += "%, Project - " + (Record.ProjectScale * 100).ToString() + "%"
         GrpResult.Text += " [CA - " + (Record.CAScale * 100).ToString()
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
-        Data.Add(New Record(True))
         LstRecords.Items.Add("(Input)")
         LstRecords.SelectedIndex = 0
-        GetResult()
+        GetInputs()
     End Sub
 
     Private Sub TxtInput_Enter(sender As Object, e As EventArgs) Handles TxtInputTest.Enter, TxtInputQuizzes.Enter, TxtInputProject.Enter, TxtInputExam.Enter
-        If TypeOf sender IsNot MetroTextBox Then
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
             Throw New NotImplementedException()
         End If
-        Dim txt As MetroTextBox = TryCast(sender, MetroTextBox)
-        txt.Tag = IsTyping.Yes
-    End Sub
-
-    Private Sub TxtInput_Leave(sender As Object, e As EventArgs) Handles TxtInputTest.Leave, TxtInputQuizzes.Leave, TxtInputProject.Leave, TxtInputExam.Leave
-        If TypeOf sender IsNot MetroTextBox Then
-            Throw New NotImplementedException()
+        If LstRecords.Tag = IsAdding.Yes Then
+            TryCast(sender, MetroTextBox).Tag = IsTyping.Yes
         End If
-        Dim txt As MetroTextBox = TryCast(sender, MetroTextBox)
-        Dim num As Double = 0
-        Double.TryParse(txt.Text, num)
-        If num > 100 Then
-            num = 100
-        ElseIf num < 0 Then
-            num = 0
-        End If
-        txt.Text = num.ToString()
-        txt.Tag = IsTyping.No
-        ShowResult()
     End Sub
 
     Private Sub TxtInput_TextChanged(sender As Object, e As EventArgs) Handles TxtInputTest.TextChanged, TxtInputQuizzes.TextChanged, TxtInputProject.TextChanged, TxtInputExam.TextChanged
-        If TypeOf sender IsNot MetroTextBox Then
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
             Throw New NotImplementedException()
         End If
-        Dim txt As MetroTextBox = TryCast(sender, MetroTextBox)
-        If txt.Tag = IsTyping.Yes Then
-            Dim output As Double = 0
-            InputRecord = If(Double.TryParse(txt.Text, output), TempRecord, New Record(False))
-            ShowResult()
+        If LstRecords.Tag = IsAdding.Yes AndAlso TryCast(sender, MetroTextBox).Tag = IsTyping.Yes Then
+            Dim Number As Double = 0
+            ShowResult(If(Double.TryParse(TryCast(sender, MetroTextBox).Text, Number), InputedRecord, New Record(False)))
+        End If
+    End Sub
+
+    Private Sub TxtInput_Leave(sender As Object, e As EventArgs) Handles TxtInputTest.Leave, TxtInputQuizzes.Leave, TxtInputProject.Leave, TxtInputExam.Leave
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
+            Throw New NotImplementedException()
+        End If
+        If LstRecords.Tag = IsAdding.Yes Then
+            Dim Number As Double = 0
+            Double.TryParse(TryCast(sender, MetroTextBox).Text, Number)
+            If Number > 100 Then
+                Number = 100
+            ElseIf Number < 0 Then
+                Number = 0
+            End If
+            TryCast(sender, MetroTextBox).Text = Number.ToString()
+            TryCast(sender, MetroTextBox).Tag = IsTyping.No
+            Temp = InputedRecord
+            ShowResult(InputedRecord)
         End If
     End Sub
 
@@ -229,14 +231,14 @@ Public Class FrmMain
             MessageBox.Show(Me, "Student name cannot be empty!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
             Return
         End If
-        For Each record As Record In Data.Skip(1)
-            If record.StudentName = TempRecord.StudentName Then
+        For Each record As Record In Data
+            If record.StudentName = InputedRecord.StudentName Then
                 MessageBox.Show(Me, "Student name is already exist!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
         Next
-        Data.Add(TempRecord)
-        InputRecord.Clear()
+        Data.Add(InputedRecord)
+        Temp.Clear()
         ShowStatistics()
         RecordsSearch()
     End Sub
@@ -258,6 +260,7 @@ Public Class FrmMain
             TxtInputQuizzes.ReadOnly = False
             TxtInputProject.ReadOnly = False
             TxtInputExam.ReadOnly = False
+            LstRecords.Tag = IsAdding.Yes
         Else
             BtnRecordsAdd.Enabled = False
             BtnRecordsRemove.Enabled = True
@@ -266,9 +269,10 @@ Public Class FrmMain
             TxtInputQuizzes.ReadOnly = True
             TxtInputProject.ReadOnly = True
             TxtInputExam.ReadOnly = True
+            LstRecords.Tag = IsAdding.No
         End If
-        GetResult()
-        ShowResult()
+        GetInputs()
+        ShowResult(InputedRecord)
     End Sub
 
     Private Sub AnyRecordsSearch_Event(sender As Object, e As EventArgs) Handles TxtRecordsSearch.TextChanged, ChkRecordsSearch.CheckedChanged
@@ -287,8 +291,8 @@ Public Class FrmMain
 #Region "Constants"
 
         Friend Const TestScale As Double = 0.5
-        Friend Const ProjectScale As Double = 0.3
         Friend Const QuizzesScale As Double = 0.2
+        Friend Const ProjectScale As Double = 0.3
         Friend Const CAScale As Double = 0.4
         Friend Const ExamScale As Double = 0.6
         Private Const None As String = "[None]"
@@ -342,7 +346,7 @@ Public Class FrmMain
 
         Public ReadOnly Property CAMarks As Double
             Get
-                Return Test * TestScale + Project * ProjectScale + Quizzes * QuizzesScale
+                Return Test * TestScale + Quizzes * QuizzesScale + Project * ProjectScale
             End Get
         End Property
 
@@ -385,7 +389,7 @@ Public Class FrmMain
                     Else
                         Return "Restudy"
                     End If
-                ElseIf ModuleGrade = "[Error Input]" Then
+                ElseIf ModuleGrade = "---" Then
                     Return "---"
                 Else
                     Return "Pass"

@@ -47,8 +47,8 @@ Partial Class FrmMain
         Me.LblResultGrade = New MetroFramework.Controls.MetroLabel()
         Me.LstRecords = New System.Windows.Forms.ListBox()
         Me.GrpStatistics = New System.Windows.Forms.GroupBox()
-        Me.TxtStatisticsD = New MetroFramework.Controls.MetroTextBox()
-        Me.LblStatisticsD = New MetroFramework.Controls.MetroLabel()
+        Me.TxtStatisticsF = New MetroFramework.Controls.MetroTextBox()
+        Me.LblStatisticsF = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsC = New MetroFramework.Controls.MetroTextBox()
         Me.LblStatisticsC = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsB = New MetroFramework.Controls.MetroTextBox()
@@ -302,8 +302,8 @@ Partial Class FrmMain
         '
         Me.GrpStatistics.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
-        Me.GrpStatistics.Controls.Add(Me.TxtStatisticsD)
-        Me.GrpStatistics.Controls.Add(Me.LblStatisticsD)
+        Me.GrpStatistics.Controls.Add(Me.TxtStatisticsF)
+        Me.GrpStatistics.Controls.Add(Me.LblStatisticsF)
         Me.GrpStatistics.Controls.Add(Me.TxtStatisticsC)
         Me.GrpStatistics.Controls.Add(Me.LblStatisticsC)
         Me.GrpStatistics.Controls.Add(Me.TxtStatisticsB)
@@ -324,23 +324,23 @@ Partial Class FrmMain
         Me.GrpStatistics.TabStop = False
         Me.GrpStatistics.Text = "Statistics"
         '
-        'TxtStatisticsD
+        'TxtStatisticsF
         '
-        Me.TxtStatisticsD.Location = New System.Drawing.Point(85, 130)
-        Me.TxtStatisticsD.Name = "TxtStatisticsD"
-        Me.TxtStatisticsD.ReadOnly = True
-        Me.TxtStatisticsD.Size = New System.Drawing.Size(75, 21)
-        Me.TxtStatisticsD.TabIndex = 5
-        Me.TxtStatisticsD.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
+        Me.TxtStatisticsF.Location = New System.Drawing.Point(85, 130)
+        Me.TxtStatisticsF.Name = "TxtStatisticsF"
+        Me.TxtStatisticsF.ReadOnly = True
+        Me.TxtStatisticsF.Size = New System.Drawing.Size(75, 21)
+        Me.TxtStatisticsF.TabIndex = 5
+        Me.TxtStatisticsF.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
         '
-        'LblStatisticsD
+        'LblStatisticsF
         '
-        Me.LblStatisticsD.AutoSize = True
-        Me.LblStatisticsD.Location = New System.Drawing.Point(6, 131)
-        Me.LblStatisticsD.Name = "LblStatisticsD"
-        Me.LblStatisticsD.Size = New System.Drawing.Size(73, 19)
-        Me.LblStatisticsD.TabIndex = 0
-        Me.LblStatisticsD.Text = "Count of D"
+        Me.LblStatisticsF.AutoSize = True
+        Me.LblStatisticsF.Location = New System.Drawing.Point(6, 131)
+        Me.LblStatisticsF.Name = "LblStatisticsF"
+        Me.LblStatisticsF.Size = New System.Drawing.Size(71, 19)
+        Me.LblStatisticsF.TabIndex = 0
+        Me.LblStatisticsF.Text = "Count of F"
         '
         'TxtStatisticsC
         '
@@ -557,8 +557,8 @@ Partial Class FrmMain
     Private WithEvents LblStatisticsAv As MetroFramework.Controls.MetroLabel
     Private WithEvents TxtStatisticsNo As MetroFramework.Controls.MetroTextBox
     Private WithEvents LblStatisticsNo As MetroFramework.Controls.MetroLabel
-    Private WithEvents TxtStatisticsD As MetroFramework.Controls.MetroTextBox
-    Private WithEvents LblStatisticsD As MetroFramework.Controls.MetroLabel
+    Private WithEvents TxtStatisticsF As MetroFramework.Controls.MetroTextBox
+    Private WithEvents LblStatisticsF As MetroFramework.Controls.MetroLabel
     Private WithEvents TxtStatisticsC As MetroFramework.Controls.MetroTextBox
     Private WithEvents LblStatisticsC As MetroFramework.Controls.MetroLabel
     Private WithEvents TxtStatisticsB As MetroFramework.Controls.MetroTextBox

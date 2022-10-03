@@ -10,7 +10,7 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("Marks Calculator")>
-<Assembly: AssemblyDescription("")>
+<Assembly: AssemblyDescription("For more information, see https://github.com/edmond-chow/Marks-Calculator")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Marks Calculator")>
 <Assembly: AssemblyCopyright("Chow Cheuk Hei (Edmond), Tse Ka Ku (Johnson) ©  2022")>
