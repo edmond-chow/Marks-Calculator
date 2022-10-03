@@ -281,6 +281,10 @@ Public Class FrmMain
         LstRecords.SelectedIndex = If(Index < LstRecords.Items.Count, Index, 0)
     End Sub
 
+    Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
+        LstRecords.Height = TxtRecordsSearch.Location.Y - LstRecords.Location.Y - 6
+    End Sub
+
 #End Region
 
     ''' <summary>
