@@ -1,2 +1,2 @@
 # Marks-Calculator
-A marks calculator
+A Marks Calculator
