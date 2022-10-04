@@ -6,7 +6,6 @@ Imports System.IO
 Imports System.Reflection
 Imports System.Text
 Imports System.Text.RegularExpressions
-Imports System.Threading
 Imports MetroFramework.Controls
 Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
@@ -37,6 +36,11 @@ Public Class FrmMain
     Private DataFile As FileStream
 
     ''' <summary>
+    ''' 表示表單已經完成加載狀態
+    ''' </summary>
+    Private LoadHasFinish As Boolean
+
+    ''' <summary>
     ''' 表示表單已經進入關閉狀態
     ''' </summary>
     Private CloseHasStarted As Boolean
@@ -52,6 +56,8 @@ Public Class FrmMain
         MinimumSize = Size
         Temp = New Record(True)
         Data = New List(Of Record)()
+        DataFile = Nothing
+        LoadHasFinish = False
         CloseHasStarted = False
     End Sub
 
@@ -266,6 +272,15 @@ Public Class FrmMain
             Else
                 DataFile = File.Create(FileName)
             End If
+            For Each Record As Record In Records
+                If Records.LongCount(
+                    Function(RecordCheck As Record) As Boolean
+                        Return RecordCheck.StudentName = Record.StudentName
+                    End Function
+                ) > 1 Then
+                    Throw New Exception()
+                End If
+            Next
         Catch Exception As Exception
             Records = New List(Of Record)()
         End Try
@@ -303,12 +318,15 @@ Public Class FrmMain
         LstRecords.SelectedIndex = 0
         GetInputs()
         RecordsSearch()
+        LoadHasFinish = True
     End Sub
 
     Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
         If CloseHasStarted = False Then
             CloseHasStarted = True
-            Await WriteDataFile()
+            If LoadHasFinish = True Then
+                Await WriteDataFile()
+            End If
         End If
     End Sub
 
