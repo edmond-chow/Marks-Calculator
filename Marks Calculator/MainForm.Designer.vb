@@ -65,6 +65,7 @@ Partial Class FrmMain
         Me.ChkRecordsSearch = New MetroFramework.Controls.MetroCheckBox()
         Me.TxtRecordsSearch = New MetroFramework.Controls.MetroTextBox()
         Me.BtnRecordsRemove = New MetroFramework.Controls.MetroButton()
+        Me.PrbMain = New MetroFramework.Controls.MetroProgressBar()
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
@@ -82,8 +83,10 @@ Partial Class FrmMain
         '
         'TxtName
         '
+        Me.TxtName.Enabled = False
         Me.TxtName.Location = New System.Drawing.Point(80, 63)
         Me.TxtName.Name = "TxtName"
+        Me.TxtName.ReadOnly = True
         Me.TxtName.Size = New System.Drawing.Size(200, 21)
         Me.TxtName.TabIndex = 1
         '
@@ -109,8 +112,10 @@ Partial Class FrmMain
         'TxtInputExam
         '
         Me.TxtInputExam.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.TxtInputExam.Enabled = False
         Me.TxtInputExam.Location = New System.Drawing.Point(253, 73)
         Me.TxtInputExam.Name = "TxtInputExam"
+        Me.TxtInputExam.ReadOnly = True
         Me.TxtInputExam.Size = New System.Drawing.Size(125, 21)
         Me.TxtInputExam.TabIndex = 4
         Me.TxtInputExam.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
@@ -128,8 +133,10 @@ Partial Class FrmMain
         'TxtInputQuizzes
         '
         Me.TxtInputQuizzes.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.TxtInputQuizzes.Enabled = False
         Me.TxtInputQuizzes.Location = New System.Drawing.Point(253, 46)
         Me.TxtInputQuizzes.Name = "TxtInputQuizzes"
+        Me.TxtInputQuizzes.ReadOnly = True
         Me.TxtInputQuizzes.Size = New System.Drawing.Size(125, 21)
         Me.TxtInputQuizzes.TabIndex = 2
         Me.TxtInputQuizzes.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
@@ -147,8 +154,10 @@ Partial Class FrmMain
         'TxtInputProject
         '
         Me.TxtInputProject.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.TxtInputProject.Enabled = False
         Me.TxtInputProject.Location = New System.Drawing.Point(62, 73)
         Me.TxtInputProject.Name = "TxtInputProject"
+        Me.TxtInputProject.ReadOnly = True
         Me.TxtInputProject.Size = New System.Drawing.Size(125, 21)
         Me.TxtInputProject.TabIndex = 3
         Me.TxtInputProject.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
@@ -156,8 +165,10 @@ Partial Class FrmMain
         'TxtInputTest
         '
         Me.TxtInputTest.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.TxtInputTest.Enabled = False
         Me.TxtInputTest.Location = New System.Drawing.Point(62, 46)
         Me.TxtInputTest.Name = "TxtInputTest"
+        Me.TxtInputTest.ReadOnly = True
         Me.TxtInputTest.Size = New System.Drawing.Size(125, 21)
         Me.TxtInputTest.TabIndex = 1
         Me.TxtInputTest.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
@@ -496,11 +507,21 @@ Partial Class FrmMain
         Me.BtnRecordsRemove.TabIndex = 2
         Me.BtnRecordsRemove.Text = "Remove"
         '
+        'PrbMain
+        '
+        Me.PrbMain.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.PrbMain.Location = New System.Drawing.Point(0, 0)
+        Me.PrbMain.Name = "PrbMain"
+        Me.PrbMain.Size = New System.Drawing.Size(778, 5)
+        Me.PrbMain.TabIndex = 0
+        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(778, 449)
+        Me.Controls.Add(Me.PrbMain)
         Me.Controls.Add(Me.GrpRecords)
         Me.Controls.Add(Me.GrpStatistics)
         Me.Controls.Add(Me.GrpResult)
@@ -568,4 +589,5 @@ Partial Class FrmMain
     Private WithEvents BtnRecordsRemove As MetroFramework.Controls.MetroButton
     Private WithEvents ChkRecordsSearch As MetroFramework.Controls.MetroCheckBox
     Private WithEvents TxtRecordsSearch As MetroFramework.Controls.MetroTextBox
+    Private WithEvents PrbMain As MetroFramework.Controls.MetroProgressBar
 End Class

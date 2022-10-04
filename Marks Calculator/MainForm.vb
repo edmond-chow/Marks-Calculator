@@ -2,10 +2,22 @@
 ' Purpose:      Used to calculate student grades.
 ' Programmer:   Chow Cheuk Hei, Tse Ka Yu on 2 / 10 / 2022
 
+Imports System.IO
+Imports System.Reflection
+Imports System.Text
 Imports System.Text.RegularExpressions
+Imports System.Threading
 Imports MetroFramework.Controls
+Imports Newtonsoft.Json
+Imports Newtonsoft.Json.Linq
 
 Public Class FrmMain
+
+#Region "Constants"
+
+    Private Const FileName As String = "Records.json"
+
+#End Region
 
 #Region "Fields"
 
@@ -17,7 +29,17 @@ Public Class FrmMain
     ''' <summary>
     ''' 用來存儲多筆數據的容器
     ''' </summary>
-    Private ReadOnly Data As List(Of Record)
+    Private Data As List(Of Record)
+
+    ''' <summary>
+    ''' 用來代表數據文件的文件流
+    ''' </summary>
+    Private DataFile As FileStream
+
+    ''' <summary>
+    ''' 表示表單已經進入關閉狀態
+    ''' </summary>
+    Private CloseHasStarted As Boolean
 
 #End Region
 
@@ -30,6 +52,7 @@ Public Class FrmMain
         MinimumSize = Size
         Temp = New Record(True)
         Data = New List(Of Record)()
+        CloseHasStarted = False
     End Sub
 
 #End Region
@@ -86,6 +109,54 @@ Public Class FrmMain
 #End Region
 
 #Region "Methods"
+
+    Private Sub SuspendControls()
+        BtnRecordsAdd.Enabled = False
+        BtnRecordsRemove.Enabled = False
+        TxtName.Enabled = False
+        TxtInputTest.Enabled = False
+        TxtInputQuizzes.Enabled = False
+        TxtInputProject.Enabled = False
+        TxtInputExam.Enabled = False
+        LstRecords.Enabled = False
+        TxtRecordsSearch.Enabled = False
+        ChkRecordsSearch.Enabled = False
+        TxtResultCA.Enabled = False
+        TxtResultModule.Enabled = False
+        TxtReusltGrade.Enabled = False
+        TxtReusltRemarks.Enabled = False
+        TxtStatisticsNo.Enabled = False
+        TxtStatisticsAv.Enabled = False
+        TxtStatisticsSd.Enabled = False
+        TxtStatisticsA.Enabled = False
+        TxtStatisticsB.Enabled = False
+        TxtStatisticsC.Enabled = False
+        TxtStatisticsF.Enabled = False
+    End Sub
+
+    Private Sub ResumeControls()
+        BtnRecordsAdd.Enabled = True
+        BtnRecordsRemove.Enabled = True
+        TxtName.Enabled = True
+        TxtInputTest.Enabled = True
+        TxtInputQuizzes.Enabled = True
+        TxtInputProject.Enabled = True
+        TxtInputExam.Enabled = True
+        LstRecords.Enabled = True
+        TxtRecordsSearch.Enabled = True
+        ChkRecordsSearch.Enabled = True
+        TxtResultCA.Enabled = True
+        TxtResultModule.Enabled = True
+        TxtReusltGrade.Enabled = True
+        TxtReusltRemarks.Enabled = True
+        TxtStatisticsNo.Enabled = True
+        TxtStatisticsAv.Enabled = True
+        TxtStatisticsSd.Enabled = True
+        TxtStatisticsA.Enabled = True
+        TxtStatisticsB.Enabled = True
+        TxtStatisticsC.Enabled = True
+        TxtStatisticsF.Enabled = True
+    End Sub
 
     Private Sub GetInputs()
         TxtName.Text = SelectedRecord.StudentName
@@ -158,14 +229,14 @@ Public Class FrmMain
         LstRecords.Items.Add("(Input)")
         For Each Record As Record In Data
             Dim IsMatched As Boolean = False
-            Try
-                If ChkRecordsSearch.Checked Then
+            If ChkRecordsSearch.Checked Then
+                Try
                     IsMatched = Regex.IsMatch(Record.StudentName, TxtRecordsSearch.Text)
-                Else
-                    IsMatched = Record.StudentName.IndexOf(TxtRecordsSearch.Text) <> -1
-                End If
-            Catch ex As Exception
-            End Try
+                Catch Exception As Exception
+                End Try
+            Else
+                IsMatched = Record.StudentName.IndexOf(TxtRecordsSearch.Text) <> -1
+            End If
             If IsMatched Then
                 LstRecords.Items.Add(Record.StudentName)
             End If
@@ -173,19 +244,72 @@ Public Class FrmMain
         LstRecords.SelectedIndex = 0
     End Sub
 
+    Private Async Function ReadDataFile() As Task(Of List(Of Record))
+        SuspendControls()
+        PrbMain.Show()
+        Dim Records As New List(Of Record)
+        Try
+            If File.Exists(FileName) Then
+                DataFile = File.Open(FileName, FileMode.Open)
+                Dim Json(DataFile.Length - 1) As Byte
+                Await DataFile.ReadAsync(Json, 0, DataFile.Length)
+                For Each RecordToken As JToken In JsonConvert.DeserializeObject(Of JArray)(Encoding.UTF8.GetString(Json)).Children()
+                    Dim TempRecord As New Record(True)
+                    For Each Field As JProperty In RecordToken
+                        Dim PropertyInfo As PropertyInfo = GetType(Record).GetProperty(Field.Name)
+                        PropertyInfo.SetValue(TempRecord, If(PropertyInfo.PropertyType = GetType(String),
+                                              Field.Value.ToString(), Double.Parse(Field.Value.ToString()))
+                                             )
+                    Next
+                    Records.Add(TempRecord)
+                Next
+            Else
+                DataFile = File.Create(FileName)
+            End If
+        Catch Exception As Exception
+            Records = New List(Of Record)()
+        End Try
+        ResumeControls()
+        PrbMain.Hide()
+        Return Records
+    End Function
+
+    Private Async Function WriteDataFile() As Task
+        SuspendControls()
+        PrbMain.Show()
+        Try
+            Dim Json As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
+            DataFile.SetLength(0)
+            Await DataFile.WriteAsync(Json, 0, Json.Length)
+        Catch Exception As Exception
+        End Try
+        ResumeControls()
+        PrbMain.Hide()
+    End Function
+
 #End Region
 
 #Region "Handles"
 
-    Private Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         LblInputMain.Text = "CA Components: Test - " + (Record.TestScale * 100).ToString()
         LblInputMain.Text += "%, Quiz - " + (Record.QuizzesScale * 100).ToString()
         LblInputMain.Text += "%, Project - " + (Record.ProjectScale * 100).ToString() + "%"
         GrpResult.Text += " [CA - " + (Record.CAScale * 100).ToString()
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
+        PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
+        Data = Await ReadDataFile()
         LstRecords.Items.Add("(Input)")
         LstRecords.SelectedIndex = 0
         GetInputs()
+        RecordsSearch()
+    End Sub
+
+    Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        If CloseHasStarted = False Then
+            CloseHasStarted = True
+            Await WriteDataFile()
+        End If
     End Sub
 
     Private Sub TxtInput_Enter(sender As Object, e As EventArgs) Handles TxtInputTest.Enter, TxtInputQuizzes.Enter, TxtInputProject.Enter, TxtInputExam.Enter
@@ -287,10 +411,22 @@ Public Class FrmMain
 
 #End Region
 
-    ''' <summary>
-    ''' 一個類別用來管理一筆數據
-    ''' </summary>
+    Private Interface IRecord
+
+#Region "Properties"
+
+        Property StudentName As String
+        Property TestMarks As Double
+        Property QuizzesMarks As Double
+        Property ProjectMarks As Double
+        Property ExamMarks As Double
+
+#End Region
+
+    End Interface
+
     Private Class Record
+        Implements IRecord
 
 #Region "Constants"
 
@@ -348,18 +484,21 @@ Public Class FrmMain
 
 #Region "Properties"
 
+        <JsonIgnore>
         Public ReadOnly Property CAMarks As Double
             Get
                 Return Test * TestScale + Quizzes * QuizzesScale + Project * ProjectScale
             End Get
         End Property
 
+        <JsonIgnore>
         Public ReadOnly Property ModuleMarks As Double
             Get
                 Return CAMarks * CAScale + Exam * ExamScale
             End Get
         End Property
 
+        <JsonIgnore>
         Public ReadOnly Property IsReal As Boolean
             Get
                 Return Test >= 0 AndAlso Test <= 100 AndAlso
@@ -369,6 +508,7 @@ Public Class FrmMain
             End Get
         End Property
 
+        <JsonIgnore>
         Public ReadOnly Property ModuleGrade As String
             Get
                 If CAMarks < 40 OrElse ExamMarks < 40 Then
@@ -385,6 +525,7 @@ Public Class FrmMain
             End Get
         End Property
 
+        <JsonIgnore>
         Public ReadOnly Property Remarks As String
             Get
                 If ModuleGrade = "F" Then
@@ -401,7 +542,8 @@ Public Class FrmMain
             End Get
         End Property
 
-        Public Property StudentName As String
+        <JsonProperty>
+        Public Property StudentName As String Implements IRecord.StudentName
             Get
                 Return If(Name <> None, Name, String.Empty)
             End Get
@@ -410,7 +552,8 @@ Public Class FrmMain
             End Set
         End Property
 
-        Public Property TestMarks As Double
+        <JsonProperty>
+        Public Property TestMarks As Double Implements IRecord.TestMarks
             Get
                 Return Test
             End Get
@@ -419,7 +562,8 @@ Public Class FrmMain
             End Set
         End Property
 
-        Public Property QuizzesMarks As Double
+        <JsonProperty>
+        Public Property QuizzesMarks As Double Implements IRecord.QuizzesMarks
             Get
                 Return Quizzes
             End Get
@@ -428,7 +572,8 @@ Public Class FrmMain
             End Set
         End Property
 
-        Public Property ProjectMarks As Double
+        <JsonProperty>
+        Public Property ProjectMarks As Double Implements IRecord.ProjectMarks
             Get
                 Return Project
             End Get
@@ -437,7 +582,8 @@ Public Class FrmMain
             End Set
         End Property
 
-        Public Property ExamMarks As Double
+        <JsonProperty>
+        Public Property ExamMarks As Double Implements IRecord.ExamMarks
             Get
                 Return Exam
             End Get
