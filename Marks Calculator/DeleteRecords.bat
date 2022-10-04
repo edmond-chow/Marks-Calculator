@@ -1,0 +1,8 @@
+del /Q "bin\Debug\Records.json"
+del /Q "bin\Release\Records.json"
+del /Q "bin\x86\Debug\Records.json"
+del /Q "bin\x86\Release\Records.json"
+del /Q "bin\x64\Debug\Records.json"
+del /Q "bin\x64\Release\Records.json"
+del /Q "bin\ARM64\Debug\Records.json"
+del /Q "bin\ARM64\Release\Records.json"

@@ -1,5 +1,4 @@
 ﻿Imports System.Resources
-Imports System
 Imports System.Reflection
 Imports System.Runtime.InteropServices
 
@@ -13,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("For more information, see https://github.com/edmond-chow/Marks-Calculator")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Marks Calculator")>
-<Assembly: AssemblyCopyright("Chow Cheuk Hei (Edmond), Tse Ka Ku (Johnson) ©  2022")>
+<Assembly: AssemblyCopyright("周卓禧 (Edmond), 謝家裕 (Johnson) © 2022")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
@@ -35,3 +34,4 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyVersion("1.0.0.0")>
 <Assembly: AssemblyFileVersion("1.0.0.0")>
 <Assembly: NeutralResourcesLanguage("en")>
+<Assembly: AssemblyKeyFile("key.snk")>
