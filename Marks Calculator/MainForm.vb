@@ -214,6 +214,7 @@ Public Class FrmMain
         If N = 0 Then
             TxtStatisticsAv.Text = "[NaN]"
             TxtStatisticsSd.Text = "[NaN]"
+            TxtStatisticsMd.Text = "[NaN]"
             Return
         End If
         Dim Av As Double = Data.Sum(
@@ -329,7 +330,7 @@ Public Class FrmMain
         Data = Await ReadDataFile()
         LstRecords.Items.Add("(Input)")
         LstRecords.SelectedIndex = 0
-        GetInputs()
+        ShowStatistics()
         RecordsSearch()
         LoadHasFinish = True
     End Sub
