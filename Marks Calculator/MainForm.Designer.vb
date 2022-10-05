@@ -60,6 +60,8 @@ Partial Class FrmMain
         Me.TxtStatisticsAv = New MetroFramework.Controls.MetroTextBox()
         Me.LblStatisticsSd = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsSd = New MetroFramework.Controls.MetroTextBox()
+        Me.LblStatisticsMd = New MetroFramework.Controls.MetroLabel()
+        Me.TxtStatisticsMd = New MetroFramework.Controls.MetroTextBox()
         Me.GrpRecords = New System.Windows.Forms.GroupBox()
         Me.BtnRecordsAdd = New MetroFramework.Controls.MetroButton()
         Me.BtnRecordsRemove = New MetroFramework.Controls.MetroButton()
@@ -301,6 +303,8 @@ Partial Class FrmMain
         '
         Me.GrpStatistics.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
+        Me.GrpStatistics.Controls.Add(Me.LblStatisticsMd)
+        Me.GrpStatistics.Controls.Add(Me.TxtStatisticsMd)
         Me.GrpStatistics.Controls.Add(Me.LblStatisticsNo)
         Me.GrpStatistics.Controls.Add(Me.TxtStatisticsNo)
         Me.GrpStatistics.Controls.Add(Me.LblStatisticsA)
@@ -352,7 +356,7 @@ Partial Class FrmMain
         '
         'TxtStatisticsA
         '
-        Me.TxtStatisticsA.Location = New System.Drawing.Point(85, 49)
+        Me.TxtStatisticsA.Location = New System.Drawing.Point(139, 49)
         Me.TxtStatisticsA.Name = "TxtStatisticsA"
         Me.TxtStatisticsA.ReadOnly = True
         Me.TxtStatisticsA.Size = New System.Drawing.Size(75, 21)
@@ -370,7 +374,7 @@ Partial Class FrmMain
         '
         'TxtStatisticsB
         '
-        Me.TxtStatisticsB.Location = New System.Drawing.Point(85, 76)
+        Me.TxtStatisticsB.Location = New System.Drawing.Point(139, 76)
         Me.TxtStatisticsB.Name = "TxtStatisticsB"
         Me.TxtStatisticsB.ReadOnly = True
         Me.TxtStatisticsB.Size = New System.Drawing.Size(75, 21)
@@ -388,7 +392,7 @@ Partial Class FrmMain
         '
         'TxtStatisticsC
         '
-        Me.TxtStatisticsC.Location = New System.Drawing.Point(85, 103)
+        Me.TxtStatisticsC.Location = New System.Drawing.Point(139, 103)
         Me.TxtStatisticsC.Name = "TxtStatisticsC"
         Me.TxtStatisticsC.ReadOnly = True
         Me.TxtStatisticsC.Size = New System.Drawing.Size(75, 21)
@@ -406,7 +410,7 @@ Partial Class FrmMain
         '
         'TxtStatisticsF
         '
-        Me.TxtStatisticsF.Location = New System.Drawing.Point(85, 130)
+        Me.TxtStatisticsF.Location = New System.Drawing.Point(139, 130)
         Me.TxtStatisticsF.Name = "TxtStatisticsF"
         Me.TxtStatisticsF.ReadOnly = True
         Me.TxtStatisticsF.Size = New System.Drawing.Size(75, 21)
@@ -416,7 +420,7 @@ Partial Class FrmMain
         'LblStatisticsAv
         '
         Me.LblStatisticsAv.AutoSize = True
-        Me.LblStatisticsAv.Location = New System.Drawing.Point(166, 50)
+        Me.LblStatisticsAv.Location = New System.Drawing.Point(220, 23)
         Me.LblStatisticsAv.Name = "LblStatisticsAv"
         Me.LblStatisticsAv.Size = New System.Drawing.Size(58, 19)
         Me.LblStatisticsAv.TabIndex = 0
@@ -424,7 +428,7 @@ Partial Class FrmMain
         '
         'TxtStatisticsAv
         '
-        Me.TxtStatisticsAv.Location = New System.Drawing.Point(292, 49)
+        Me.TxtStatisticsAv.Location = New System.Drawing.Point(346, 22)
         Me.TxtStatisticsAv.Name = "TxtStatisticsAv"
         Me.TxtStatisticsAv.ReadOnly = True
         Me.TxtStatisticsAv.Size = New System.Drawing.Size(100, 21)
@@ -434,7 +438,7 @@ Partial Class FrmMain
         'LblStatisticsSd
         '
         Me.LblStatisticsSd.AutoSize = True
-        Me.LblStatisticsSd.Location = New System.Drawing.Point(166, 77)
+        Me.LblStatisticsSd.Location = New System.Drawing.Point(220, 50)
         Me.LblStatisticsSd.Name = "LblStatisticsSd"
         Me.LblStatisticsSd.Size = New System.Drawing.Size(120, 19)
         Me.LblStatisticsSd.TabIndex = 0
@@ -442,12 +446,30 @@ Partial Class FrmMain
         '
         'TxtStatisticsSd
         '
-        Me.TxtStatisticsSd.Location = New System.Drawing.Point(292, 76)
+        Me.TxtStatisticsSd.Location = New System.Drawing.Point(346, 49)
         Me.TxtStatisticsSd.Name = "TxtStatisticsSd"
         Me.TxtStatisticsSd.ReadOnly = True
         Me.TxtStatisticsSd.Size = New System.Drawing.Size(100, 21)
         Me.TxtStatisticsSd.TabIndex = 7
         Me.TxtStatisticsSd.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
+        '
+        'LblStatisticsMd
+        '
+        Me.LblStatisticsMd.AutoSize = True
+        Me.LblStatisticsMd.Location = New System.Drawing.Point(220, 77)
+        Me.LblStatisticsMd.Name = "LblStatisticsMd"
+        Me.LblStatisticsMd.Size = New System.Drawing.Size(53, 19)
+        Me.LblStatisticsMd.TabIndex = 0
+        Me.LblStatisticsMd.Text = "Median"
+        '
+        'TxtStatisticsMd
+        '
+        Me.TxtStatisticsMd.Location = New System.Drawing.Point(346, 76)
+        Me.TxtStatisticsMd.Name = "TxtStatisticsMd"
+        Me.TxtStatisticsMd.ReadOnly = True
+        Me.TxtStatisticsMd.Size = New System.Drawing.Size(100, 21)
+        Me.TxtStatisticsMd.TabIndex = 8
+        Me.TxtStatisticsMd.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
         '
         'GrpRecords
         '
@@ -584,6 +606,8 @@ Partial Class FrmMain
     Private WithEvents TxtStatisticsAv As MetroFramework.Controls.MetroTextBox
     Private WithEvents LblStatisticsSd As MetroFramework.Controls.MetroLabel
     Private WithEvents TxtStatisticsSd As MetroFramework.Controls.MetroTextBox
+    Private WithEvents LblStatisticsMd As MetroFramework.Controls.MetroLabel
+    Private WithEvents TxtStatisticsMd As MetroFramework.Controls.MetroTextBox
     Private WithEvents GrpRecords As GroupBox
     Private WithEvents BtnRecordsAdd As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsRemove As MetroFramework.Controls.MetroButton

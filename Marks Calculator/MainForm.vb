@@ -134,6 +134,7 @@ Public Class FrmMain
         TxtStatisticsNo.Enabled = False
         TxtStatisticsAv.Enabled = False
         TxtStatisticsSd.Enabled = False
+        TxtStatisticsMd.Enabled = False
         TxtStatisticsA.Enabled = False
         TxtStatisticsB.Enabled = False
         TxtStatisticsC.Enabled = False
@@ -158,6 +159,7 @@ Public Class FrmMain
         TxtStatisticsNo.Enabled = True
         TxtStatisticsAv.Enabled = True
         TxtStatisticsSd.Enabled = True
+        TxtStatisticsMd.Enabled = True
         TxtStatisticsA.Enabled = True
         TxtStatisticsB.Enabled = True
         TxtStatisticsC.Enabled = True
@@ -228,6 +230,17 @@ Public Class FrmMain
             ) / N
         )
         TxtStatisticsSd.Text = Sd.ToString()
+        Dim Sorted As Double() = Data.Select(
+            Function(Record As Record) As Double
+                Return Record.ModuleMarks
+            End Function
+        ).ToArray()
+        Array.Sort(Sorted)
+        Dim Md As Double = If(Sorted.LongLength Mod 2 = 0,
+            (Sorted(Sorted.LongLength / 2) + Sorted(Sorted.LongLength / 2 - 1)) / 2,
+            Sorted((Sorted.LongLength - 1) / 2)
+        )
+        TxtStatisticsMd.Text = Md.ToString()
     End Sub
 
     Private Sub RecordsSearch()
