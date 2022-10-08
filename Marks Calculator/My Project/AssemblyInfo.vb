@@ -12,7 +12,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("For more information, see https://github.com/edmond-chow/Marks-Calculator")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Marks Calculator")>
-<Assembly: AssemblyCopyright("© 周卓禧 (Edmond), 謝家裕 (Johnson) All rights reserved.")>
+<Assembly: AssemblyCopyright("© 周卓禧 (Edmond), 謝家裕 (Johnson). All rights reserved.")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
