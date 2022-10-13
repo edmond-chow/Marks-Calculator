@@ -92,6 +92,15 @@ Public Class FrmMain
         End Get
     End Property
 
+    Protected Overrides ReadOnly Property CreateParams As CreateParams
+        Get
+            Const WS_MINIMIZEBOX As Integer = &H20000
+            Dim Params As CreateParams = MyBase.CreateParams
+            Params.Style = Params.Style Or WS_MINIMIZEBOX
+            Return Params
+        End Get
+    End Property
+
 #End Region
 
 #Region "Enumerations"
