@@ -45,6 +45,8 @@ Public Class FrmMain
     ''' </summary>
     Private CloseHasStarted As Boolean
 
+    Private LastWindowState As FormWindowState
+
 #End Region
 
 #Region "Constructors"
@@ -59,6 +61,7 @@ Public Class FrmMain
         DataFile = Nothing
         LoadHasFinish = False
         CloseHasStarted = False
+        LastWindowState = WindowState
     End Sub
 
 #End Region
@@ -448,6 +451,16 @@ Public Class FrmMain
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
         LstRecords.Height = TxtRecordsSearch.Location.Y - LstRecords.Location.Y - 6
+        If LastWindowState <> WindowState AndAlso WindowState = FormWindowState.Normal Then
+            TmrMain.Enabled = True
+        End If
+        LastWindowState = WindowState
+    End Sub
+
+    Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
+        If FocusMe() Then
+            TmrMain.Enabled = False
+        End If
     End Sub
 
 #End Region
