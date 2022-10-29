@@ -64,8 +64,8 @@ Public Class FrmMain
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
-        Temp = New Record(True)
-        Data = New List(Of Record)()
+        Temp = Nothing
+        Data = Nothing
         DataFile = Nothing
         LoadHasFinish = False
         CloseHasStarted = False
@@ -395,6 +395,7 @@ Public Class FrmMain
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
         PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
         Data = Await ReadDataFile()
+        Temp = New Record(True)
         ShowStatistics()
         RecordsSearch()
         If Not IsNotTheSame(Data) Then
