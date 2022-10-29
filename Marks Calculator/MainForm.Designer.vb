@@ -47,6 +47,8 @@ Partial Class FrmMain
         Me.LblReusltRemarks = New MetroFramework.Controls.MetroLabel()
         Me.TxtReusltRemarks = New MetroFramework.Controls.MetroTextBox()
         Me.GrpStatistics = New System.Windows.Forms.GroupBox()
+        Me.LblStatisticsMd = New MetroFramework.Controls.MetroLabel()
+        Me.TxtStatisticsMd = New MetroFramework.Controls.MetroTextBox()
         Me.LblStatisticsNo = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsNo = New MetroFramework.Controls.MetroTextBox()
         Me.LblStatisticsA = New MetroFramework.Controls.MetroLabel()
@@ -61,9 +63,8 @@ Partial Class FrmMain
         Me.TxtStatisticsAv = New MetroFramework.Controls.MetroTextBox()
         Me.LblStatisticsSd = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsSd = New MetroFramework.Controls.MetroTextBox()
-        Me.LblStatisticsMd = New MetroFramework.Controls.MetroLabel()
-        Me.TxtStatisticsMd = New MetroFramework.Controls.MetroTextBox()
         Me.GrpRecords = New System.Windows.Forms.GroupBox()
+        Me.ChkRecords = New MetroFramework.Controls.MetroCheckBox()
         Me.BtnRecordsAdd = New MetroFramework.Controls.MetroButton()
         Me.BtnRecordsRemove = New MetroFramework.Controls.MetroButton()
         Me.LstRecords = New System.Windows.Forms.ListBox()
@@ -329,6 +330,24 @@ Partial Class FrmMain
         Me.GrpStatistics.TabStop = False
         Me.GrpStatistics.Text = "Statistics"
         '
+        'LblStatisticsMd
+        '
+        Me.LblStatisticsMd.AutoSize = True
+        Me.LblStatisticsMd.Location = New System.Drawing.Point(220, 77)
+        Me.LblStatisticsMd.Name = "LblStatisticsMd"
+        Me.LblStatisticsMd.Size = New System.Drawing.Size(53, 19)
+        Me.LblStatisticsMd.TabIndex = 0
+        Me.LblStatisticsMd.Text = "Median"
+        '
+        'TxtStatisticsMd
+        '
+        Me.TxtStatisticsMd.Location = New System.Drawing.Point(346, 76)
+        Me.TxtStatisticsMd.Name = "TxtStatisticsMd"
+        Me.TxtStatisticsMd.ReadOnly = True
+        Me.TxtStatisticsMd.Size = New System.Drawing.Size(100, 21)
+        Me.TxtStatisticsMd.TabIndex = 8
+        Me.TxtStatisticsMd.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
+        '
         'LblStatisticsNo
         '
         Me.LblStatisticsNo.AutoSize = True
@@ -455,29 +474,12 @@ Partial Class FrmMain
         Me.TxtStatisticsSd.TabIndex = 7
         Me.TxtStatisticsSd.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
         '
-        'LblStatisticsMd
-        '
-        Me.LblStatisticsMd.AutoSize = True
-        Me.LblStatisticsMd.Location = New System.Drawing.Point(220, 77)
-        Me.LblStatisticsMd.Name = "LblStatisticsMd"
-        Me.LblStatisticsMd.Size = New System.Drawing.Size(53, 19)
-        Me.LblStatisticsMd.TabIndex = 0
-        Me.LblStatisticsMd.Text = "Median"
-        '
-        'TxtStatisticsMd
-        '
-        Me.TxtStatisticsMd.Location = New System.Drawing.Point(346, 76)
-        Me.TxtStatisticsMd.Name = "TxtStatisticsMd"
-        Me.TxtStatisticsMd.ReadOnly = True
-        Me.TxtStatisticsMd.Size = New System.Drawing.Size(100, 21)
-        Me.TxtStatisticsMd.TabIndex = 8
-        Me.TxtStatisticsMd.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
-        '
         'GrpRecords
         '
         Me.GrpRecords.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.GrpRecords.Controls.Add(Me.ChkRecords)
         Me.GrpRecords.Controls.Add(Me.BtnRecordsAdd)
         Me.GrpRecords.Controls.Add(Me.BtnRecordsRemove)
         Me.GrpRecords.Controls.Add(Me.LstRecords)
@@ -490,6 +492,16 @@ Partial Class FrmMain
         Me.GrpRecords.TabIndex = 5
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
+        '
+        'ChkRecords
+        '
+        Me.ChkRecords.AutoSize = True
+        Me.ChkRecords.Location = New System.Drawing.Point(6, 49)
+        Me.ChkRecords.Name = "ChkRecords"
+        Me.ChkRecords.Size = New System.Drawing.Size(140, 15)
+        Me.ChkRecords.TabIndex = 3
+        Me.ChkRecords.Text = "Allow Repeated Name"
+        Me.ChkRecords.UseVisualStyleBackColor = True
         '
         'BtnRecordsAdd
         '
@@ -515,10 +527,10 @@ Partial Class FrmMain
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.LstRecords.FormattingEnabled = True
         Me.LstRecords.ItemHeight = 16
-        Me.LstRecords.Location = New System.Drawing.Point(6, 49)
+        Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(213, 260)
-        Me.LstRecords.TabIndex = 3
+        Me.LstRecords.Size = New System.Drawing.Size(213, 244)
+        Me.LstRecords.TabIndex = 4
         '
         'TxtRecordsSearch
         '
@@ -527,7 +539,7 @@ Partial Class FrmMain
         Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 317)
         Me.TxtRecordsSearch.Name = "TxtRecordsSearch"
         Me.TxtRecordsSearch.Size = New System.Drawing.Size(213, 21)
-        Me.TxtRecordsSearch.TabIndex = 4
+        Me.TxtRecordsSearch.TabIndex = 5
         '
         'ChkRecordsSearch
         '
@@ -535,9 +547,9 @@ Partial Class FrmMain
         Me.ChkRecordsSearch.AutoSize = True
         Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 344)
         Me.ChkRecordsSearch.Name = "ChkRecordsSearch"
-        Me.ChkRecordsSearch.Size = New System.Drawing.Size(154, 15)
-        Me.ChkRecordsSearch.TabIndex = 5
-        Me.ChkRecordsSearch.Text = "using Regular Expression"
+        Me.ChkRecordsSearch.Size = New System.Drawing.Size(155, 15)
+        Me.ChkRecordsSearch.TabIndex = 6
+        Me.ChkRecordsSearch.Text = "Using Regular Expression"
         Me.ChkRecordsSearch.UseVisualStyleBackColor = True
         '
         'TmrMain
@@ -620,4 +632,5 @@ Partial Class FrmMain
     Private WithEvents TxtRecordsSearch As MetroFramework.Controls.MetroTextBox
     Private WithEvents ChkRecordsSearch As MetroFramework.Controls.MetroCheckBox
     Friend WithEvents TmrMain As Timer
+    Friend WithEvents ChkRecords As MetroFramework.Controls.MetroCheckBox
 End Class

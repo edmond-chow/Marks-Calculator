@@ -21,17 +21,17 @@ Public Class FrmMain
 #Region "Fields"
 
     ''' <summary>
-    ''' 用來存儲目前數據的容器
+    ''' 用來存儲目前數據的執行個體
     ''' </summary>
     Private Temp As Record
 
     ''' <summary>
-    ''' 用來存儲多筆數據的容器
+    ''' 用來存儲多筆數據的執行個體
     ''' </summary>
     Private Data As List(Of Record)
 
     ''' <summary>
-    ''' 用來代表數據文件的文件流
+    ''' 用來代表數據的文件流
     ''' </summary>
     Private DataFile As FileStream
 
@@ -46,6 +46,7 @@ Public Class FrmMain
     Private CloseHasStarted As Boolean
 
     Private LastWindowState As FormWindowState
+    Private ReadOnly RandomNumberGenerator As Random
 
 #End Region
 
@@ -62,6 +63,7 @@ Public Class FrmMain
         LoadHasFinish = False
         CloseHasStarted = False
         LastWindowState = WindowState
+        RandomNumberGenerator = New Random()
     End Sub
 
 #End Region
@@ -74,7 +76,20 @@ Public Class FrmMain
     ''' <returns></returns>
     Private ReadOnly Property InputedRecord As Record
         Get
-            Return New Record(TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
+            Dim MyRecord As New Record(TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
+            Dim RandomNumber As Integer = 0
+            While True
+                RandomNumber = RandomNumberGenerator.Next(100000000, 999999999)
+                If Data.LongCount(
+                    Function(Record As Record) As Boolean
+                        Return Record.ID = RandomNumber
+                    End Function
+                ) = 0 Then
+                    Exit While
+                End If
+            End While
+            MyRecord.ID = RandomNumber
+            Return MyRecord
         End Get
     End Property
 
@@ -88,8 +103,8 @@ Public Class FrmMain
                 Return Temp
             End If
             Return Data.Where(
-                Function(record As Record) As Boolean
-                    Return record.StudentName = LstRecords.SelectedItem.ToString()
+                Function(Record As Record) As Boolean
+                    Return Record.ID = CType(TxtRecordsSearch.Tag, List(Of Integer)).ElementAt(LstRecords.SelectedIndex - 1)
                 End Function
             ).Single()
         End Get
@@ -193,10 +208,11 @@ Public Class FrmMain
             TxtReusltGrade.Text = Result.ModuleGrade.ToString()
             TxtReusltRemarks.Text = Result.Remarks.ToString()
         Else
-            TxtResultCA.Text = "[Error Input]"
-            TxtResultModule.Text = "[Error Input]"
-            TxtReusltGrade.Text = "[Error Input]"
-            TxtReusltRemarks.Text = "[Error Input]"
+            Const ErrorInput As String = "[Error Input]"
+            TxtResultCA.Text = ErrorInput
+            TxtResultModule.Text = ErrorInput
+            TxtReusltGrade.Text = ErrorInput
+            TxtReusltRemarks.Text = ErrorInput
         End If
     End Sub
 
@@ -224,9 +240,10 @@ Public Class FrmMain
         ).ToString()
         Dim N As Double = Data.LongCount()
         If N = 0 Then
-            TxtStatisticsAv.Text = "[NaN]"
-            TxtStatisticsSd.Text = "[NaN]"
-            TxtStatisticsMd.Text = "[NaN]"
+            Const NaN As String = "[NaN]"
+            TxtStatisticsAv.Text = NaN
+            TxtStatisticsSd.Text = NaN
+            TxtStatisticsMd.Text = NaN
             Return
         End If
         Dim Av As Double = Data.Sum(
@@ -259,6 +276,7 @@ Public Class FrmMain
     Private Sub RecordsSearch()
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
+        TxtRecordsSearch.Tag = New List(Of Integer)
         For Each Record As Record In Data
             Dim IsMatched As Boolean = False
             If ChkRecordsSearch.Checked Then
@@ -271,10 +289,33 @@ Public Class FrmMain
             End If
             If IsMatched Then
                 LstRecords.Items.Add(Record.StudentName)
+                CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(Record.ID)
             End If
         Next
         LstRecords.SelectedIndex = 0
     End Sub
+
+    Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of Record)) As Boolean
+        For i As Integer = 0 To Enumerable.Count() - 2
+            For j As Integer = 1 To Enumerable.Count() - 1
+                If Enumerable.ElementAt(i).ID = Enumerable.ElementAt(i + j).ID Then
+                    Return False
+                End If
+            Next
+        Next
+        Return True
+    End Function
+
+    Private Shared Function IsNotTheSame(Enumerable As IEnumerable(Of IRecord)) As Boolean
+        For i As Integer = 0 To Enumerable.Count() - 2
+            For j As Integer = 1 To Enumerable.Count() - 1
+                If Enumerable.ElementAt(i).StudentName = Enumerable.ElementAt(i + j).StudentName Then
+                    Return False
+                End If
+            Next
+        Next
+        Return True
+    End Function
 
     Private Async Function ReadDataFile() As Task(Of List(Of Record))
         SuspendControls()
@@ -289,27 +330,27 @@ Public Class FrmMain
                     Dim TempRecord As New Record(True)
                     For Each Field As JProperty In RecordToken
                         Dim PropertyInfo As PropertyInfo = GetType(Record).GetProperty(Field.Name)
-                        PropertyInfo.SetValue(TempRecord, If(PropertyInfo.PropertyType = GetType(String),
-                                              Field.Value.ToString(), Double.Parse(Field.Value.ToString()))
-                                             )
+                        If PropertyInfo.PropertyType = GetType(String) Then
+                            PropertyInfo.SetValue(TempRecord, Field.Value.ToString())
+                        ElseIf PropertyInfo.PropertyType = GetType(Double) Then
+                            PropertyInfo.SetValue(TempRecord, Double.Parse(Field.Value.ToString()))
+                        ElseIf PropertyInfo.PropertyType = GetType(Integer) Then
+                            PropertyInfo.SetValue(TempRecord, Integer.Parse(Field.Value.ToString()))
+                        Else
+                            Throw New NotImplementedException()
+                        End If
                     Next
                     Records.Add(TempRecord)
                 Next
             Else
                 DataFile = File.Create(FileName)
             End If
-            For Each Record As Record In Records
-                If Records.LongCount(
-                    Function(RecordCheck As Record) As Boolean
-                        Return RecordCheck.StudentName = Record.StudentName
-                    End Function
-                ) > 1 Then
-                    Throw New Exception()
-                End If
-            Next
         Catch Exception As Exception
             Records = New List(Of Record)()
         End Try
+        If Not IsNotTheSameID(Records) Then
+            Records = New List(Of Record)()
+        End If
         ResumeControls()
         PrbMain.Hide()
         Return Records
@@ -340,10 +381,11 @@ Public Class FrmMain
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
         PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
         Data = Await ReadDataFile()
-        LstRecords.Items.Add("(Input)")
-        LstRecords.SelectedIndex = 0
         ShowStatistics()
         RecordsSearch()
+        If Not IsNotTheSame(Data) Then
+            ChkRecords.Checked = True
+        End If
         LoadHasFinish = True
     End Sub
 
@@ -361,7 +403,7 @@ Public Class FrmMain
             Throw New NotImplementedException()
         End If
         If LstRecords.Tag = IsAdding.Yes Then
-            TryCast(sender, MetroTextBox).Tag = IsTyping.Yes
+            CType(sender, MetroTextBox).Tag = IsTyping.Yes
         End If
     End Sub
 
@@ -369,9 +411,9 @@ Public Class FrmMain
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
             Throw New NotImplementedException()
         End If
-        If LstRecords.Tag = IsAdding.Yes AndAlso TryCast(sender, MetroTextBox).Tag = IsTyping.Yes Then
+        If LstRecords.Tag = IsAdding.Yes AndAlso CType(sender, MetroTextBox).Tag = IsTyping.Yes Then
             Dim Number As Double = 0
-            ShowResult(If(Double.TryParse(TryCast(sender, MetroTextBox).Text, Number), InputedRecord, New Record(False)))
+            ShowResult(If(Double.TryParse(CType(sender, MetroTextBox).Text, Number), InputedRecord, New Record(False)))
         End If
     End Sub
 
@@ -381,14 +423,14 @@ Public Class FrmMain
         End If
         If LstRecords.Tag = IsAdding.Yes Then
             Dim Number As Double = 0
-            Double.TryParse(TryCast(sender, MetroTextBox).Text, Number)
+            Double.TryParse(CType(sender, MetroTextBox).Text, Number)
             If Number > 100 Then
                 Number = 100
             ElseIf Number < 0 Then
                 Number = 0
             End If
-            TryCast(sender, MetroTextBox).Text = Number.ToString()
-            TryCast(sender, MetroTextBox).Tag = IsTyping.No
+            CType(sender, MetroTextBox).Text = Number.ToString()
+            CType(sender, MetroTextBox).Tag = IsTyping.No
             Temp = InputedRecord
             ShowResult(InputedRecord)
         End If
@@ -399,12 +441,14 @@ Public Class FrmMain
             MessageBox.Show(Me, "Student name cannot be empty!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
             Return
         End If
-        For Each record As Record In Data
-            If record.StudentName = InputedRecord.StudentName Then
-                MessageBox.Show(Me, "Student name is already exist!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                Return
-            End If
-        Next
+        If Not ChkRecords.Checked Then
+            For Each Record As Record In Data
+                If Record.StudentName = InputedRecord.StudentName Then
+                    MessageBox.Show(Me, "Student name is already exist!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Return
+                End If
+            Next
+        End If
         Data.Add(InputedRecord)
         Temp.Clear()
         ShowStatistics()
@@ -419,10 +463,17 @@ Public Class FrmMain
         LstRecords.SelectedIndex = If(Index < LstRecords.Items.Count, Index, 0)
     End Sub
 
+    Private Sub ChkRecords_CheckedChanged(sender As Object, e As EventArgs) Handles ChkRecords.CheckedChanged
+        If Not ChkRecords.Checked AndAlso Not IsNotTheSame(Data) Then
+            MessageBox.Show(Me, "Some of the student names have the same! But it still avoids the same input though.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
+        End If
+    End Sub
+
     Private Sub LstRecord_SelectedIndexChanged(sender As Object, e As EventArgs) Handles LstRecords.SelectedIndexChanged
         If LstRecords.SelectedIndex = 0 Then
             BtnRecordsAdd.Enabled = True
             BtnRecordsRemove.Enabled = False
+            ChkRecords.Enabled = True
             TxtName.ReadOnly = False
             TxtInputTest.ReadOnly = False
             TxtInputQuizzes.ReadOnly = False
@@ -432,6 +483,7 @@ Public Class FrmMain
         Else
             BtnRecordsAdd.Enabled = False
             BtnRecordsRemove.Enabled = True
+            ChkRecords.Enabled = False
             TxtName.ReadOnly = True
             TxtInputTest.ReadOnly = True
             TxtInputQuizzes.ReadOnly = True
@@ -447,6 +499,15 @@ Public Class FrmMain
         Dim Index As Integer = LstRecords.SelectedIndex
         RecordsSearch()
         LstRecords.SelectedIndex = If(Index < LstRecords.Items.Count, Index, 0)
+    End Sub
+
+    Private Sub ChkEnterKeys_Event(sender As Object, e As KeyEventArgs) Handles ChkRecords.KeyDown, ChkRecordsSearch.KeyDown
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
+            Throw New NotImplementedException()
+        End If
+        If e.KeyCode = Keys.Enter Then
+            CType(sender, MetroCheckBox).Checked = Not CType(sender, MetroCheckBox).Checked
+        End If
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
@@ -490,6 +551,7 @@ Public Class FrmMain
         Friend Const CAScale As Double = 0.4
         Friend Const ExamScale As Double = 0.6
         Private Const None As String = "[None]"
+        Private Const Invalid As String = "---"
 
 #End Region
 
@@ -500,6 +562,7 @@ Public Class FrmMain
         Private Quizzes As Double
         Private Project As Double
         Private Exam As Double
+        Private Code As Integer
 
 #End Region
 
@@ -512,26 +575,32 @@ Public Class FrmMain
                 Quizzes = 0
                 Project = 0
                 Exam = 0
+                Code = 0
             Else
                 Test = Double.MaxValue
                 Quizzes = Double.MaxValue
                 Project = Double.MaxValue
                 Exam = Double.MaxValue
+                Code = 0
             End If
         End Sub
+
         Public Sub New(Name As String)
             Me.Name = Name
             Test = 0
             Quizzes = 0
             Project = 0
             Exam = 0
+            Code = 0
         End Sub
+
         Public Sub New(Name As String, Test As Double, Quizzes As Double, Project As Double, Exam As Double)
             Me.Name = Name
             Me.Test = Test
             Me.Quizzes = Quizzes
             Me.Project = Project
             Me.Exam = Exam
+            Code = 0
         End Sub
 
 #End Region
@@ -574,7 +643,7 @@ Public Class FrmMain
                 ElseIf ModuleMarks >= 40 AndAlso ModuleMarks < 65 Then
                     Return "C"
                 Else
-                    Return "---"
+                    Return Invalid
                 End If
             End Get
         End Property
@@ -588,8 +657,8 @@ Public Class FrmMain
                     Else
                         Return "Restudy"
                     End If
-                ElseIf ModuleGrade = "---" Then
-                    Return "---"
+                ElseIf ModuleGrade = Invalid Then
+                    Return Invalid
                 Else
                     Return "Pass"
                 End If
@@ -601,8 +670,8 @@ Public Class FrmMain
             Get
                 Return If(Name <> None, Name, String.Empty)
             End Get
-            Set(value As String)
-                Name = value
+            Set(Value As String)
+                Name = Value
             End Set
         End Property
 
@@ -611,8 +680,8 @@ Public Class FrmMain
             Get
                 Return Test
             End Get
-            Set(value As Double)
-                Test = value
+            Set(Value As Double)
+                Test = Value
             End Set
         End Property
 
@@ -621,8 +690,8 @@ Public Class FrmMain
             Get
                 Return Quizzes
             End Get
-            Set(value As Double)
-                Quizzes = value
+            Set(Value As Double)
+                Quizzes = Value
             End Set
         End Property
 
@@ -631,8 +700,8 @@ Public Class FrmMain
             Get
                 Return Project
             End Get
-            Set(value As Double)
-                Project = value
+            Set(Value As Double)
+                Project = Value
             End Set
         End Property
 
@@ -641,8 +710,18 @@ Public Class FrmMain
             Get
                 Return Exam
             End Get
-            Set(value As Double)
-                Exam = value
+            Set(Value As Double)
+                Exam = Value
+            End Set
+        End Property
+
+        <JsonProperty>
+        Public Property ID As Integer
+            Get
+                Return Code
+            End Get
+            Set(Value As Integer)
+                Code = Value
             End Set
         End Property
 
@@ -656,6 +735,7 @@ Public Class FrmMain
             Quizzes = 0
             Project = 0
             Exam = 0
+            Code = 0
         End Sub
 
 #End Region
