@@ -21,7 +21,7 @@ Public Class FrmMain
 #Region "Fields"
 
     ''' <summary>
-    ''' 用來存儲目前數據的執行個體
+    ''' 用來存儲暫存數據的執行個體
     ''' </summary>
     Private Temp As Record
 
@@ -45,7 +45,14 @@ Public Class FrmMain
     ''' </summary>
     Private CloseHasStarted As Boolean
 
+    ''' <summary>
+    ''' 表示表單上一個視窗狀態
+    ''' </summary>
     Private LastWindowState As FormWindowState
+
+    ''' <summary>
+    ''' 隨機數生成的執行個體
+    ''' </summary>
     Private ReadOnly RandomNumberGenerator As Random
 
 #End Region
@@ -110,6 +117,10 @@ Public Class FrmMain
         End Get
     End Property
 
+    ''' <summary>
+    ''' 實現 Windows 視窗的最細化功能
+    ''' </summary>
+    ''' <returns></returns>
     Protected Overrides ReadOnly Property CreateParams As CreateParams
         Get
             Const WS_MINIMIZEBOX As Integer = &H20000
