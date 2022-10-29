@@ -273,7 +273,7 @@ Public Class FrmMain
             ) / N
         )
         TxtStatisticsSd.Text = Sd.ToString()
-        Dim Sorted As Double() = Data.Select(
+        Dim Sorted() As Double = Data.Select(
             Function(Record As Record) As Double
                 Return Record.ModuleMarks
             End Function
@@ -373,7 +373,7 @@ Public Class FrmMain
         SuspendControls()
         PrbMain.Show()
         Try
-            Dim Json As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
+            Dim Json() As Byte = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
             DataFile.SetLength(0)
             Await DataFile.WriteAsync(Json, 0, Json.Length)
             DataFile.Close()
