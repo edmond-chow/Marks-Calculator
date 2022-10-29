@@ -55,6 +55,16 @@ Public Class FrmMain
     ''' </summary>
     Private ReadOnly RandomNumberGenerator As Random
 
+    ''' <summary>
+    ''' 當 Leave 事件先被觸發時，這個標誌為會短暫變為 True
+    ''' </summary>
+    Dim LeaveFirstLock As Boolean
+
+    ''' <summary>
+    ''' 當 LostFocus 事件先被觸發時，這個標誌為會短暫變為 True
+    ''' </summary>
+    Dim LostFocusFirstLock As Boolean
+
 #End Region
 
 #Region "Constructors"
@@ -71,6 +81,8 @@ Public Class FrmMain
         CloseHasStarted = False
         LastWindowState = WindowState
         RandomNumberGenerator = New Random()
+        LeaveFirstLock = False
+        LostFocusFirstLock = False
     End Sub
 
 #End Region
@@ -526,7 +538,20 @@ Public Class FrmMain
     End Sub
 
     Private Sub ChkRecordsSearch_Leave(sender As Object, e As EventArgs) Handles ChkRecordsSearch.Leave
-        SelectNextControl(TxtName, True, True, True, True)
+        If LostFocusFirstLock = False Then
+            LeaveFirstLock = True
+        Else
+            LostFocusFirstLock = False
+        End If
+    End Sub
+
+    Private Sub ChkRecordsSearch_LostFocus(sender As Object, e As EventArgs) Handles ChkRecordsSearch.LostFocus
+        If LeaveFirstLock = True Then
+            SelectNextControl(TxtName, True, True, True, True)
+            LeaveFirstLock = False
+        Else
+            LostFocusFirstLock = True
+        End If
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
