@@ -525,6 +525,10 @@ Public Class FrmMain
         End If
     End Sub
 
+    Private Sub ChkRecordsSearch_Leave(sender As Object, e As EventArgs) Handles ChkRecordsSearch.Leave
+        SelectNextControl(TxtName, True, True, True, True)
+    End Sub
+
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
         If LastWindowState <> WindowState AndAlso WindowState = FormWindowState.Normal Then
             TmrMain.Enabled = True
