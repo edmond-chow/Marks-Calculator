@@ -146,6 +146,7 @@ Public Class FrmMain
     Private Sub SuspendControls()
         BtnRecordsAdd.Enabled = False
         BtnRecordsRemove.Enabled = False
+        ChkRecords.Enabled = False
         TxtName.Enabled = False
         TxtInputTest.Enabled = False
         TxtInputQuizzes.Enabled = False
@@ -171,6 +172,7 @@ Public Class FrmMain
     Private Sub ResumeControls()
         BtnRecordsAdd.Enabled = True
         BtnRecordsRemove.Enabled = True
+        ChkRecords.Enabled = True
         TxtName.Enabled = True
         TxtInputTest.Enabled = True
         TxtInputQuizzes.Enabled = True
