@@ -523,13 +523,15 @@ Partial Class FrmMain
         '
         'LstRecords
         '
-        Me.LstRecords.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+        Me.LstRecords.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.LstRecords.FormattingEnabled = True
+        Me.LstRecords.IntegralHeight = False
         Me.LstRecords.ItemHeight = 16
         Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(213, 244)
+        Me.LstRecords.Size = New System.Drawing.Size(213, 241)
         Me.LstRecords.TabIndex = 4
         '
         'TxtRecordsSearch

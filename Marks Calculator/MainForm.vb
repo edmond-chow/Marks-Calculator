@@ -513,7 +513,6 @@ Public Class FrmMain
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
-        LstRecords.Height = TxtRecordsSearch.Location.Y - LstRecords.Location.Y - 6
         If LastWindowState <> WindowState AndAlso WindowState = FormWindowState.Normal Then
             TmrMain.Enabled = True
         End If
