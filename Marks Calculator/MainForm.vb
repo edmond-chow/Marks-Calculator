@@ -666,14 +666,14 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property CAMarks As Double
             Get
-                Return Test * TestScale + Quizzes * QuizzesScale + Project * ProjectScale
+                Return If(IsReal, Test * TestScale + Quizzes * QuizzesScale + Project * ProjectScale, Double.NaN)
             End Get
         End Property
 
         <JsonIgnore>
         Public ReadOnly Property ModuleMarks As Double
             Get
-                Return CAMarks * CAScale + Exam * ExamScale
+                Return If(IsReal, CAMarks * CAScale + Exam * ExamScale, Double.NaN)
             End Get
         End Property
 
@@ -690,16 +690,16 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property ModuleGrade As String
             Get
-                If CAMarks < 40 OrElse ExamMarks < 40 Then
-                    Return "F"
-                ElseIf ModuleMarks >= 75 AndAlso ModuleMarks <= 100 Then
-                    Return "A"
-                ElseIf ModuleMarks >= 65 AndAlso ModuleMarks < 75 Then
-                    Return "B"
-                ElseIf ModuleMarks >= 40 AndAlso ModuleMarks < 65 Then
-                    Return "C"
-                Else
+                If Not IsReal Then
                     Return Invalid
+                ElseIf CAMarks < 40 OrElse Exam < 40 Then
+                    Return "F"
+                ElseIf ModuleMarks >= 75 Then
+                    Return "A"
+                ElseIf ModuleMarks >= 65 Then
+                    Return "B"
+                Else
+                    Return "C"
                 End If
             End Get
         End Property
