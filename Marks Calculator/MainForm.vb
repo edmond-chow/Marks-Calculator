@@ -297,7 +297,7 @@ Public Class FrmMain
         LstRecords.SelectedIndex = 0
     End Sub
 
-    Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of Record)) As Boolean
+    Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of IReliability)) As Boolean
         For i As Integer = 0 To Enumerable.Count() - 2
             For j As Integer = 1 To Enumerable.Count() - 1
                 If Enumerable.ElementAt(i).ID = Enumerable.ElementAt(i + j).ID Then
@@ -365,6 +365,7 @@ Public Class FrmMain
             Dim Json As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
             DataFile.SetLength(0)
             Await DataFile.WriteAsync(Json, 0, Json.Length)
+            DataFile.Close()
         Catch Exception As Exception
         End Try
         ResumeControls()
@@ -527,6 +528,16 @@ Public Class FrmMain
 
 #End Region
 
+    Private Interface IReliability
+
+#Region "Properties"
+
+        Property ID As Integer
+
+#End Region
+
+    End Interface
+
     Private Interface IRecord
 
 #Region "Properties"
@@ -542,7 +553,7 @@ Public Class FrmMain
     End Interface
 
     Private Class Record
-        Implements IRecord
+        Implements IRecord, IReliability
 
 #Region "Constants"
 
@@ -717,7 +728,7 @@ Public Class FrmMain
         End Property
 
         <JsonProperty>
-        Public Property ID As Integer
+        Public Property ID As Integer Implements IReliability.ID
             Get
                 Return Code
             End Get
