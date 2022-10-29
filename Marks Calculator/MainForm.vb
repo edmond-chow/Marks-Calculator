@@ -14,6 +14,9 @@ Public Class FrmMain
 
 #Region "Constants"
 
+    ''' <summary>
+    ''' 數據緩存的檔案名稱
+    ''' </summary>
     Private Const FileName As String = "Records.json"
 
 #End Region
