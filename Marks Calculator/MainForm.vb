@@ -633,10 +633,10 @@ Public Class FrmMain
                 Exam = 0
                 Code = 0
             Else
-                Test = Double.MaxValue
-                Quizzes = Double.MaxValue
-                Project = Double.MaxValue
-                Exam = Double.MaxValue
+                Test = Double.NaN
+                Quizzes = Double.NaN
+                Project = Double.NaN
+                Exam = Double.NaN
                 Code = 0
             End If
         End Sub
