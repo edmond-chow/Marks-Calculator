@@ -599,7 +599,7 @@ Public Class FrmMain
     End Interface
 
     Private Class Record
-        Implements IRecord, IReliability
+        Implements IRecord, IReliability, IEquatable(Of Object), IComparable(Of Record), IComparable
 
 #Region "Constants"
 
@@ -796,8 +796,8 @@ Public Class FrmMain
             Code = 0
         End Sub
 
-        Public Overrides Function Equals(obj As Object) As Boolean
-            Return TypeOf obj Is Record AndAlso Me = CType(obj, Record)
+        Public Overrides Function Equals(Other As Object) As Boolean Implements IEquatable(Of Object).Equals
+            Return TypeOf Other Is Record AndAlso Me = CType(Other, Record)
         End Function
 
         Public Overrides Function GetHashCode() As Integer
@@ -808,16 +808,29 @@ Public Class FrmMain
             Return MyBase.ToString() + " (" + Name.ToString() + ", " + Code.ToString() + ")"
         End Function
 
+        Public Function CompareTo(Other As Record) As Integer Implements IComparable(Of Record).CompareTo
+            Return Other.Code - Code
+        End Function
+
+        Public Function CompareTo(Other As Object) As Integer Implements IComparable.CompareTo
+            Return If(TypeOf Other Is Record, CompareTo(CType(Other, Record)), 0)
+        End Function
+
 #End Region
 
 #Region "Operators"
 
-        Public Shared Operator =(L As Record, R As Record) As Boolean
-            Return L.Name = R.Name AndAlso L.Test = R.Test AndAlso L.Quizzes = R.Quizzes AndAlso L.Project = R.Project AndAlso L.Exam = R.Exam AndAlso L.Code = R.Code
+        Public Shared Operator =(Left As Record, Right As Record) As Boolean
+            Return Left.Name = Right.Name AndAlso
+                Left.Test = Right.Test AndAlso
+                Left.Quizzes = Right.Quizzes AndAlso
+                Left.Project = Right.Project AndAlso
+                Left.Exam = Right.Exam AndAlso
+                Left.Code = Right.Code
         End Operator
 
-        Public Shared Operator <>(L As Record, R As Record) As Boolean
-            Return Not L = R
+        Public Shared Operator <>(Left As Record, Right As Record) As Boolean
+            Return Not Left = Right
         End Operator
 
         Public Shared Widening Operator CType(Valid As Boolean) As Record
