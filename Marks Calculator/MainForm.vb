@@ -809,7 +809,7 @@ Public Class FrmMain
         End Function
 
         Public Function CompareTo(Other As Record) As Integer Implements IComparable(Of Record).CompareTo
-            Return Other.Code - Code
+            Return Code - Other.Code
         End Function
 
         Public Function CompareTo(Other As Object) As Integer Implements IComparable.CompareTo
