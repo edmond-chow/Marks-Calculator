@@ -4,6 +4,8 @@
 
 Imports System.IO
 Imports System.Reflection
+Imports System.Runtime.Serialization
+Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports MetroFramework.Controls
@@ -365,7 +367,7 @@ Public Class FrmMain
                         ElseIf PropertyInfo.PropertyType = GetType(Integer) Then
                             PropertyInfo.SetValue(TempRecord, Integer.Parse(Field.Value.ToString()))
                         Else
-                            Throw New NotImplementedException()
+                            Throw New BranchesShouldNotBeInstantiatedException()
                         End If
                     Next
                     Records.Add(TempRecord)
@@ -430,7 +432,7 @@ Public Class FrmMain
 
     Private Sub TxtInput_Enter(sender As Object, e As EventArgs) Handles TxtInputTest.Enter, TxtInputQuizzes.Enter, TxtInputProject.Enter, TxtInputExam.Enter
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New NotImplementedException()
+            Throw New BranchesShouldNotBeInstantiatedException()
         End If
         If LstRecords.Tag = IsAdding.Yes Then
             CType(sender, MetroTextBox).Tag = IsTyping.Yes
@@ -439,7 +441,7 @@ Public Class FrmMain
 
     Private Sub TxtInput_TextChanged(sender As Object, e As EventArgs) Handles TxtInputTest.TextChanged, TxtInputQuizzes.TextChanged, TxtInputProject.TextChanged, TxtInputExam.TextChanged
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New NotImplementedException()
+            Throw New BranchesShouldNotBeInstantiatedException()
         End If
         If LstRecords.Tag = IsAdding.Yes AndAlso CType(sender, MetroTextBox).Tag = IsTyping.Yes Then
             Dim Number As Double = 0
@@ -449,7 +451,7 @@ Public Class FrmMain
 
     Private Sub TxtInput_Leave(sender As Object, e As EventArgs) Handles TxtInputTest.Leave, TxtInputQuizzes.Leave, TxtInputProject.Leave, TxtInputExam.Leave
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New NotImplementedException()
+            Throw New BranchesShouldNotBeInstantiatedException()
         End If
         If LstRecords.Tag = IsAdding.Yes Then
             Dim Number As Double = 0
@@ -533,7 +535,7 @@ Public Class FrmMain
 
     Private Sub ChkEnterKeys_Event(sender As Object, e As KeyEventArgs) Handles ChkRecords.KeyDown, ChkRecordsSearch.KeyDown
         If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
-            Throw New NotImplementedException()
+            Throw New BranchesShouldNotBeInstantiatedException()
         End If
         If e.KeyCode = Keys.Enter Then
             CType(sender, MetroCheckBox).Checked = Not CType(sender, MetroCheckBox).Checked
@@ -835,6 +837,29 @@ Public Class FrmMain
         End Operator
 
 #End Region
+
+    End Class
+
+    <Serializable>
+    Private Class BranchesShouldNotBeInstantiatedException
+        Inherits NotImplementedException
+
+        Public Sub New()
+            MyBase.New()
+        End Sub
+
+        Public Sub New(message As String)
+            MyBase.New(message)
+        End Sub
+
+        Public Sub New(message As String, inner As Exception)
+            MyBase.New(message, inner)
+        End Sub
+
+        <SecuritySafeCritical>
+        Protected Sub New(info As SerializationInfo, context As StreamingContext)
+            MyBase.New(info, context)
+        End Sub
 
     End Class
 
