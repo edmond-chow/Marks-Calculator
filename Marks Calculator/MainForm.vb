@@ -98,7 +98,7 @@ Public Class FrmMain
     ''' <returns></returns>
     Private ReadOnly Property InputedRecord As Record
         Get
-            Dim MyRecord As New Record(TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
+            Dim MyRecord As Record = (TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
             Dim RandomNumber As Integer = 0
             While True
                 RandomNumber = RandomNumberGenerator.Next(100000000, 999999999)
@@ -325,7 +325,7 @@ Public Class FrmMain
 
     Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of IReliability)) As Boolean
         For i As Integer = 0 To Enumerable.Count() - 2
-            For j As Integer = 1 To Enumerable.Count() - 1
+            For j As Integer = 1 To Enumerable.Count() - 1 - i
                 If Enumerable.ElementAt(i).ID = Enumerable.ElementAt(i + j).ID Then
                     Return False
                 End If
@@ -336,7 +336,7 @@ Public Class FrmMain
 
     Private Shared Function IsNotTheSame(Enumerable As IEnumerable(Of IRecord)) As Boolean
         For i As Integer = 0 To Enumerable.Count() - 2
-            For j As Integer = 1 To Enumerable.Count() - 1
+            For j As Integer = 1 To Enumerable.Count() - 1 - i
                 If Enumerable.ElementAt(i).StudentName = Enumerable.ElementAt(i + j).StudentName Then
                     Return False
                 End If
@@ -355,7 +355,7 @@ Public Class FrmMain
                 Dim Json(DataFile.Length - 1) As Byte
                 Await DataFile.ReadAsync(Json, 0, DataFile.Length)
                 For Each RecordToken As JToken In JsonConvert.DeserializeObject(Of JArray)(Encoding.UTF8.GetString(Json)).Children()
-                    Dim TempRecord As New Record(True)
+                    Dim TempRecord As Record = True
                     For Each Field As JProperty In RecordToken
                         Dim PropertyInfo As PropertyInfo = GetType(Record).GetProperty(Field.Name)
                         If PropertyInfo.PropertyType = GetType(String) Then
@@ -410,7 +410,7 @@ Public Class FrmMain
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
         PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
         Data = Await ReadDataFile()
-        Temp = New Record(True)
+        Temp = True
         ShowStatistics()
         RecordsSearch()
         If Not IsNotTheSame(Data) Then
@@ -443,7 +443,7 @@ Public Class FrmMain
         End If
         If LstRecords.Tag = IsAdding.Yes AndAlso CType(sender, MetroTextBox).Tag = IsTyping.Yes Then
             Dim Number As Double = 0
-            ShowResult(If(Double.TryParse(CType(sender, MetroTextBox).Text, Number), InputedRecord, New Record(False)))
+            ShowResult(If(Double.TryParse(CType(sender, MetroTextBox).Text, Number), InputedRecord, False))
         End If
     End Sub
 
@@ -793,6 +793,46 @@ Public Class FrmMain
             Exam = 0
             Code = 0
         End Sub
+
+        Public Overrides Function Equals(obj As Object) As Boolean
+            Return TypeOf obj Is Record AndAlso Me = CType(obj, Record)
+        End Function
+
+        Public Overrides Function GetHashCode() As Integer
+            Return Code
+        End Function
+
+        Public Overrides Function ToString() As String
+            Return MyBase.ToString() + " (" + Name.ToString() + ", " + Code.ToString() + ")"
+        End Function
+
+#End Region
+
+#Region "Operators"
+
+        Public Shared Operator =(L As Record, R As Record) As Boolean
+            Return L.Name = R.Name AndAlso L.Test = R.Test AndAlso L.Quizzes = R.Quizzes AndAlso L.Project = R.Project AndAlso L.Exam = R.Exam AndAlso L.Code = R.Code
+        End Operator
+
+        Public Shared Operator <>(L As Record, R As Record) As Boolean
+            Return Not L = R
+        End Operator
+
+        Public Shared Widening Operator CType(Valid As Boolean) As Record
+            Return New Record(Valid)
+        End Operator
+
+        Public Shared Widening Operator CType(Name As String) As Record
+            Return New Record(Name)
+        End Operator
+
+        Public Shared Widening Operator CType(Value As (Name As String, Test As Double, Quizzes As Double, Project As Double, Exam As Double)) As Record
+            Return New Record(Value.Name, Value.Test, Value.Quizzes, Value.Project, Value.Exam)
+        End Operator
+
+        Public Shared Narrowing Operator CType(Code As Integer) As Record
+            Return New Record(True) With {.ID = Code}
+        End Operator
 
 #End Region
 
