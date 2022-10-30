@@ -844,6 +844,8 @@ Public Class FrmMain
     Private Class BranchesShouldNotBeInstantiatedException
         Inherits NotImplementedException
 
+#Region "Constructors"
+
         Public Sub New()
             MyBase.New()
         End Sub
@@ -860,6 +862,8 @@ Public Class FrmMain
         Protected Sub New(info As SerializationInfo, context As StreamingContext)
             MyBase.New(info, context)
         End Sub
+
+#End Region
 
     End Class
 
