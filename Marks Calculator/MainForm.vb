@@ -118,20 +118,60 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
+    ''' 表示 LstRecords 已選取項目相應的上一個 Record
+    ''' </summary>
+    ''' <returns></returns>
+    Private Property SelectedPrevRecord As Record
+        Get
+            If LstRecords.SelectedIndex <= 1 Then
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
+            Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 2))
+        End Get
+        Set(Value As Record)
+            If LstRecords.SelectedIndex <= 1 Then
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
+            Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 2)) = Value
+        End Set
+    End Property
+
+    ''' <summary>
     ''' 表示 LstRecords 已選取項目相應的 Record
     ''' </summary>
     ''' <returns></returns>
-    Private ReadOnly Property SelectedRecord As Record
+    Private Property SelectedRecord As Record
         Get
             If LstRecords.SelectedIndex = 0 Then
                 Return Temp
             End If
-            Return Data.Where(
-                Function(Record As Record) As Boolean
-                    Return Record.ID = CType(TxtRecordsSearch.Tag, List(Of Integer)).ElementAt(LstRecords.SelectedIndex - 1)
-                End Function
-            ).Single()
+            Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 1))
         End Get
+        Set(Value As Record)
+            If LstRecords.SelectedIndex = 0 Then
+                Temp = Value
+            End If
+            Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 1)) = Value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' 表示 LstRecords 已選取項目相應的下一個 Record
+    ''' </summary>
+    ''' <returns></returns>
+    Private Property SelectedNextRecord As Record
+        Get
+            If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 Then
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
+            Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex))
+        End Get
+        Set(Value As Record)
+            If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 Then
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
+            Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex)) = Value
+        End Set
     End Property
 
     ''' <summary>
@@ -307,19 +347,19 @@ Public Class FrmMain
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
         TxtRecordsSearch.Tag = New List(Of Integer)
-        For Each Record As Record In Data
+        For i As Integer = 0 To Data.Count - 1
             Dim IsMatched As Boolean = False
             If ChkRecordsSearch.Checked Then
                 Try
-                    IsMatched = Regex.IsMatch(Record.StudentName, TxtRecordsSearch.Text)
+                    IsMatched = Regex.IsMatch(Data.Item(i).StudentName, TxtRecordsSearch.Text)
                 Catch Exception As Exception
                 End Try
             Else
-                IsMatched = Record.StudentName.IndexOf(TxtRecordsSearch.Text) <> -1
+                IsMatched = Data(i).StudentName.IndexOf(TxtRecordsSearch.Text) <> -1
             End If
             If IsMatched Then
-                LstRecords.Items.Add(Record.StudentName)
-                CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(Record.ID)
+                LstRecords.Items.Add(Data.Item(i).StudentName)
+                CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
         LstRecords.SelectedIndex = 0
@@ -501,6 +541,24 @@ Public Class FrmMain
         LstRecords.SelectedIndex = If(Index < LstRecords.Items.Count, Index, 0)
     End Sub
 
+    Private Sub BtnRecordsUp_Click(sender As Object, e As EventArgs) Handles BtnRecordsUp.Click
+        Dim Index As Integer = LstRecords.SelectedIndex - 1
+        Dim Temp As Record = SelectedPrevRecord
+        SelectedPrevRecord = SelectedRecord
+        SelectedRecord = Temp
+        RecordsSearch()
+        LstRecords.SelectedIndex = Index
+    End Sub
+
+    Private Sub BtnRecordsDown_Click(sender As Object, e As EventArgs) Handles BtnRecordsDown.Click
+        Dim Index As Integer = LstRecords.SelectedIndex + 1
+        Dim Temp As Record = SelectedNextRecord
+        SelectedNextRecord = SelectedRecord
+        SelectedRecord = Temp
+        RecordsSearch()
+        LstRecords.SelectedIndex = Index
+    End Sub
+
     Private Sub ChkRecords_CheckedChanged(sender As Object, e As EventArgs) Handles ChkRecords.CheckedChanged
         If Not ChkRecords.Checked AndAlso Not IsNotTheSame(Data) Then
             MessageBox.Show(Me, "Some of the student names have the same! But it still avoids the same input though.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -511,6 +569,8 @@ Public Class FrmMain
         If LstRecords.SelectedIndex = 0 Then
             BtnRecordsAdd.Enabled = True
             BtnRecordsRemove.Enabled = False
+            BtnRecordsUp.Enabled = False
+            BtnRecordsDown.Enabled = False
             ChkRecords.Enabled = True
             TxtName.ReadOnly = False
             TxtInputTest.ReadOnly = False
@@ -521,6 +581,8 @@ Public Class FrmMain
         Else
             BtnRecordsAdd.Enabled = False
             BtnRecordsRemove.Enabled = True
+            BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
+            BtnRecordsDown.Enabled = LstRecords.SelectedIndex < LstRecords.Items.Count - 1
             ChkRecords.Enabled = False
             TxtName.ReadOnly = True
             TxtInputTest.ReadOnly = True
