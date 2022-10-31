@@ -83,13 +83,13 @@ Partial Class FrmMain
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.PrbMain.Location = New System.Drawing.Point(0, 0)
         Me.PrbMain.Name = "PrbMain"
-        Me.PrbMain.Size = New System.Drawing.Size(778, 5)
+        Me.PrbMain.Size = New System.Drawing.Size(777, 5)
         Me.PrbMain.TabIndex = 0
         '
         'LblName
         '
         Me.LblName.AutoSize = True
-        Me.LblName.Location = New System.Drawing.Point(29, 63)
+        Me.LblName.Location = New System.Drawing.Point(23, 64)
         Me.LblName.Name = "LblName"
         Me.LblName.Size = New System.Drawing.Size(45, 19)
         Me.LblName.TabIndex = 0
@@ -98,7 +98,7 @@ Partial Class FrmMain
         'TxtName
         '
         Me.TxtName.Enabled = False
-        Me.TxtName.Location = New System.Drawing.Point(80, 63)
+        Me.TxtName.Location = New System.Drawing.Point(74, 63)
         Me.TxtName.Name = "TxtName"
         Me.TxtName.ReadOnly = True
         Me.TxtName.Size = New System.Drawing.Size(200, 21)
@@ -118,7 +118,7 @@ Partial Class FrmMain
         Me.GrpInput.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
         Me.GrpInput.Location = New System.Drawing.Point(23, 90)
         Me.GrpInput.Name = "GrpInput"
-        Me.GrpInput.Size = New System.Drawing.Size(500, 100)
+        Me.GrpInput.Size = New System.Drawing.Size(500, 95)
         Me.GrpInput.TabIndex = 2
         Me.GrpInput.TabStop = False
         Me.GrpInput.Text = "Input CA and Exam Marks"
@@ -134,9 +134,8 @@ Partial Class FrmMain
         '
         'LblInputTest
         '
-        Me.LblInputTest.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.LblInputTest.AutoSize = True
-        Me.LblInputTest.Location = New System.Drawing.Point(6, 47)
+        Me.LblInputTest.Location = New System.Drawing.Point(6, 42)
         Me.LblInputTest.Name = "LblInputTest"
         Me.LblInputTest.Size = New System.Drawing.Size(30, 19)
         Me.LblInputTest.TabIndex = 0
@@ -144,9 +143,8 @@ Partial Class FrmMain
         '
         'TxtInputTest
         '
-        Me.TxtInputTest.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.TxtInputTest.Enabled = False
-        Me.TxtInputTest.Location = New System.Drawing.Point(62, 46)
+        Me.TxtInputTest.Location = New System.Drawing.Point(62, 41)
         Me.TxtInputTest.Name = "TxtInputTest"
         Me.TxtInputTest.ReadOnly = True
         Me.TxtInputTest.Size = New System.Drawing.Size(125, 21)
@@ -155,9 +153,8 @@ Partial Class FrmMain
         '
         'LblInputQuizzes
         '
-        Me.LblInputQuizzes.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.LblInputQuizzes.AutoSize = True
-        Me.LblInputQuizzes.Location = New System.Drawing.Point(193, 47)
+        Me.LblInputQuizzes.Location = New System.Drawing.Point(193, 42)
         Me.LblInputQuizzes.Name = "LblInputQuizzes"
         Me.LblInputQuizzes.Size = New System.Drawing.Size(54, 19)
         Me.LblInputQuizzes.TabIndex = 0
@@ -165,9 +162,8 @@ Partial Class FrmMain
         '
         'TxtInputQuizzes
         '
-        Me.TxtInputQuizzes.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.TxtInputQuizzes.Enabled = False
-        Me.TxtInputQuizzes.Location = New System.Drawing.Point(253, 46)
+        Me.TxtInputQuizzes.Location = New System.Drawing.Point(253, 41)
         Me.TxtInputQuizzes.Name = "TxtInputQuizzes"
         Me.TxtInputQuizzes.ReadOnly = True
         Me.TxtInputQuizzes.Size = New System.Drawing.Size(125, 21)
@@ -176,9 +172,8 @@ Partial Class FrmMain
         '
         'LblInputProject
         '
-        Me.LblInputProject.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.LblInputProject.AutoSize = True
-        Me.LblInputProject.Location = New System.Drawing.Point(6, 74)
+        Me.LblInputProject.Location = New System.Drawing.Point(6, 69)
         Me.LblInputProject.Name = "LblInputProject"
         Me.LblInputProject.Size = New System.Drawing.Size(50, 19)
         Me.LblInputProject.TabIndex = 0
@@ -186,9 +181,8 @@ Partial Class FrmMain
         '
         'TxtInputProject
         '
-        Me.TxtInputProject.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.TxtInputProject.Enabled = False
-        Me.TxtInputProject.Location = New System.Drawing.Point(62, 73)
+        Me.TxtInputProject.Location = New System.Drawing.Point(62, 68)
         Me.TxtInputProject.Name = "TxtInputProject"
         Me.TxtInputProject.ReadOnly = True
         Me.TxtInputProject.Size = New System.Drawing.Size(125, 21)
@@ -197,9 +191,8 @@ Partial Class FrmMain
         '
         'LblInputExam
         '
-        Me.LblInputExam.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.LblInputExam.AutoSize = True
-        Me.LblInputExam.Location = New System.Drawing.Point(193, 74)
+        Me.LblInputExam.Location = New System.Drawing.Point(193, 69)
         Me.LblInputExam.Name = "LblInputExam"
         Me.LblInputExam.Size = New System.Drawing.Size(41, 19)
         Me.LblInputExam.TabIndex = 0
@@ -207,9 +200,8 @@ Partial Class FrmMain
         '
         'TxtInputExam
         '
-        Me.TxtInputExam.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.TxtInputExam.Enabled = False
-        Me.TxtInputExam.Location = New System.Drawing.Point(253, 73)
+        Me.TxtInputExam.Location = New System.Drawing.Point(253, 68)
         Me.TxtInputExam.Name = "TxtInputExam"
         Me.TxtInputExam.ReadOnly = True
         Me.TxtInputExam.Size = New System.Drawing.Size(125, 21)
@@ -227,9 +219,9 @@ Partial Class FrmMain
         Me.GrpResult.Controls.Add(Me.LblReusltRemarks)
         Me.GrpResult.Controls.Add(Me.TxtReusltRemarks)
         Me.GrpResult.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
-        Me.GrpResult.Location = New System.Drawing.Point(23, 196)
+        Me.GrpResult.Location = New System.Drawing.Point(23, 191)
         Me.GrpResult.Name = "GrpResult"
-        Me.GrpResult.Size = New System.Drawing.Size(500, 69)
+        Me.GrpResult.Size = New System.Drawing.Size(500, 76)
         Me.GrpResult.TabIndex = 3
         Me.GrpResult.TabStop = False
         Me.GrpResult.Text = "Module Result"
@@ -237,7 +229,7 @@ Partial Class FrmMain
         'LblResultCA
         '
         Me.LblResultCA.AutoSize = True
-        Me.LblResultCA.Location = New System.Drawing.Point(6, 16)
+        Me.LblResultCA.Location = New System.Drawing.Point(6, 23)
         Me.LblResultCA.Name = "LblResultCA"
         Me.LblResultCA.Size = New System.Drawing.Size(66, 19)
         Me.LblResultCA.TabIndex = 0
@@ -245,7 +237,7 @@ Partial Class FrmMain
         '
         'TxtResultCA
         '
-        Me.TxtResultCA.Location = New System.Drawing.Point(106, 15)
+        Me.TxtResultCA.Location = New System.Drawing.Point(106, 22)
         Me.TxtResultCA.Name = "TxtResultCA"
         Me.TxtResultCA.ReadOnly = True
         Me.TxtResultCA.Size = New System.Drawing.Size(125, 21)
@@ -254,7 +246,7 @@ Partial Class FrmMain
         'LblResultModule
         '
         Me.LblResultModule.AutoSize = True
-        Me.LblResultModule.Location = New System.Drawing.Point(237, 16)
+        Me.LblResultModule.Location = New System.Drawing.Point(237, 23)
         Me.LblResultModule.Name = "LblResultModule"
         Me.LblResultModule.Size = New System.Drawing.Size(93, 19)
         Me.LblResultModule.TabIndex = 0
@@ -262,7 +254,7 @@ Partial Class FrmMain
         '
         'TxtResultModule
         '
-        Me.TxtResultModule.Location = New System.Drawing.Point(336, 15)
+        Me.TxtResultModule.Location = New System.Drawing.Point(336, 22)
         Me.TxtResultModule.Name = "TxtResultModule"
         Me.TxtResultModule.ReadOnly = True
         Me.TxtResultModule.Size = New System.Drawing.Size(125, 21)
@@ -271,7 +263,7 @@ Partial Class FrmMain
         'LblResultGrade
         '
         Me.LblResultGrade.AutoSize = True
-        Me.LblResultGrade.Location = New System.Drawing.Point(6, 43)
+        Me.LblResultGrade.Location = New System.Drawing.Point(6, 50)
         Me.LblResultGrade.Name = "LblResultGrade"
         Me.LblResultGrade.Size = New System.Drawing.Size(94, 19)
         Me.LblResultGrade.TabIndex = 0
@@ -279,7 +271,7 @@ Partial Class FrmMain
         '
         'TxtReusltGrade
         '
-        Me.TxtReusltGrade.Location = New System.Drawing.Point(106, 42)
+        Me.TxtReusltGrade.Location = New System.Drawing.Point(106, 49)
         Me.TxtReusltGrade.Name = "TxtReusltGrade"
         Me.TxtReusltGrade.ReadOnly = True
         Me.TxtReusltGrade.Size = New System.Drawing.Size(125, 21)
@@ -288,7 +280,7 @@ Partial Class FrmMain
         'LblReusltRemarks
         '
         Me.LblReusltRemarks.AutoSize = True
-        Me.LblReusltRemarks.Location = New System.Drawing.Point(237, 43)
+        Me.LblReusltRemarks.Location = New System.Drawing.Point(237, 50)
         Me.LblReusltRemarks.Name = "LblReusltRemarks"
         Me.LblReusltRemarks.Size = New System.Drawing.Size(59, 19)
         Me.LblReusltRemarks.TabIndex = 0
@@ -296,7 +288,7 @@ Partial Class FrmMain
         '
         'TxtReusltRemarks
         '
-        Me.TxtReusltRemarks.Location = New System.Drawing.Point(336, 42)
+        Me.TxtReusltRemarks.Location = New System.Drawing.Point(336, 49)
         Me.TxtReusltRemarks.Name = "TxtReusltRemarks"
         Me.TxtReusltRemarks.ReadOnly = True
         Me.TxtReusltRemarks.Size = New System.Drawing.Size(125, 21)
@@ -323,7 +315,7 @@ Partial Class FrmMain
         Me.GrpStatistics.Controls.Add(Me.LblStatisticsSd)
         Me.GrpStatistics.Controls.Add(Me.TxtStatisticsSd)
         Me.GrpStatistics.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
-        Me.GrpStatistics.Location = New System.Drawing.Point(23, 271)
+        Me.GrpStatistics.Location = New System.Drawing.Point(23, 273)
         Me.GrpStatistics.Name = "GrpStatistics"
         Me.GrpStatistics.Size = New System.Drawing.Size(500, 157)
         Me.GrpStatistics.TabIndex = 4
@@ -486,9 +478,9 @@ Partial Class FrmMain
         Me.GrpRecords.Controls.Add(Me.TxtRecordsSearch)
         Me.GrpRecords.Controls.Add(Me.ChkRecordsSearch)
         Me.GrpRecords.Font = New System.Drawing.Font("微軟正黑體", 9.0!)
-        Me.GrpRecords.Location = New System.Drawing.Point(530, 63)
+        Me.GrpRecords.Location = New System.Drawing.Point(529, 63)
         Me.GrpRecords.Name = "GrpRecords"
-        Me.GrpRecords.Size = New System.Drawing.Size(225, 365)
+        Me.GrpRecords.Size = New System.Drawing.Size(225, 367)
         Me.GrpRecords.TabIndex = 5
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
@@ -531,14 +523,14 @@ Partial Class FrmMain
         Me.LstRecords.ItemHeight = 16
         Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(213, 241)
+        Me.LstRecords.Size = New System.Drawing.Size(213, 243)
         Me.LstRecords.TabIndex = 4
         '
         'TxtRecordsSearch
         '
         Me.TxtRecordsSearch.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 317)
+        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 319)
         Me.TxtRecordsSearch.Name = "TxtRecordsSearch"
         Me.TxtRecordsSearch.Size = New System.Drawing.Size(213, 21)
         Me.TxtRecordsSearch.TabIndex = 5
@@ -547,7 +539,7 @@ Partial Class FrmMain
         '
         Me.ChkRecordsSearch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.ChkRecordsSearch.AutoSize = True
-        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 344)
+        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 346)
         Me.ChkRecordsSearch.Name = "ChkRecordsSearch"
         Me.ChkRecordsSearch.Size = New System.Drawing.Size(155, 15)
         Me.ChkRecordsSearch.TabIndex = 6
@@ -561,7 +553,7 @@ Partial Class FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(778, 449)
+        Me.ClientSize = New System.Drawing.Size(777, 452)
         Me.Controls.Add(Me.PrbMain)
         Me.Controls.Add(Me.LblName)
         Me.Controls.Add(Me.TxtName)
@@ -571,7 +563,7 @@ Partial Class FrmMain
         Me.Controls.Add(Me.GrpRecords)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "FrmMain"
-        Me.Padding = New System.Windows.Forms.Padding(20, 60, 20, 18)
+        Me.Padding = New System.Windows.Forms.Padding(20, 60, 20, 19)
         Me.Style = MetroFramework.MetroColorStyle.Green
         Me.Text = "Calculation of Module Grade"
         Me.Theme = MetroFramework.MetroThemeStyle.Light
