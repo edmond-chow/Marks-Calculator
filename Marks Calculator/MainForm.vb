@@ -469,7 +469,9 @@ Public Class FrmMain
     End Sub
 
     Private Sub TxtName_Leave(sender As Object, e As EventArgs) Handles TxtName.Leave
-        Temp = InputedRecord
+        If LstRecords.Tag = IsAdding.Yes Then
+            Temp = InputedRecord
+        End If
     End Sub
 
     Private Sub BtnRecordsAdd_Click(sender As Object, e As EventArgs) Handles BtnRecordsAdd.Click
