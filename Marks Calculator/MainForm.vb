@@ -468,6 +468,10 @@ Public Class FrmMain
         End If
     End Sub
 
+    Private Sub TxtName_Leave(sender As Object, e As EventArgs) Handles TxtName.Leave
+        Temp = InputedRecord
+    End Sub
+
     Private Sub BtnRecordsAdd_Click(sender As Object, e As EventArgs) Handles BtnRecordsAdd.Click
         If TxtName.Text = String.Empty Then
             MessageBox.Show(Me, "Student name cannot be empty!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
