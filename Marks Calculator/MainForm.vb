@@ -143,12 +143,18 @@ Public Class FrmMain
     ''' <returns></returns>
     Private Property SelectedRecord As Record
         Get
+            If LstRecords.SelectedIndex = -1 Then
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
             If LstRecords.SelectedIndex = 0 Then
                 Return Temp
             End If
             Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 1))
         End Get
         Set(Value As Record)
+            If LstRecords.SelectedIndex = -1 Then
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
             If LstRecords.SelectedIndex = 0 Then
                 Temp = Value
             End If
@@ -162,13 +168,13 @@ Public Class FrmMain
     ''' <returns></returns>
     Private Property SelectedNextRecord As Record
         Get
-            If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 Then
+            If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException()
             End If
             Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex))
         End Get
         Set(Value As Record)
-            If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 Then
+            If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException()
             End If
             Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex)) = Value
