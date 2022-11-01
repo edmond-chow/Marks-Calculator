@@ -349,7 +349,7 @@ Public Class FrmMain
     Private Sub RecordsSearch(Index As Index)
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
-        TxtRecordsSearch.Tag = New List(Of Integer)
+        TxtRecordsSearch.Tag = New List(Of Integer)()
         For i As Integer = 0 To Data.Count - 1
             Dim IsMatched As Boolean = False
             If ChkRecordsSearch.Checked Then
@@ -393,7 +393,7 @@ Public Class FrmMain
     Private Async Function ReadDataFile() As Task(Of List(Of Record))
         SuspendControls()
         PrbMain.Show()
-        Dim Records As New List(Of Record)
+        Dim Records As New List(Of Record)()
         Try
             If File.Exists(FileName) Then
                 DataFile = File.Open(FileName, FileMode.Open)
