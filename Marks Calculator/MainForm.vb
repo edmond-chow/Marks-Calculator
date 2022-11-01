@@ -337,14 +337,16 @@ Public Class FrmMain
             End Function
         ).ToArray()
         Array.Sort(Sorted)
-        Dim Md As Double = If(Sorted.LongLength Mod 2 = 0,
+        Dim Md As Double =
+        If(
+            Sorted.LongLength Mod 2 = 0,
             (Sorted(Sorted.LongLength / 2) + Sorted(Sorted.LongLength / 2 - 1)) / 2,
             Sorted((Sorted.LongLength - 1) / 2)
         )
         TxtStatisticsMd.Text = Md.ToString()
     End Sub
 
-    Private Sub RecordsSearch()
+    Private Sub RecordsSearch(Index As Index)
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
         TxtRecordsSearch.Tag = New List(Of Integer)
@@ -363,7 +365,7 @@ Public Class FrmMain
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
-        LstRecords.SelectedIndex = 0
+        LstRecords.SelectedIndex = Index.Invoke()
     End Sub
 
     Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of IReliability)) As Boolean
@@ -455,7 +457,11 @@ Public Class FrmMain
         Data = Await ReadDataFile()
         Temp = True
         ShowStatistics()
-        RecordsSearch()
+        RecordsSearch(
+            Function() As Integer
+                Return 0
+            End Function
+        )
         If Not IsNotTheSame(Data) Then
             ChkRecords.Checked = True
         End If
@@ -532,33 +538,46 @@ Public Class FrmMain
         Data.Add(InputedRecord)
         Temp.Clear()
         ShowStatistics()
-        RecordsSearch()
+        RecordsSearch(
+            Function() As Integer
+                Return 0
+            End Function
+        )
     End Sub
 
     Private Sub BtnRecordsRemove_Click(sender As Object, e As EventArgs) Handles BtnRecordsRemove.Click
-        Dim Index As Integer = LstRecords.SelectedIndex
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         Data.Remove(SelectedRecord)
         ShowStatistics()
-        RecordsSearch()
-        LstRecords.SelectedIndex = If(Index < LstRecords.Items.Count, Index, 0)
+        RecordsSearch(
+            Function() As Integer
+                Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
+            End Function
+        )
     End Sub
 
     Private Sub BtnRecordsUp_Click(sender As Object, e As EventArgs) Handles BtnRecordsUp.Click
-        Dim Index As Integer = LstRecords.SelectedIndex - 1
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex - 1
         Dim Temp As Record = SelectedPrevRecord
         SelectedPrevRecord = SelectedRecord
         SelectedRecord = Temp
-        RecordsSearch()
-        LstRecords.SelectedIndex = Index
+        RecordsSearch(
+            Function() As Integer
+                Return CaptureIndex
+            End Function
+        )
     End Sub
 
     Private Sub BtnRecordsDown_Click(sender As Object, e As EventArgs) Handles BtnRecordsDown.Click
-        Dim Index As Integer = LstRecords.SelectedIndex + 1
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex + 1
         Dim Temp As Record = SelectedNextRecord
         SelectedNextRecord = SelectedRecord
         SelectedRecord = Temp
-        RecordsSearch()
-        LstRecords.SelectedIndex = Index
+        RecordsSearch(
+            Function() As Integer
+                Return CaptureIndex
+            End Function
+        )
     End Sub
 
     Private Sub ChkRecords_CheckedChanged(sender As Object, e As EventArgs) Handles ChkRecords.CheckedChanged
@@ -598,9 +617,12 @@ Public Class FrmMain
     End Sub
 
     Private Sub AnyRecordsSearch_Event(sender As Object, e As EventArgs) Handles TxtRecordsSearch.TextChanged, ChkRecordsSearch.CheckedChanged
-        Dim Index As Integer = LstRecords.SelectedIndex
-        RecordsSearch()
-        LstRecords.SelectedIndex = If(Index < LstRecords.Items.Count, Index, 0)
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex
+        RecordsSearch(
+            Function() As Integer
+                Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
+            End Function
+        )
     End Sub
 
     Private Sub ChkEnterKeys_Event(sender As Object, e As KeyEventArgs) Handles ChkRecords.KeyDown, ChkRecordsSearch.KeyDown
@@ -634,6 +656,12 @@ Public Class FrmMain
             Next
         End If
     End Sub
+
+#End Region
+
+#Region "Delegates"
+
+    Private Delegate Function Index() As Integer
 
 #End Region
 
