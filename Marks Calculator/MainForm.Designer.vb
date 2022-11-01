@@ -64,6 +64,8 @@ Partial Class FrmMain
         Me.LblStatisticsSd = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsSd = New MetroFramework.Controls.MetroTextBox()
         Me.GrpRecords = New System.Windows.Forms.GroupBox()
+        Me.BtnRecordsDown = New MetroFramework.Controls.MetroButton()
+        Me.BtnRecordsUp = New MetroFramework.Controls.MetroButton()
         Me.ChkRecords = New MetroFramework.Controls.MetroCheckBox()
         Me.BtnRecordsAdd = New MetroFramework.Controls.MetroButton()
         Me.BtnRecordsRemove = New MetroFramework.Controls.MetroButton()
@@ -71,8 +73,6 @@ Partial Class FrmMain
         Me.TxtRecordsSearch = New MetroFramework.Controls.MetroTextBox()
         Me.ChkRecordsSearch = New MetroFramework.Controls.MetroCheckBox()
         Me.TmrMain = New System.Windows.Forms.Timer(Me.components)
-        Me.BtnRecordsUp = New MetroFramework.Controls.MetroButton()
-        Me.BtnRecordsDown = New MetroFramework.Controls.MetroButton()
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
@@ -489,6 +489,24 @@ Partial Class FrmMain
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
         '
+        'BtnRecordsDown
+        '
+        Me.BtnRecordsDown.Enabled = False
+        Me.BtnRecordsDown.Location = New System.Drawing.Point(195, 22)
+        Me.BtnRecordsDown.Name = "BtnRecordsDown"
+        Me.BtnRecordsDown.Size = New System.Drawing.Size(21, 21)
+        Me.BtnRecordsDown.TabIndex = 4
+        Me.BtnRecordsDown.Text = "▼"
+        '
+        'BtnRecordsUp
+        '
+        Me.BtnRecordsUp.Enabled = False
+        Me.BtnRecordsUp.Location = New System.Drawing.Point(168, 22)
+        Me.BtnRecordsUp.Name = "BtnRecordsUp"
+        Me.BtnRecordsUp.Size = New System.Drawing.Size(21, 21)
+        Me.BtnRecordsUp.TabIndex = 3
+        Me.BtnRecordsUp.Text = "▲"
+        '
         'ChkRecords
         '
         Me.ChkRecords.AutoSize = True
@@ -552,24 +570,7 @@ Partial Class FrmMain
         '
         'TmrMain
         '
-        '
-        'BtnRecordsUp
-        '
-        Me.BtnRecordsUp.Enabled = False
-        Me.BtnRecordsUp.Location = New System.Drawing.Point(168, 22)
-        Me.BtnRecordsUp.Name = "BtnRecordsUp"
-        Me.BtnRecordsUp.Size = New System.Drawing.Size(21, 21)
-        Me.BtnRecordsUp.TabIndex = 3
-        Me.BtnRecordsUp.Text = "▲"
-        '
-        'BtnRecordsDown
-        '
-        Me.BtnRecordsDown.Enabled = False
-        Me.BtnRecordsDown.Location = New System.Drawing.Point(195, 22)
-        Me.BtnRecordsDown.Name = "BtnRecordsDown"
-        Me.BtnRecordsDown.Size = New System.Drawing.Size(21, 21)
-        Me.BtnRecordsDown.TabIndex = 4
-        Me.BtnRecordsDown.Text = "▼"
+        Me.TmrMain.Enabled = True
         '
         'FrmMain
         '

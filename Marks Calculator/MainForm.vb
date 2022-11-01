@@ -9,6 +9,7 @@ Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports MetroFramework.Controls
+Imports MetroFramework.Forms
 Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 
@@ -61,14 +62,14 @@ Public Class FrmMain
     Private ReadOnly RandomNumberGenerator As Random
 
     ''' <summary>
-    ''' 當 Leave 事件先被觸發時，這個標誌為會短暫變為 True
+    ''' 用來表示變更焦點請求，這個標誌為會短暫變為 True
     ''' </summary>
-    Dim LeaveFirstLock As Boolean
+    Private FocusMeRequest As Boolean
 
     ''' <summary>
-    ''' 當 LostFocus 事件先被觸發時，這個標誌為會短暫變為 True
+    ''' 用來表示變更視窗按鈕設定請求，這個標誌為會短暫變為 True
     ''' </summary>
-    Dim LostFocusFirstLock As Boolean
+    Private WindowButtonsRequest As Boolean
 
 #End Region
 
@@ -86,8 +87,8 @@ Public Class FrmMain
         CloseHasStarted = False
         LastWindowState = WindowState
         RandomNumberGenerator = New Random()
-        LeaveFirstLock = False
-        LostFocusFirstLock = False
+        FocusMeRequest = False
+        WindowButtonsRequest = False
     End Sub
 
 #End Region
@@ -458,6 +459,7 @@ Public Class FrmMain
         If Not IsNotTheSame(Data) Then
             ChkRecords.Checked = True
         End If
+        WindowButtonsRequest = True
         LoadHasFinish = True
     End Sub
 
@@ -610,33 +612,26 @@ Public Class FrmMain
         End If
     End Sub
 
-    Private Sub ChkRecordsSearch_Leave(sender As Object, e As EventArgs) Handles ChkRecordsSearch.Leave
-        If LostFocusFirstLock = False Then
-            LeaveFirstLock = True
-        Else
-            LostFocusFirstLock = False
-        End If
-    End Sub
-
-    Private Sub ChkRecordsSearch_LostFocus(sender As Object, e As EventArgs) Handles ChkRecordsSearch.LostFocus
-        If LeaveFirstLock = True Then
-            SelectNextControl(TxtName, True, True, True, True)
-            LeaveFirstLock = False
-        Else
-            LostFocusFirstLock = True
-        End If
-    End Sub
-
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
         If LastWindowState <> WindowState AndAlso WindowState = FormWindowState.Normal Then
-            TmrMain.Enabled = True
+            FocusMeRequest = True
         End If
         LastWindowState = WindowState
     End Sub
 
     Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
-        If FocusMe() Then
-            TmrMain.Enabled = False
+        If FocusMeRequest = True AndAlso FocusMe() Then
+            FocusMeRequest = False
+        End If
+        If WindowButtonsRequest = True Then
+            For Each Control As Control In Controls
+                Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+                Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+                If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
+                    Control.TabStop = False
+                    WindowButtonsRequest = False
+                End If
+            Next
         End If
     End Sub
 
