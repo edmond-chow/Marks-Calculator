@@ -64,6 +64,7 @@ Partial Class FrmMain
         Me.LblStatisticsSd = New MetroFramework.Controls.MetroLabel()
         Me.TxtStatisticsSd = New MetroFramework.Controls.MetroTextBox()
         Me.GrpRecords = New System.Windows.Forms.GroupBox()
+        Me.BtnRecordsSquare = New MetroFramework.Controls.MetroButton()
         Me.BtnRecordsDown = New MetroFramework.Controls.MetroButton()
         Me.BtnRecordsUp = New MetroFramework.Controls.MetroButton()
         Me.ChkRecords = New MetroFramework.Controls.MetroCheckBox()
@@ -73,7 +74,6 @@ Partial Class FrmMain
         Me.TxtRecordsSearch = New MetroFramework.Controls.MetroTextBox()
         Me.ChkRecordsSearch = New MetroFramework.Controls.MetroCheckBox()
         Me.TmrMain = New System.Windows.Forms.Timer(Me.components)
-        Me.BtnRecordsSquare = New MetroFramework.Controls.MetroButton()
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
@@ -320,7 +320,7 @@ Partial Class FrmMain
         Me.GrpStatistics.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
         Me.GrpStatistics.Location = New System.Drawing.Point(23, 273)
         Me.GrpStatistics.Name = "GrpStatistics"
-        Me.GrpStatistics.Size = New System.Drawing.Size(500, 157)
+        Me.GrpStatistics.Size = New System.Drawing.Size(500, 200)
         Me.GrpStatistics.TabIndex = 4
         Me.GrpStatistics.TabStop = False
         Me.GrpStatistics.Text = "Statistics"
@@ -486,10 +486,19 @@ Partial Class FrmMain
         Me.GrpRecords.Font = New System.Drawing.Font("微軟正黑體", 9.0!)
         Me.GrpRecords.Location = New System.Drawing.Point(529, 63)
         Me.GrpRecords.Name = "GrpRecords"
-        Me.GrpRecords.Size = New System.Drawing.Size(275, 367)
+        Me.GrpRecords.Size = New System.Drawing.Size(275, 410)
         Me.GrpRecords.TabIndex = 5
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
+        '
+        'BtnRecordsSquare
+        '
+        Me.BtnRecordsSquare.Enabled = False
+        Me.BtnRecordsSquare.Location = New System.Drawing.Point(195, 22)
+        Me.BtnRecordsSquare.Name = "BtnRecordsSquare"
+        Me.BtnRecordsSquare.Size = New System.Drawing.Size(21, 21)
+        Me.BtnRecordsSquare.TabIndex = 4
+        Me.BtnRecordsSquare.Text = "■"
         '
         'BtnRecordsDown
         '
@@ -547,14 +556,14 @@ Partial Class FrmMain
         Me.LstRecords.ItemHeight = 16
         Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(263, 243)
+        Me.LstRecords.Size = New System.Drawing.Size(263, 286)
         Me.LstRecords.TabIndex = 7
         '
         'TxtRecordsSearch
         '
         Me.TxtRecordsSearch.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 319)
+        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 362)
         Me.TxtRecordsSearch.Name = "TxtRecordsSearch"
         Me.TxtRecordsSearch.Size = New System.Drawing.Size(263, 21)
         Me.TxtRecordsSearch.TabIndex = 8
@@ -563,7 +572,7 @@ Partial Class FrmMain
         '
         Me.ChkRecordsSearch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.ChkRecordsSearch.AutoSize = True
-        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 346)
+        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 389)
         Me.ChkRecordsSearch.Name = "ChkRecordsSearch"
         Me.ChkRecordsSearch.Size = New System.Drawing.Size(155, 15)
         Me.ChkRecordsSearch.TabIndex = 9
@@ -574,20 +583,11 @@ Partial Class FrmMain
         '
         Me.TmrMain.Enabled = True
         '
-        'BtnRecordsSquare
-        '
-        Me.BtnRecordsSquare.Enabled = False
-        Me.BtnRecordsSquare.Location = New System.Drawing.Point(195, 22)
-        Me.BtnRecordsSquare.Name = "BtnRecordsSquare"
-        Me.BtnRecordsSquare.Size = New System.Drawing.Size(21, 21)
-        Me.BtnRecordsSquare.TabIndex = 4
-        Me.BtnRecordsSquare.Text = "■"
-        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(827, 452)
+        Me.ClientSize = New System.Drawing.Size(827, 495)
         Me.Controls.Add(Me.PrbMain)
         Me.Controls.Add(Me.LblName)
         Me.Controls.Add(Me.TxtName)
