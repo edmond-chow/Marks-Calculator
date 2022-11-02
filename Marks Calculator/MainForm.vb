@@ -4,6 +4,7 @@
 
 Imports System.IO
 Imports System.Reflection
+Imports System.Runtime.Remoting.Channels
 Imports System.Runtime.Serialization
 Imports System.Security
 Imports System.Text
@@ -525,6 +526,21 @@ Public Class FrmMain
             CType(sender, MetroTextBox).Tag = IsTyping.No
             Temp = InputedRecord
             ShowResult(InputedRecord)
+        End If
+    End Sub
+
+    Private Sub TxtNameWithInput_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtName.KeyDown, TxtInputTest.KeyDown, TxtInputQuizzes.KeyDown, TxtInputProject.KeyDown, TxtInputExam.KeyDown
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        If LstRecords.Tag = IsAdding.Yes AndAlso e.KeyCode = Keys.Enter Then
+            If Not CType(sender, MetroTextBox).Equals(TxtInputExam) Then
+                SelectNextControl(ActiveControl, True, True, True, True)
+            Else
+                BtnRecordsAdd.PerformClick()
+                SelectNextControl(TxtName, True, True, True, True)
+            End If
+            e.SuppressKeyPress = True
         End If
     End Sub
 
