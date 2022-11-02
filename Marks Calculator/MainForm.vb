@@ -374,6 +374,12 @@ Public Class FrmMain
         LstRecords.SelectedIndex = Index.Invoke()
     End Sub
 
+    Private Function RecordsIsSorted() As Boolean
+        Dim TempList As List(Of Record) = Data.ToList()
+        TempList.Sort()
+        Return Data.SequenceEqual(TempList)
+    End Function
+
     Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of IReliability)) As Boolean
         For i As Integer = 0 To Enumerable.Count() - 2
             For j As Integer = 1 To Enumerable.Count() - 1 - i
@@ -552,9 +558,9 @@ Public Class FrmMain
     End Sub
 
     Private Sub BtnRecordsRemove_Click(sender As Object, e As EventArgs) Handles BtnRecordsRemove.Click
-        Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         Data.Remove(SelectedRecord)
         ShowStatistics()
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         RecordsSearch(
             Function() As Integer
                 Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
@@ -563,10 +569,10 @@ Public Class FrmMain
     End Sub
 
     Private Sub BtnRecordsUp_Click(sender As Object, e As EventArgs) Handles BtnRecordsUp.Click
-        Dim CaptureIndex As Integer = LstRecords.SelectedIndex - 1
         Dim Temp As Record = SelectedPrevRecord
         SelectedPrevRecord = SelectedRecord
         SelectedRecord = Temp
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex - 1
         RecordsSearch(
             Function() As Integer
                 Return CaptureIndex
@@ -574,11 +580,22 @@ Public Class FrmMain
         )
     End Sub
 
+    Private Sub BtnRecordsSquare_Click(sender As Object, e As EventArgs) Handles BtnRecordsSquare.Click
+        Data.Sort()
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex
+        RecordsSearch(
+            Function() As Integer
+                Return CaptureIndex
+            End Function
+        )
+        BtnRecordsSquare.Enabled = False
+    End Sub
+
     Private Sub BtnRecordsDown_Click(sender As Object, e As EventArgs) Handles BtnRecordsDown.Click
-        Dim CaptureIndex As Integer = LstRecords.SelectedIndex + 1
         Dim Temp As Record = SelectedNextRecord
         SelectedNextRecord = SelectedRecord
         SelectedRecord = Temp
+        Dim CaptureIndex As Integer = LstRecords.SelectedIndex + 1
         RecordsSearch(
             Function() As Integer
                 Return CaptureIndex
@@ -597,6 +614,7 @@ Public Class FrmMain
             BtnRecordsAdd.Enabled = True
             BtnRecordsRemove.Enabled = False
             BtnRecordsUp.Enabled = False
+            BtnRecordsSquare.Enabled = False
             BtnRecordsDown.Enabled = False
             ChkRecords.Enabled = True
             TxtName.ReadOnly = False
@@ -609,6 +627,7 @@ Public Class FrmMain
             BtnRecordsAdd.Enabled = False
             BtnRecordsRemove.Enabled = True
             BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
+            BtnRecordsSquare.Enabled = Not RecordsIsSorted()
             BtnRecordsDown.Enabled = LstRecords.SelectedIndex < LstRecords.Items.Count - 1
             ChkRecords.Enabled = False
             TxtName.ReadOnly = True
@@ -906,7 +925,7 @@ Public Class FrmMain
         End Function
 
         Public Function CompareTo(Other As Record) As Integer Implements IComparable(Of Record).CompareTo
-            Return Code - Other.Code
+            Return If(Name.CompareTo(Other.Name) <> 0, Name.CompareTo(Other.Name), Code - Other.Code)
         End Function
 
         Public Function CompareTo(Other As Object) As Integer Implements IComparable.CompareTo
