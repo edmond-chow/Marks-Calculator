@@ -86,7 +86,7 @@ Partial Class FrmMain
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.PrbMain.Location = New System.Drawing.Point(0, 0)
         Me.PrbMain.Name = "PrbMain"
-        Me.PrbMain.Size = New System.Drawing.Size(801, 5)
+        Me.PrbMain.Size = New System.Drawing.Size(827, 5)
         Me.PrbMain.TabIndex = 0
         '
         'LblName
@@ -486,7 +486,7 @@ Partial Class FrmMain
         Me.GrpRecords.Font = New System.Drawing.Font("微軟正黑體", 9.0!)
         Me.GrpRecords.Location = New System.Drawing.Point(529, 63)
         Me.GrpRecords.Name = "GrpRecords"
-        Me.GrpRecords.Size = New System.Drawing.Size(249, 367)
+        Me.GrpRecords.Size = New System.Drawing.Size(275, 367)
         Me.GrpRecords.TabIndex = 5
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
@@ -547,7 +547,7 @@ Partial Class FrmMain
         Me.LstRecords.ItemHeight = 16
         Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(237, 243)
+        Me.LstRecords.Size = New System.Drawing.Size(263, 243)
         Me.LstRecords.TabIndex = 7
         '
         'TxtRecordsSearch
@@ -556,7 +556,7 @@ Partial Class FrmMain
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 319)
         Me.TxtRecordsSearch.Name = "TxtRecordsSearch"
-        Me.TxtRecordsSearch.Size = New System.Drawing.Size(237, 21)
+        Me.TxtRecordsSearch.Size = New System.Drawing.Size(263, 21)
         Me.TxtRecordsSearch.TabIndex = 8
         '
         'ChkRecordsSearch
@@ -587,7 +587,7 @@ Partial Class FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(801, 452)
+        Me.ClientSize = New System.Drawing.Size(827, 452)
         Me.Controls.Add(Me.PrbMain)
         Me.Controls.Add(Me.LblName)
         Me.Controls.Add(Me.TxtName)
