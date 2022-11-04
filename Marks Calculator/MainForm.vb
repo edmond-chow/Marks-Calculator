@@ -219,6 +219,7 @@ Public Class FrmMain
 #Region "Methods"
 
     Private Sub SuspendControls()
+        PrbMain.Show()
         BtnRecordsAdd.Enabled = False
         BtnRecordsRemove.Enabled = False
         ChkRecords.Enabled = False
@@ -245,6 +246,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub ResumeControls()
+        PrbMain.Hide()
         BtnRecordsAdd.Enabled = True
         BtnRecordsRemove.Enabled = True
         ChkRecords.Enabled = True
@@ -402,15 +404,12 @@ Public Class FrmMain
         Return True
     End Function
 
-    Private Async Function ReadDataFile() As Task(Of List(Of Record))
-        SuspendControls()
-        PrbMain.Show()
-        Dim Records As New List(Of Record)()
+    Private Async Function ReadDataFile() As Task
         Try
             If File.Exists(FileName) Then
                 DataFile = File.Open(FileName, FileMode.Open)
                 Dim Json(DataFile.Length - 1) As Byte
-                Await DataFile.ReadAsync(Json, 0, DataFile.Length)
+                Await DataFile.ReadAsync(Json, 0, DataFile.Length).ConfigureAwait(False)
                 For Each RecordToken As JToken In JsonConvert.DeserializeObject(Of JArray)(Encoding.UTF8.GetString(Json)).Children()
                     Dim TempRecord As Record = True
                     For Each Field As JProperty In RecordToken
@@ -425,25 +424,20 @@ Public Class FrmMain
                             Throw New BranchesShouldNotBeInstantiatedException()
                         End If
                     Next
-                    Records.Add(TempRecord)
+                    Data.Add(TempRecord)
                 Next
             Else
                 DataFile = File.Create(FileName)
             End If
         Catch Exception As Exception
-            Records = New List(Of Record)()
+            Data = New List(Of Record)()
         End Try
-        If Not IsNotTheSameID(Records) Then
-            Records = New List(Of Record)()
+        If Not IsNotTheSameID(Data) Then
+            Data = New List(Of Record)()
         End If
-        ResumeControls()
-        PrbMain.Hide()
-        Return Records
     End Function
 
     Private Async Function WriteDataFile() As Task
-        SuspendControls()
-        PrbMain.Show()
         Try
             Dim Json() As Byte = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
             DataFile.SetLength(0)
@@ -451,8 +445,6 @@ Public Class FrmMain
             DataFile.Close()
         Catch Exception As Exception
         End Try
-        ResumeControls()
-        PrbMain.Hide()
     End Function
 
 #End Region
@@ -460,13 +452,14 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        SuspendControls()
         LblInputMain.Text = "CA Components: Test - " + (Record.TestScale * 100).ToString()
         LblInputMain.Text += "%, Quiz - " + (Record.QuizzesScale * 100).ToString()
         LblInputMain.Text += "%, Project - " + (Record.ProjectScale * 100).ToString() + "%"
         GrpResult.Text += " [CA - " + (Record.CAScale * 100).ToString()
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
         PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
-        Data = Await ReadDataFile()
+        Await ReadDataFile().ConfigureAwait(True)
         Temp = True
         ShowStatistics()
         RecordsSearch(
@@ -479,15 +472,18 @@ Public Class FrmMain
         End If
         WindowButtonsRequest = True
         LoadHasFinish = True
+        ResumeControls()
     End Sub
 
     Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        SuspendControls()
         If CloseHasStarted = False Then
             CloseHasStarted = True
             If LoadHasFinish = True Then
-                Await WriteDataFile()
+                Await WriteDataFile().ConfigureAwait(True)
             End If
         End If
+        ResumeControls()
     End Sub
 
     Private Sub TxtInput_Enter(sender As Object, e As EventArgs) Handles TxtInputTest.Enter, TxtInputQuizzes.Enter, TxtInputProject.Enter, TxtInputExam.Enter
