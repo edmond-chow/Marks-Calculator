@@ -659,8 +659,8 @@ Partial Class FrmMain
     Private WithEvents LstRecords As ListBox
     Private WithEvents TxtRecordsSearch As MetroFramework.Controls.MetroTextBox
     Private WithEvents ChkRecordsSearch As MetroFramework.Controls.MetroCheckBox
-    Friend WithEvents TmrMain As Timer
-    Friend WithEvents ChkRecords As MetroFramework.Controls.MetroCheckBox
+    Private WithEvents TmrMain As Timer
+    Private WithEvents ChkRecords As MetroFramework.Controls.MetroCheckBox
     Private WithEvents BtnRecordsDown As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsUp As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsSquare As MetroFramework.Controls.MetroButton
