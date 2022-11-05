@@ -377,9 +377,12 @@ Public Class FrmMain
     End Sub
 
     Private Function RecordsIsSorted() As Boolean
-        Dim TempList As List(Of Record) = Data.ToList()
-        TempList.Sort()
-        Return Data.SequenceEqual(TempList)
+        For i As Integer = 0 To Data.Count - 2
+            If Not Data.ElementAt(i).CompareTo(Data.ElementAt(i + 1)) <= 0 Then
+                Return False
+            End If
+        Next
+        Return True
     End Function
 
     Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of IReliability)) As Boolean
@@ -992,6 +995,22 @@ Public Class FrmMain
 
         Public Shared Operator <>(Left As Record, Right As Record) As Boolean
             Return Not Left = Right
+        End Operator
+
+        Public Shared Operator <(Left As Record, Right As Record) As Boolean
+            Return Left.CompareTo(Right) < 0
+        End Operator
+
+        Public Shared Operator >(Left As Record, Right As Record) As Boolean
+            Return Left.CompareTo(Right) > 0
+        End Operator
+
+        Public Shared Operator <=(Left As Record, Right As Record) As Boolean
+            Return Left.CompareTo(Right) <= 0
+        End Operator
+
+        Public Shared Operator >=(Left As Record, Right As Record) As Boolean
+            Return Left.CompareTo(Right) >= 0
         End Operator
 
         Public Shared Widening Operator CType(Valid As Boolean) As Record
