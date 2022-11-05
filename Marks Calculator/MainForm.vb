@@ -80,8 +80,8 @@ Public Class FrmMain
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
-        Temp = Nothing
-        Data = Nothing
+        Data = New List(Of Record)()
+        Temp = True
         DataFile = Nothing
         LoadHasFinish = False
         CloseHasStarted = False
@@ -405,9 +405,13 @@ Public Class FrmMain
     End Function
 
     Private Async Function ReadDataFile() As Task
+        SuspendControls()
         Try
             If File.Exists(FileName) Then
                 DataFile = File.Open(FileName, FileMode.Open)
+                If DataFile.Length = 0 Then
+                    Return
+                End If
                 Dim Json(DataFile.Length - 1) As Byte
                 Await DataFile.ReadAsync(Json, 0, DataFile.Length).ConfigureAwait(False)
                 For Each RecordToken As JToken In JsonConvert.DeserializeObject(Of JArray)(Encoding.UTF8.GetString(Json)).Children()
@@ -435,16 +439,22 @@ Public Class FrmMain
         If Not IsNotTheSameID(Data) Then
             Data = New List(Of Record)()
         End If
+        ResumeControls()
     End Function
 
     Private Async Function WriteDataFile() As Task
+        SuspendControls()
         Try
+            If DataFile Is Nothing Then
+                Return
+            End If
             Dim Json() As Byte = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
             DataFile.SetLength(0)
             Await DataFile.WriteAsync(Json, 0, Json.Length)
             DataFile.Close()
         Catch Exception As Exception
         End Try
+        ResumeControls()
     End Function
 
 #End Region
@@ -452,7 +462,6 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        SuspendControls()
         LblInputMain.Text = "CA Components: Test - " + (Record.TestScale * 100).ToString()
         LblInputMain.Text += "%, Quiz - " + (Record.QuizzesScale * 100).ToString()
         LblInputMain.Text += "%, Project - " + (Record.ProjectScale * 100).ToString() + "%"
@@ -460,7 +469,6 @@ Public Class FrmMain
         GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
         PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
         Await ReadDataFile().ConfigureAwait(True)
-        Temp = True
         ShowStatistics()
         RecordsSearch(
             Function() As Integer
@@ -472,18 +480,15 @@ Public Class FrmMain
         End If
         WindowButtonsRequest = True
         LoadHasFinish = True
-        ResumeControls()
     End Sub
 
     Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        SuspendControls()
         If CloseHasStarted = False Then
             CloseHasStarted = True
             If LoadHasFinish = True Then
                 Await WriteDataFile().ConfigureAwait(True)
             End If
         End If
-        ResumeControls()
     End Sub
 
     Private Sub TxtInput_Enter(sender As Object, e As EventArgs) Handles TxtInputTest.Enter, TxtInputQuizzes.Enter, TxtInputProject.Enter, TxtInputExam.Enter
