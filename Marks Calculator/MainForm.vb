@@ -354,7 +354,7 @@ Public Class FrmMain
         TxtStatisticsMd.Text = Md.ToString()
     End Sub
 
-    Private Sub RecordsSearch(IndexCallback As IndexCallback)
+    Private Sub RecordsSearch(IndexFunc As IndexFunc)
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
         TxtRecordsSearch.Tag = New List(Of Integer)()
@@ -373,7 +373,7 @@ Public Class FrmMain
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
-        LstRecords.SelectedIndex = IndexCallback.Invoke()
+        LstRecords.SelectedIndex = IndexFunc.Invoke()
     End Sub
 
     Private Function RecordsIsSorted() As Boolean
@@ -731,7 +731,7 @@ Public Class FrmMain
 
 #Region "Delegates"
 
-    Private Delegate Function IndexCallback() As Integer
+    Private Delegate Function IndexFunc() As Integer
 
 #End Region
 
