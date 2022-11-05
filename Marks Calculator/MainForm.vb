@@ -711,6 +711,22 @@ Public Class FrmMain
         End If
     End Sub
 
+    Protected Overrides Sub WndProc(ByRef Message As Message)
+        Const WM_NCHITTEST As Integer = &H84
+        Select Case Message.Msg
+            Case WM_NCHITTEST '（透過對這個訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
+                Dim X As Integer = (Message.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam 低 16 位元代表滑鼠遊標的 x 座標）
+                Dim Y As Integer = (Message.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam 高 16 位元代表滑鼠遊標的 y 座標）
+                If X > 23 AndAlso X < Size.Width - 23 AndAlso Y > 63 AndAlso Y < Size.Height - 23 Then
+                    Return
+                Else
+                    MyBase.WndProc(Message)
+                End If
+            Case Else
+                MyBase.WndProc(Message)
+        End Select
+    End Sub
+
 #End Region
 
 #Region "Delegates"
