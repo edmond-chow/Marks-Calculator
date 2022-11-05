@@ -182,7 +182,7 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 實現 Windows 視窗的最細化功能
+    ''' 實現 Windows 視窗的最細化功能（對於 Form.FormBorderStyle 為 FormBorderStyle.None 的視窗）
     ''' </summary>
     ''' <returns></returns>
     Protected Overrides ReadOnly Property CreateParams As CreateParams
@@ -354,7 +354,7 @@ Public Class FrmMain
         TxtStatisticsMd.Text = Md.ToString()
     End Sub
 
-    Private Sub RecordsSearch(Index As Index)
+    Private Sub RecordsSearch(IndexCallback As IndexCallback)
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
         TxtRecordsSearch.Tag = New List(Of Integer)()
@@ -373,7 +373,7 @@ Public Class FrmMain
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
-        LstRecords.SelectedIndex = Index.Invoke()
+        LstRecords.SelectedIndex = IndexCallback.Invoke()
     End Sub
 
     Private Function RecordsIsSorted() As Boolean
@@ -413,7 +413,7 @@ Public Class FrmMain
                     Return
                 End If
                 Dim Json(DataFile.Length - 1) As Byte
-                Await DataFile.ReadAsync(Json, 0, DataFile.Length).ConfigureAwait(False)
+                Await DataFile.ReadAsync(Json, 0, DataFile.Length).ConfigureAwait(True)
                 For Each RecordToken As JToken In JsonConvert.DeserializeObject(Of JArray)(Encoding.UTF8.GetString(Json)).Children()
                     Dim TempRecord As Record = True
                     For Each Field As JProperty In RecordToken
@@ -450,7 +450,7 @@ Public Class FrmMain
             End If
             Dim Json() As Byte = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
             DataFile.SetLength(0)
-            Await DataFile.WriteAsync(Json, 0, Json.Length)
+            Await DataFile.WriteAsync(Json, 0, Json.Length).ConfigureAwait(True)
             DataFile.Close()
         Catch Exception As Exception
         End Try
@@ -533,7 +533,7 @@ Public Class FrmMain
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
             Throw New BranchesShouldNotBeInstantiatedException()
         End If
-        If LstRecords.Tag = IsAdding.Yes AndAlso e.KeyCode = Keys.Enter Then
+        If LstRecords.Tag = IsAdding.Yes AndAlso e.KeyCode = Keys.Enter Then '（實現批量資料輸入的快速 Enter 按鍵）
             If Not CType(sender, MetroTextBox).Equals(TxtInputExam) Then
                 SelectNextControl(ActiveControl, True, True, True, True)
             Else
@@ -670,26 +670,39 @@ Public Class FrmMain
         If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
             Throw New BranchesShouldNotBeInstantiatedException()
         End If
-        If e.KeyCode = Keys.Enter Then
+        If e.KeyCode = Keys.Enter Then '（實現透過鍵盤 Enter 按鍵改變核對方塊的狀態）
             CType(sender, MetroCheckBox).Checked = Not CType(sender, MetroCheckBox).Checked
         End If
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
-        If LastWindowState <> WindowState AndAlso WindowState = FormWindowState.Normal Then
-            FocusMeRequest = True
+        If LastWindowState <> WindowState Then
+            Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+            Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+            For Each Control As Control In Controls '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
+                If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag AndAlso Control.Tag = MetroFormButtonTag.GetEnumValues()(1) Then
+                    If WindowState = FormWindowState.Normal Then
+                        Control.Text = "1"
+                    ElseIf WindowState = FormWindowState.Maximized Then
+                        Control.Text = "2"
+                    End If
+                End If
+            Next
+            If WindowState = FormWindowState.Normal Then
+                FocusMeRequest = True
+            End If
         End If
         LastWindowState = WindowState
     End Sub
 
     Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
-        If FocusMeRequest = True AndAlso FocusMe() Then
+        If FocusMeRequest = True AndAlso FocusMe() Then '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
             FocusMeRequest = False
         End If
-        If WindowButtonsRequest = True Then
+        If WindowButtonsRequest = True Then '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
+            Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+            Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
             For Each Control As Control In Controls
-                Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
-                Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
                 If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
                     Control.TabStop = False
                     WindowButtonsRequest = False
@@ -702,7 +715,7 @@ Public Class FrmMain
 
 #Region "Delegates"
 
-    Private Delegate Function Index() As Integer
+    Private Delegate Function IndexCallback() As Integer
 
 #End Region
 
