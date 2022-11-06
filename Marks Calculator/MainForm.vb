@@ -28,14 +28,14 @@ Public Class FrmMain
 #Region "Fields"
 
     ''' <summary>
-    ''' 用來存儲暫存數據的執行個體
-    ''' </summary>
-    Private Temp As Record
-
-    ''' <summary>
     ''' 用來存儲多筆數據的執行個體
     ''' </summary>
     Private Data As List(Of Record)
+
+    ''' <summary>
+    ''' 用來存儲暫存數據的執行個體
+    ''' </summary>
+    Private Temp As Record
 
     ''' <summary>
     ''' 用來代表數據的文件流
@@ -92,6 +92,7 @@ Public Class FrmMain
         LoadHasFinish = False
         CloseHasStarted = False
         LastWindowState = WindowState
+        LastSize = Size
         RandomNumberGenerator = New Random()
         FocusMeRequest = False
         WindowButtonsRequest = False
