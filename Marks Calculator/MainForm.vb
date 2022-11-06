@@ -732,8 +732,12 @@ Public Class FrmMain
             Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam 低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam 高 16 位元代表滑鼠遊標的 y 座標）
-                If X > 23 AndAlso X < Size.Width - 23 AndAlso Y > 63 AndAlso Y < Size.Height - 23 Then
+                If X >= 23 AndAlso X < Size.Width - 23 AndAlso Y >= 63 AndAlso Y < Size.Height - 23 Then
                     Return
+                ElseIf X < 5 OrElse X >= Size.Width - 5 OrElse Y < 5 OrElse Y >= Size.Height - 5 Then
+                    If X >= Size.Width - 5 AndAlso Y >= Size.Height - 5 Then
+                        MyBase.WndProc(m)
+                    End If
                 Else
                     MyBase.WndProc(m)
                 End If
