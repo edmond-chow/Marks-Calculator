@@ -723,10 +723,10 @@ Public Class FrmMain
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
                 If WindowState = FormWindowState.Maximized Then
                     Dim Params As Native.NCCALCSIZE_PARAMS = Marshal.PtrToStructure(Of Native.NCCALCSIZE_PARAMS)(m.LParam)
-                    Params.rgrc(0).Left += 8
-                    Params.rgrc(0).Top += 8
-                    Params.rgrc(0).Right -= 8
-                    Params.rgrc(0).Bottom -= 8
+                    Params.rgrc(0).left += 8
+                    Params.rgrc(0).top += 8
+                    Params.rgrc(0).right -= 8
+                    Params.rgrc(0).bottom -= 8
                     Marshal.StructureToPtr(Params, m.LParam, True)
                 End If
             Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
@@ -1081,10 +1081,10 @@ Public Class FrmMain
         <StructLayout(LayoutKind.Sequential)>
         Public Structure RECT
 
-            Public Left As Integer
-            Public Top As Integer
-            Public Right As Integer
-            Public Bottom As Integer
+            Public left As Integer
+            Public top As Integer
+            Public right As Integer
+            Public bottom As Integer
 
         End Structure
 
