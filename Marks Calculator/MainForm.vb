@@ -730,11 +730,14 @@ Public Class FrmMain
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
                 If WindowState = FormWindowState.Maximized Then
+                    Dim X As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
+                    Dim Y As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+                    Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
                     Dim Params As Native.NCCALCSIZE_PARAMS = Marshal.PtrToStructure(Of Native.NCCALCSIZE_PARAMS)(m.LParam)
-                    Params.rgrc(0).left += 8
-                    Params.rgrc(0).top += 8
-                    Params.rgrc(0).right -= 8
-                    Params.rgrc(0).bottom -= 8
+                    Params.rgrc(0).left += X + Border
+                    Params.rgrc(0).top += Y + Border
+                    Params.rgrc(0).right -= X + Border
+                    Params.rgrc(0).bottom -= Y + Border
                     Marshal.StructureToPtr(Params, m.LParam, True)
                 ElseIf WindowState = FormWindowState.Normal Then
                     LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
@@ -1088,6 +1091,14 @@ Public Class FrmMain
 
     Private Class Native
 
+        Public Const SM_CXSIZEFRAME As Integer = 32
+        Public Const SM_CYSIZEFRAME As Integer = 33
+        Public Const SM_CXPADDEDBORDER As Integer = 92
+
+        <DllImport("user32.dll")>
+        Public Shared Function GetSystemMetrics(smIndex As Integer) As Integer
+        End Function
+
         <StructLayout(LayoutKind.Sequential)>
         Public Structure RECT
 
@@ -1113,9 +1124,11 @@ Public Class FrmMain
 
         <StructLayout(LayoutKind.Sequential)>
         Public Structure NCCALCSIZE_PARAMS
+
             <MarshalAs(UnmanagedType.ByValArray, SizeConst:=3)>
             Public rgrc As RECT()
             Public lppos As WINDOWPOS
+
         End Structure
 
     End Class
