@@ -58,6 +58,11 @@ Public Class FrmMain
     Private LastWindowState As FormWindowState
 
     ''' <summary>
+    ''' 表示表單上一個視窗大小
+    ''' </summary>
+    Private LastSize As Size
+
+    ''' <summary>
     ''' 隨機數生成的執行個體
     ''' </summary>
     Private ReadOnly RandomNumberGenerator As Random
@@ -695,6 +700,8 @@ Public Class FrmMain
             Next
             If WindowState = FormWindowState.Normal Then
                 FocusMeRequest = True
+            Else
+                Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
             End If
         End If
         LastWindowState = WindowState
@@ -728,6 +735,8 @@ Public Class FrmMain
                     Params.rgrc(0).right -= 8
                     Params.rgrc(0).bottom -= 8
                     Marshal.StructureToPtr(Params, m.LParam, True)
+                ElseIf WindowState = FormWindowState.Normal Then
+                    LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
                 End If
             Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam 低 16 位元代表滑鼠遊標的 x 座標）
