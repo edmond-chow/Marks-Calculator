@@ -4,6 +4,7 @@
 
 Imports System.IO
 Imports System.Reflection
+Imports System.Runtime.InteropServices
 Imports System.Runtime.Serialization
 Imports System.Security
 Imports System.Text
@@ -465,6 +466,7 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: Test - " + (Record.TestScale * 100).ToString()
         LblInputMain.Text += "%, Quiz - " + (Record.QuizzesScale * 100).ToString()
         LblInputMain.Text += "%, Project - " + (Record.ProjectScale * 100).ToString() + "%"
@@ -715,9 +717,19 @@ Public Class FrmMain
     End Sub
 
     Protected Overrides Sub WndProc(ByRef m As Message)
+        Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
         Select Case m.Msg
-            Case WM_NCHITTEST '（透過對這個訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
+            Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
+                If WindowState = FormWindowState.Maximized Then
+                    Dim Params As Native.NCCALCSIZE_PARAMS = Marshal.PtrToStructure(Of Native.NCCALCSIZE_PARAMS)(m.LParam)
+                    Params.rgrc(0).Left += 8
+                    Params.rgrc(0).Top += 8
+                    Params.rgrc(0).Right -= 8
+                    Params.rgrc(0).Bottom -= 8
+                    Marshal.StructureToPtr(Params, m.LParam, True)
+                End If
+            Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam 低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam 高 16 位元代表滑鼠遊標的 y 座標）
                 If X > 23 AndAlso X < Size.Width - 23 AndAlso Y > 63 AndAlso Y < Size.Height - 23 Then
@@ -1057,6 +1069,40 @@ Public Class FrmMain
         End Sub
 
 #End Region
+
+    End Class
+
+    Private Class Native
+
+        <StructLayout(LayoutKind.Sequential)>
+        Public Structure RECT
+
+            Public Left As Integer
+            Public Top As Integer
+            Public Right As Integer
+            Public Bottom As Integer
+
+        End Structure
+
+        <StructLayout(LayoutKind.Sequential)>
+        Public Structure WINDOWPOS
+
+            Public hWnd As IntPtr
+            Public hWndInsertAfter As IntPtr
+            Public x As Integer
+            Public y As Integer
+            Public cx As Integer
+            Public cy As Integer
+            Public flags As UInteger
+
+        End Structure
+
+        <StructLayout(LayoutKind.Sequential)>
+        Public Structure NCCALCSIZE_PARAMS
+            <MarshalAs(UnmanagedType.ByValArray, SizeConst:=3)>
+            Public rgrc As RECT()
+            Public lppos As WINDOWPOS
+        End Structure
 
     End Class
 
