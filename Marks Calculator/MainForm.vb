@@ -1091,26 +1091,40 @@ Public Class FrmMain
 
     Private Class Native
 
+#Region "Constants"
+
         Public Const SM_CXSIZEFRAME As Integer = 32
         Public Const SM_CYSIZEFRAME As Integer = 33
         Public Const SM_CXPADDEDBORDER As Integer = 92
+
+#End Region
+
+#Region "Decorations"
 
         <DllImport("user32.dll")>
         Public Shared Function GetSystemMetrics(smIndex As Integer) As Integer
         End Function
 
+#End Region
+
         <StructLayout(LayoutKind.Sequential)>
         Public Structure RECT
+
+#Region "Fields"
 
             Public left As Integer
             Public top As Integer
             Public right As Integer
             Public bottom As Integer
 
+#End Region
+
         End Structure
 
         <StructLayout(LayoutKind.Sequential)>
         Public Structure WINDOWPOS
+
+#Region "Fields"
 
             Public hWnd As IntPtr
             Public hWndInsertAfter As IntPtr
@@ -1120,14 +1134,20 @@ Public Class FrmMain
             Public cy As Integer
             Public flags As UInteger
 
+#End Region
+
         End Structure
 
         <StructLayout(LayoutKind.Sequential)>
         Public Structure NCCALCSIZE_PARAMS
 
+#Region "Fields"
+
             <MarshalAs(UnmanagedType.ByValArray, SizeConst:=3)>
             Public rgrc As RECT()
             Public lppos As WINDOWPOS
+
+#End Region
 
         End Structure
 
