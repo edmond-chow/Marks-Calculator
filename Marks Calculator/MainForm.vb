@@ -743,8 +743,8 @@ Public Class FrmMain
                     LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
                 End If
             Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
-                Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam 低 16 位元代表滑鼠遊標的 x 座標）
-                Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam 高 16 位元代表滑鼠遊標的 y 座標）
+                Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
+                Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 If X >= 23 AndAlso X < Size.Width - 23 AndAlso Y >= 63 AndAlso Y < Size.Height - 23 Then
                     Return
                 ElseIf X < 5 OrElse X >= Size.Width - 5 OrElse Y < 5 OrElse Y >= Size.Height - 5 Then
