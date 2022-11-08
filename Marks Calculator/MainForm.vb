@@ -746,7 +746,6 @@ Public Class FrmMain
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 If X >= 23 AndAlso X < Size.Width - 23 AndAlso Y >= 63 AndAlso Y < Size.Height - 23 Then
-                    Return
                 ElseIf X < 5 OrElse X >= Size.Width - 5 OrElse Y < 5 OrElse Y >= Size.Height - 5 Then
                     If X >= Size.Width - 5 AndAlso Y >= Size.Height - 5 Then
                         MyBase.WndProc(m)
