@@ -22,7 +22,6 @@ Partial Class FrmMain
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FrmMain))
         Me.PrbMain = New MetroFramework.Controls.MetroProgressBar()
         Me.LblName = New MetroFramework.Controls.MetroLabel()
@@ -73,7 +72,6 @@ Partial Class FrmMain
         Me.LstRecords = New System.Windows.Forms.ListBox()
         Me.TxtRecordsSearch = New MetroFramework.Controls.MetroTextBox()
         Me.ChkRecordsSearch = New MetroFramework.Controls.MetroCheckBox()
-        Me.TmrMain = New System.Windows.Forms.Timer(Me.components)
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
@@ -569,10 +567,6 @@ Partial Class FrmMain
         Me.ChkRecordsSearch.Text = "Using Regular Expression"
         Me.ChkRecordsSearch.UseVisualStyleBackColor = True
         '
-        'TmrMain
-        '
-        Me.TmrMain.Enabled = True
-        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
@@ -649,7 +643,6 @@ Partial Class FrmMain
     Private WithEvents LstRecords As ListBox
     Private WithEvents TxtRecordsSearch As MetroFramework.Controls.MetroTextBox
     Private WithEvents ChkRecordsSearch As MetroFramework.Controls.MetroCheckBox
-    Private WithEvents TmrMain As Timer
     Private WithEvents ChkRecords As MetroFramework.Controls.MetroCheckBox
     Private WithEvents BtnRecordsDown As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsUp As MetroFramework.Controls.MetroButton

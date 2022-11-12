@@ -69,16 +69,6 @@ Public Class FrmMain
     Private ReadOnly RandomNumberGenerator As Random
 
     ''' <summary>
-    ''' 用來表示變更焦點請求，這個標誌為會短暫變為 True
-    ''' </summary>
-    Private FocusMeRequest As Boolean
-
-    ''' <summary>
-    ''' 用來表示變更視窗按鈕設定請求，這個標誌為會短暫變為 True
-    ''' </summary>
-    Private WindowButtonsRequest As Boolean
-
-    ''' <summary>
     ''' 鎖定控制項的保留項
     ''' </summary>
     Private Reserved As List(Of (FieldInfo, Object))
@@ -99,8 +89,6 @@ Public Class FrmMain
         LastWindowState = WindowState
         LastSize = Size
         RandomNumberGenerator = New Random()
-        FocusMeRequest = False
-        WindowButtonsRequest = False
         Reserved = Nothing
     End Sub
 
@@ -361,9 +349,9 @@ Public Class FrmMain
         Array.Sort(Sorted)
         Dim Md As Double =
         If(
-            Sorted.LongLength Mod 2 = 0,
-            (Sorted(Sorted.LongLength / 2) + Sorted(Sorted.LongLength / 2 - 1)) / 2,
-            Sorted((Sorted.LongLength - 1) / 2)
+            Sorted.Length Mod 2 = 0,
+            (Sorted(Sorted.Length / 2) + Sorted(Sorted.Length / 2 - 1)) / 2,
+            Sorted((Sorted.Length - 1) / 2)
         )
         TxtStatisticsMd.Text = Md.ToString()
     End Sub
@@ -486,6 +474,44 @@ Public Class FrmMain
         ResumeControls()
     End Function
 
+    Private Shared Sub FocusMeRequest(state As Object)
+        If state Is Nothing OrElse TypeOf state IsNot FrmMain Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        If Not CType(state, FrmMain).FocusMe() Then
+            SynchronizationContext.Current.Post(AddressOf FocusMeRequest, state)
+        End If
+    End Sub
+
+    Private Shared Sub WindowButtonsRequest(state As Object)
+        If state Is Nothing OrElse TypeOf state IsNot FrmMain Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+        Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+        Dim IntegrityCheck(MetroFormButtonTag.GetEnumValues().Length - 1) As (Tag As Object, Validated As Boolean)
+        For i As Integer = 0 To IntegrityCheck.Length - 1
+            IntegrityCheck(i) = (MetroFormButtonTag.GetEnumValues()(i), False)
+        Next
+        For Each Control As Control In CType(state, FrmMain).Controls
+            If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
+                Control.TabStop = False
+                For i As Integer = 0 To IntegrityCheck.Length - 1
+                    If IntegrityCheck(i).Tag = Control.Tag Then
+                        IntegrityCheck(i) = (IntegrityCheck(i).Tag, True)
+                        Exit For
+                    End If
+                Next
+            End If
+        Next
+        For Each Check As (Object, Validated As Boolean) In IntegrityCheck
+            If Check.Validated = False Then
+                SynchronizationContext.Current.Post(AddressOf WindowButtonsRequest, state)
+                Return
+            End If
+        Next
+    End Sub
+
 #End Region
 
 #Region "Handles"
@@ -510,7 +536,7 @@ Public Class FrmMain
         If Not IsNotTheSame(Data) Then
             ChkRecords.Checked = True
         End If
-        WindowButtonsRequest = True
+        SynchronizationContext.Current.Post(AddressOf WindowButtonsRequest, Me) '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
         State = FormState.LoadHasFinish
     End Sub
 
@@ -724,28 +750,12 @@ Public Class FrmMain
                 End If
             Next
             If WindowState = FormWindowState.Normal Then
-                FocusMeRequest = True
+                SynchronizationContext.Current.Post(AddressOf FocusMeRequest, Me) '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
             Else
                 Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
             End If
         End If
         LastWindowState = WindowState
-    End Sub
-
-    Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
-        If FocusMeRequest = True AndAlso FocusMe() Then '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
-            FocusMeRequest = False
-        End If
-        If WindowButtonsRequest = True Then '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
-            Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
-            Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-            For Each Control As Control In Controls
-                If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
-                    Control.TabStop = False
-                    WindowButtonsRequest = False
-                End If
-            Next
-        End If
     End Sub
 
     Protected Overrides Sub WndProc(ByRef m As Message)
