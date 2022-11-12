@@ -9,6 +9,7 @@ Imports System.Runtime.Serialization
 Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports System.Threading
 Imports MetroFramework.Controls
 Imports MetroFramework.Forms
 Imports Newtonsoft.Json
@@ -22,6 +23,11 @@ Public Class FrmMain
     ''' 數據緩存的檔案名稱
     ''' </summary>
     Private Const FileName As String = "Records.json"
+
+    ''' <summary>
+    ''' 除錯時間
+    ''' </summary>
+    Private Const DebugTimeout As Integer = 5000
 
 #End Region
 
@@ -43,14 +49,9 @@ Public Class FrmMain
     Private DataFile As FileStream
 
     ''' <summary>
-    ''' 表示表單已經完成加載狀態
+    ''' 表示目前的表單狀態
     ''' </summary>
-    Private LoadHasFinish As Boolean
-
-    ''' <summary>
-    ''' 表示表單已經進入關閉狀態
-    ''' </summary>
-    Private CloseHasStarted As Boolean
+    Private State As FormState
 
     ''' <summary>
     ''' 表示表單上一個視窗狀態
@@ -94,8 +95,7 @@ Public Class FrmMain
         Data = New List(Of Record)()
         Temp = True
         DataFile = Nothing
-        LoadHasFinish = False
-        CloseHasStarted = False
+        State = FormState.Initializing
         LastWindowState = WindowState
         LastSize = Size
         RandomNumberGenerator = New Random()
@@ -242,7 +242,7 @@ Public Class FrmMain
 #Region "Enumerations"
 
     ''' <summary>
-    ''' 代表控制項正在輸入數據
+    ''' 表示控制項正在輸入數據
     ''' </summary>
     Private Enum IsTyping
         Yes = 1
@@ -250,11 +250,21 @@ Public Class FrmMain
     End Enum
 
     ''' <summary>
-    ''' 代表控制項正在插入數據
+    ''' 表示控制項正在插入數據
     ''' </summary>
     Private Enum IsAdding
         Yes = 1
         No = 2
+    End Enum
+
+    ''' <summary>
+    ''' 表示目前的表單狀態
+    ''' </summary>
+    Private Enum FormState
+        Initializing = 1
+        LoadHasFinish = 2
+        CloseHasStarted = 3
+        Finalizing = 4
     End Enum
 
 #End Region
@@ -411,6 +421,16 @@ Public Class FrmMain
         Return True
     End Function
 
+    Private Async Function DebugTest() As Task
+        If Environment.CommandLine.Contains("debug") Then
+            Await Task.Run(
+                Sub()
+                    Thread.Sleep(DebugTimeout)
+                End Sub
+            ).ConfigureAwait(False)
+        End If
+    End Function
+
     Private Async Function ReadDataFile() As Task
         SuspendControls()
         Try
@@ -446,11 +466,13 @@ Public Class FrmMain
         If Not IsNotTheSameID(Data) Then
             Data = New List(Of Record)()
         End If
+        Await DebugTest().ConfigureAwait(True)
         ResumeControls()
     End Function
 
     Private Async Function WriteDataFile() As Task
         SuspendControls()
+        Await DebugTest().ConfigureAwait(True)
         Try
             If DataFile Is Nothing Then
                 Return
@@ -492,15 +514,18 @@ Public Class FrmMain
             ChkRecords.Checked = True
         End If
         WindowButtonsRequest = True
-        LoadHasFinish = True
+        State = FormState.LoadHasFinish
     End Sub
 
     Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        If CloseHasStarted = False Then
-            CloseHasStarted = True
-            If LoadHasFinish = True Then
-                Await WriteDataFile().ConfigureAwait(True)
-            End If
+        If State = FormState.LoadHasFinish Then
+            State = FormState.CloseHasStarted
+            e.Cancel = True
+            Await WriteDataFile().ConfigureAwait(True)
+            State = FormState.Finalizing
+            Close()
+        ElseIf State = FormState.CloseHasStarted Then
+            e.Cancel = True
         End If
     End Sub
 
