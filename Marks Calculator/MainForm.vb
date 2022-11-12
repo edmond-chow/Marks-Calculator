@@ -27,7 +27,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 除錯時間
     ''' </summary>
-    Private Const DebugTimeout As Integer = 5000
+    Private Const DebugTimeout As Integer = 1000
 
 #End Region
 
@@ -437,7 +437,7 @@ Public Class FrmMain
             If File.Exists(FileName) Then
                 DataFile = File.Open(FileName, FileMode.Open)
                 If DataFile.Length = 0 Then
-                    Return
+                    Throw New BranchesShouldNotBeInstantiatedException()
                 End If
                 Dim Json(DataFile.Length - 1) As Byte
                 Await DataFile.ReadAsync(Json, 0, DataFile.Length).ConfigureAwait(True)
@@ -475,7 +475,7 @@ Public Class FrmMain
         Await DebugTest().ConfigureAwait(True)
         Try
             If DataFile Is Nothing Then
-                Return
+                Throw New BranchesShouldNotBeInstantiatedException()
             End If
             Dim Json() As Byte = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
             DataFile.SetLength(0)
