@@ -421,7 +421,7 @@ Public Class FrmMain
         Return True
     End Function
 
-    Private Async Function DebugTest() As Task
+    Private Shared Async Function DebugTest() As Task
         If Environment.CommandLine.Contains("debug") Then
             Await Task.Run(
                 Sub()
@@ -497,11 +497,8 @@ Public Class FrmMain
             End Function
         )
         FormBorderStyle = FormBorderStyle.Sizable
-        LblInputMain.Text = "CA Components: Test - " + (Record.TestScale * 100).ToString()
-        LblInputMain.Text += "%, Quiz - " + (Record.QuizzesScale * 100).ToString()
-        LblInputMain.Text += "%, Project - " + (Record.ProjectScale * 100).ToString() + "%"
-        GrpResult.Text += " [CA - " + (Record.CAScale * 100).ToString()
-        GrpResult.Text += "%, Exam - " + (Record.ExamScale * 100).ToString() + "%]"
+        LblInputMain.Text = "CA Components: " + Record.CAComponents
+        GrpResult.Text += " [" + Record.ModuleResult + "]"
         PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
         Await ReadDataFile().ConfigureAwait(True)
         ShowStatistics()
@@ -884,6 +881,31 @@ Public Class FrmMain
 
 #Region "Properties"
 
+        Public Shared ReadOnly Property Scale(Number As Double) As String
+            Get
+                Return (Number * 100).ToString() + "%"
+            End Get
+        End Property
+
+        Public Shared ReadOnly Property CAComponents As String
+            Get
+                Return Enumerate(", ",
+                    Enumerate(" - ", "Test", Scale(TestScale)),
+                    Enumerate(" - ", "Quiz", Scale(QuizzesScale)),
+                    Enumerate(" - ", "Project", Scale(ProjectScale))
+                )
+            End Get
+        End Property
+
+        Public Shared ReadOnly Property ModuleResult As String
+            Get
+                Return Enumerate(", ",
+                    Enumerate(" - ", "CA", Scale(CAScale)),
+                    Enumerate(" - ", "Exam", Scale(ExamScale))
+                )
+            End Get
+        End Property
+
         <JsonIgnore>
         Public ReadOnly Property CAMarks As Double
             Get
@@ -1005,6 +1027,17 @@ Public Class FrmMain
 #End Region
 
 #Region "Methods"
+
+        Private Shared Function Enumerate(Separator As String, ParamArray Appends() As String) As String
+            If Appends Is Nothing OrElse Appends.Length = 0 Then
+                Return String.Empty
+            End If
+            Dim [Return] As String = Appends(0)
+            For Each Append As String In Appends.Skip(1)
+                [Return] += Separator + Append
+            Next
+            Return [Return]
+        End Function
 
         Public Sub Clear()
             Name = None
