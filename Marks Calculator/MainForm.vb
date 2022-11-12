@@ -77,6 +77,11 @@ Public Class FrmMain
     ''' </summary>
     Private WindowButtonsRequest As Boolean
 
+    ''' <summary>
+    ''' 鎖定控制項的保留項
+    ''' </summary>
+    Private Reserved As List(Of (FieldInfo, Object))
+
 #End Region
 
 #Region "Constructors"
@@ -96,6 +101,7 @@ Public Class FrmMain
         RandomNumberGenerator = New Random()
         FocusMeRequest = False
         WindowButtonsRequest = False
+        Reserved = Nothing
     End Sub
 
 #End Region
@@ -189,6 +195,36 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
+    ''' 鎖定控制項的篩選器
+    ''' </summary>
+    ''' <returns></returns>
+    Private Property Selector As IEnumerable(Of (FieldInfo, Object))
+        Get
+            Return GetType(FrmMain).GetRuntimeFields().Where(
+                Function(Field As FieldInfo) As Boolean
+                    Return Field.FieldType = GetType(MetroButton) OrElse
+                        Field.FieldType = GetType(MetroTextBox) OrElse
+                        Field.FieldType = GetType(MetroCheckBox) OrElse
+                        Field.FieldType = GetType(ListBox)
+                End Function
+            ).Select(
+                Function(Field As FieldInfo) As (FieldInfo, Object)
+                    Return (Field, Field.GetValue(Me))
+                End Function
+            ).Select(
+                Function(Tuple As (Field As FieldInfo, Value As Object)) As (FieldInfo, Object)
+                    Return (Tuple.Field, Tuple.Value.GetType().GetProperty("Enabled").GetValue(Tuple.Value))
+                End Function
+            )
+        End Get
+        Set(Tuples As IEnumerable(Of (FieldInfo, Object)))
+            For Each Tuple As (Field As FieldInfo, Value As Object) In Tuples
+                Tuple.Field.FieldType.GetProperty("Enabled").SetValue(Tuple.Field.GetValue(Me), Tuple.Value)
+            Next
+        End Set
+    End Property
+
+    ''' <summary>
     ''' 實現 Windows 視窗的最細化功能（對於 Form.FormBorderStyle 為 FormBorderStyle.None 的視窗）
     ''' </summary>
     ''' <returns></returns>
@@ -227,56 +263,17 @@ Public Class FrmMain
 
     Private Sub SuspendControls()
         PrbMain.Show()
-        BtnRecordsAdd.Enabled = False
-        BtnRecordsRemove.Enabled = False
-        ChkRecords.Enabled = False
-        TxtName.Enabled = False
-        TxtInputTest.Enabled = False
-        TxtInputQuizzes.Enabled = False
-        TxtInputProject.Enabled = False
-        TxtInputExam.Enabled = False
-        LstRecords.Enabled = False
-        TxtRecordsSearch.Enabled = False
-        ChkRecordsSearch.Enabled = False
-        TxtResultCA.Enabled = False
-        TxtResultModule.Enabled = False
-        TxtReusltGrade.Enabled = False
-        TxtReusltRemarks.Enabled = False
-        TxtStatisticsNo.Enabled = False
-        TxtStatisticsAv.Enabled = False
-        TxtStatisticsSd.Enabled = False
-        TxtStatisticsMd.Enabled = False
-        TxtStatisticsA.Enabled = False
-        TxtStatisticsB.Enabled = False
-        TxtStatisticsC.Enabled = False
-        TxtStatisticsF.Enabled = False
+        Reserved = Selector.ToList()
+        Selector = Selector.Select(
+            Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
+                Return (Tuple.Field, False)
+            End Function
+        )
     End Sub
 
     Private Sub ResumeControls()
         PrbMain.Hide()
-        BtnRecordsAdd.Enabled = True
-        BtnRecordsRemove.Enabled = True
-        ChkRecords.Enabled = True
-        TxtName.Enabled = True
-        TxtInputTest.Enabled = True
-        TxtInputQuizzes.Enabled = True
-        TxtInputProject.Enabled = True
-        TxtInputExam.Enabled = True
-        LstRecords.Enabled = True
-        TxtRecordsSearch.Enabled = True
-        ChkRecordsSearch.Enabled = True
-        TxtResultCA.Enabled = True
-        TxtResultModule.Enabled = True
-        TxtReusltGrade.Enabled = True
-        TxtReusltRemarks.Enabled = True
-        TxtStatisticsNo.Enabled = True
-        TxtStatisticsAv.Enabled = True
-        TxtStatisticsSd.Enabled = True
-        TxtStatisticsMd.Enabled = True
-        TxtStatisticsA.Enabled = True
-        TxtStatisticsB.Enabled = True
-        TxtStatisticsC.Enabled = True
-        TxtStatisticsF.Enabled = True
+        Selector = Reserved
     End Sub
 
     Private Sub GetInputs()
@@ -472,6 +469,11 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Selector = Selector.Select(
+            Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
+                Return (Tuple.Field, True)
+            End Function
+        )
         FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: Test - " + (Record.TestScale * 100).ToString()
         LblInputMain.Text += "%, Quiz - " + (Record.QuizzesScale * 100).ToString()

@@ -100,7 +100,6 @@ Partial Class FrmMain
         '
         'TxtName
         '
-        Me.TxtName.Enabled = False
         Me.TxtName.Location = New System.Drawing.Point(74, 63)
         Me.TxtName.Name = "TxtName"
         Me.TxtName.ReadOnly = True
@@ -146,7 +145,6 @@ Partial Class FrmMain
         '
         'TxtInputTest
         '
-        Me.TxtInputTest.Enabled = False
         Me.TxtInputTest.Location = New System.Drawing.Point(62, 41)
         Me.TxtInputTest.Name = "TxtInputTest"
         Me.TxtInputTest.ReadOnly = True
@@ -165,7 +163,6 @@ Partial Class FrmMain
         '
         'TxtInputQuizzes
         '
-        Me.TxtInputQuizzes.Enabled = False
         Me.TxtInputQuizzes.Location = New System.Drawing.Point(253, 41)
         Me.TxtInputQuizzes.Name = "TxtInputQuizzes"
         Me.TxtInputQuizzes.ReadOnly = True
@@ -184,7 +181,6 @@ Partial Class FrmMain
         '
         'TxtInputProject
         '
-        Me.TxtInputProject.Enabled = False
         Me.TxtInputProject.Location = New System.Drawing.Point(62, 68)
         Me.TxtInputProject.Name = "TxtInputProject"
         Me.TxtInputProject.ReadOnly = True
@@ -203,7 +199,6 @@ Partial Class FrmMain
         '
         'TxtInputExam
         '
-        Me.TxtInputExam.Enabled = False
         Me.TxtInputExam.Location = New System.Drawing.Point(253, 68)
         Me.TxtInputExam.Name = "TxtInputExam"
         Me.TxtInputExam.ReadOnly = True
@@ -493,7 +488,6 @@ Partial Class FrmMain
         '
         'BtnRecordsSquare
         '
-        Me.BtnRecordsSquare.Enabled = False
         Me.BtnRecordsSquare.Location = New System.Drawing.Point(195, 22)
         Me.BtnRecordsSquare.Name = "BtnRecordsSquare"
         Me.BtnRecordsSquare.Size = New System.Drawing.Size(21, 21)
@@ -502,7 +496,6 @@ Partial Class FrmMain
         '
         'BtnRecordsDown
         '
-        Me.BtnRecordsDown.Enabled = False
         Me.BtnRecordsDown.Location = New System.Drawing.Point(222, 22)
         Me.BtnRecordsDown.Name = "BtnRecordsDown"
         Me.BtnRecordsDown.Size = New System.Drawing.Size(21, 21)
@@ -511,7 +504,6 @@ Partial Class FrmMain
         '
         'BtnRecordsUp
         '
-        Me.BtnRecordsUp.Enabled = False
         Me.BtnRecordsUp.Location = New System.Drawing.Point(168, 22)
         Me.BtnRecordsUp.Name = "BtnRecordsUp"
         Me.BtnRecordsUp.Size = New System.Drawing.Size(21, 21)
@@ -530,7 +522,6 @@ Partial Class FrmMain
         '
         'BtnRecordsAdd
         '
-        Me.BtnRecordsAdd.Enabled = False
         Me.BtnRecordsAdd.Location = New System.Drawing.Point(6, 22)
         Me.BtnRecordsAdd.Name = "BtnRecordsAdd"
         Me.BtnRecordsAdd.Size = New System.Drawing.Size(75, 21)
@@ -539,7 +530,6 @@ Partial Class FrmMain
         '
         'BtnRecordsRemove
         '
-        Me.BtnRecordsRemove.Enabled = False
         Me.BtnRecordsRemove.Location = New System.Drawing.Point(87, 22)
         Me.BtnRecordsRemove.Name = "BtnRecordsRemove"
         Me.BtnRecordsRemove.Size = New System.Drawing.Size(75, 21)
