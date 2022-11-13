@@ -474,26 +474,25 @@ Public Class FrmMain
         ResumeControls()
     End Function
 
-    Private Shared Sub FocusMeRequest(state As Object)
-        If state Is Nothing OrElse TypeOf state IsNot FrmMain Then
-            Throw New BranchesShouldNotBeInstantiatedException()
-        End If
-        If Not CType(state, FrmMain).FocusMe() Then
-            SynchronizationContext.Current.Post(AddressOf FocusMeRequest, state)
+    Private Async Sub FocusMeRequest()
+        If FocusMe() = False Then
+            Await Task.Run(
+                Sub()
+                    Thread.Sleep(1)
+                End Sub
+            ).ConfigureAwait(True)
+            SynchronizationContext.Current.Post(AddressOf FocusMeRequest, Me)
         End If
     End Sub
 
-    Private Shared Sub WindowButtonsRequest(state As Object)
-        If state Is Nothing OrElse TypeOf state IsNot FrmMain Then
-            Throw New BranchesShouldNotBeInstantiatedException()
-        End If
+    Private Async Sub WindowButtonsRequest()
         Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
         Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
         Dim IntegrityCheck(MetroFormButtonTag.GetEnumValues().Length - 1) As (Tag As Object, Validated As Boolean)
         For i As Integer = 0 To IntegrityCheck.Length - 1
             IntegrityCheck(i) = (MetroFormButtonTag.GetEnumValues()(i), False)
         Next
-        For Each Control As Control In CType(state, FrmMain).Controls
+        For Each Control As Control In Controls
             If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
                 Control.TabStop = False
                 For i As Integer = 0 To IntegrityCheck.Length - 1
@@ -506,8 +505,13 @@ Public Class FrmMain
         Next
         For Each Check As (Object, Validated As Boolean) In IntegrityCheck
             If Check.Validated = False Then
-                SynchronizationContext.Current.Post(AddressOf WindowButtonsRequest, state)
-                Return
+                Await Task.Run(
+                    Sub()
+                        Thread.Sleep(1)
+                    End Sub
+                ).ConfigureAwait(True)
+                SynchronizationContext.Current.Post(AddressOf WindowButtonsRequest, Me)
+                Exit For
             End If
         Next
     End Sub
