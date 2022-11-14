@@ -481,7 +481,7 @@ Public Class FrmMain
                     Thread.Sleep(1)
                 End Sub
             ).ConfigureAwait(True)
-            SynchronizationContext.Current.Post(AddressOf FocusMeRequest, Me)
+            FocusMeRequest()
         End If
     End Sub
 
@@ -510,7 +510,7 @@ Public Class FrmMain
                         Thread.Sleep(1)
                     End Sub
                 ).ConfigureAwait(True)
-                SynchronizationContext.Current.Post(AddressOf WindowButtonsRequest, Me)
+                WindowButtonsRequest()
                 Exit For
             End If
         Next
@@ -540,7 +540,7 @@ Public Class FrmMain
         If Not IsNotTheSame(Data) Then
             ChkRecords.Checked = True
         End If
-        SynchronizationContext.Current.Post(AddressOf WindowButtonsRequest, Me) '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
+        WindowButtonsRequest() '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
         State = FormState.LoadHasFinish
     End Sub
 
@@ -754,7 +754,7 @@ Public Class FrmMain
                 End If
             Next
             If WindowState = FormWindowState.Normal Then
-                SynchronizationContext.Current.Post(AddressOf FocusMeRequest, Me) '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
+                FocusMeRequest() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
             Else
                 Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
             End If
