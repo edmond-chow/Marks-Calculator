@@ -409,6 +409,19 @@ Public Class FrmMain
         Return True
     End Function
 
+    Private Shared Sub ShowException(Exception As Exception)
+        While Exception IsNot Nothing
+            MessageBox.Show(
+                Exception.Message + Environment.NewLine +
+                Environment.NewLine +
+                Exception.TargetSite.ToString() + Environment.NewLine +
+                Environment.NewLine +
+                Exception.StackTrace.ToString() _
+            , Exception.Source, MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+            Exception = Exception.InnerException
+        End While
+    End Sub
+
     Private Shared Async Function DebugTest() As Task
         If Environment.CommandLine.Contains("debug") Then
             Await Task.Run(
@@ -449,6 +462,7 @@ Public Class FrmMain
                 DataFile = File.Create(FileName)
             End If
         Catch Exception As Exception
+            ShowException(Exception)
             Data = New List(Of Record)()
         End Try
         If Not IsNotTheSameID(Data) Then
@@ -470,6 +484,7 @@ Public Class FrmMain
             Await DataFile.WriteAsync(Json, 0, Json.Length).ConfigureAwait(True)
             DataFile.Close()
         Catch Exception As Exception
+            ShowException(Exception)
         End Try
         ResumeControls()
     End Function
@@ -623,7 +638,7 @@ Public Class FrmMain
         If Not ChkRecords.Checked Then
             For Each Record As Record In Data
                 If Record.StudentName = InputedRecord.StudentName Then
-                    MessageBox.Show(Me, "Student name is already exist!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    MessageBox.Show(Me, "Student name is already exist!", Text, MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
                     Return
                 End If
             Next
