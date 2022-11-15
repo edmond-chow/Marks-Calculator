@@ -409,9 +409,9 @@ Public Class FrmMain
         Return True
     End Function
 
-    Private Shared Sub ShowException(Exception As Exception)
+    Private Sub ShowException(Exception As Exception)
         While Exception IsNot Nothing
-            MessageBox.Show(
+            MessageBox.Show(Me,
                 Exception.Message + Environment.NewLine +
                 Environment.NewLine +
                 Exception.TargetSite.ToString() + Environment.NewLine +
