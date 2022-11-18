@@ -86,6 +86,11 @@ Public Class FrmMain
     ''' </summary>
     Private DataSourceConnection As MySqlConnection
 
+    ''' <summary>
+    ''' 用來表示數據正在鎖定的執行個體
+    ''' </summary>
+    Private IsDataControlsLocking As Boolean
+
 #End Region
 
 #Region "Constructors"
@@ -104,6 +109,7 @@ Public Class FrmMain
         RandomNumberGenerator = New Random()
         Reserved = Nothing
         DataSourceConnection = Nothing
+        IsDataControlsLocking = False
     End Sub
 
 #End Region
@@ -294,6 +300,37 @@ Public Class FrmMain
             BtnDataSourceDownload.Enabled = Not State
             TxtDataSourceDatabase.ReadOnly = State
             TxtDataSourceTable.ReadOnly = State
+            DataControlsLock = State
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' 表示數據鎖定時的狀態變化
+    ''' </summary>
+    Private Property DataControlsLock As Boolean
+        Get
+            Return IsDataControlsLocking
+        End Get
+        Set(State As Boolean)
+            IsDataControlsLocking = State
+            If State Then
+                BtnRecordsAdd.Enabled = False
+                BtnRecordsRemove.Enabled = False
+                BtnRecordsUp.Enabled = False
+                BtnRecordsSquare.Enabled = False
+                BtnRecordsDown.Enabled = False
+                ChkRecords.Enabled = False
+                TxtName.ReadOnly = True
+                TxtInputTest.ReadOnly = True
+                TxtInputQuizzes.ReadOnly = True
+                TxtInputProject.ReadOnly = True
+                TxtInputExam.ReadOnly = True
+                LstRecords.Tag = IsTyping.No
+            Else
+                Dim Index As Integer = LstRecords.SelectedIndex
+                LstRecords.SelectedIndex = -1
+                LstRecords.SelectedIndex = Index
+            End If
         End Set
     End Property
 
@@ -983,6 +1020,13 @@ Public Class FrmMain
             State = FormState.CloseHasStarted
             e.Cancel = True
             If Connection = ConnectState.Connected Then
+                While DataControlsLock
+                    Await Task.Run(
+                        Sub()
+                            Thread.Sleep(1)
+                        End Sub
+                    ).ConfigureAwait(True)
+                End While
                 BtnDataSourceConnect.PerformClick()
                 While Connection <> ConnectState.Disconnected
                     Await Task.Run(
@@ -1184,32 +1228,37 @@ Public Class FrmMain
     End Sub
 
     Private Sub LstRecord_SelectedIndexChanged(sender As Object, e As EventArgs) Handles LstRecords.SelectedIndexChanged
-        If LstRecords.SelectedIndex = 0 Then
-            BtnRecordsAdd.Enabled = True
-            BtnRecordsRemove.Enabled = False
-            BtnRecordsUp.Enabled = False
-            BtnRecordsSquare.Enabled = False
-            BtnRecordsDown.Enabled = False
-            ChkRecords.Enabled = True
-            TxtName.ReadOnly = False
-            TxtInputTest.ReadOnly = False
-            TxtInputQuizzes.ReadOnly = False
-            TxtInputProject.ReadOnly = False
-            TxtInputExam.ReadOnly = False
-            LstRecords.Tag = IsAdding.Yes
-        Else
-            BtnRecordsAdd.Enabled = False
-            BtnRecordsRemove.Enabled = True
-            BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
-            BtnRecordsSquare.Enabled = Not RecordsIsSorted()
-            BtnRecordsDown.Enabled = LstRecords.SelectedIndex < LstRecords.Items.Count - 1
-            ChkRecords.Enabled = False
-            TxtName.ReadOnly = True
-            TxtInputTest.ReadOnly = True
-            TxtInputQuizzes.ReadOnly = True
-            TxtInputProject.ReadOnly = True
-            TxtInputExam.ReadOnly = True
-            LstRecords.Tag = IsAdding.No
+        If LstRecords.SelectedIndex = -1 Then
+            Return
+        End If
+        If DataControlsLock = False Then
+            If LstRecords.SelectedIndex = 0 Then
+                BtnRecordsAdd.Enabled = True
+                BtnRecordsRemove.Enabled = False
+                BtnRecordsUp.Enabled = False
+                BtnRecordsSquare.Enabled = False
+                BtnRecordsDown.Enabled = False
+                ChkRecords.Enabled = True
+                TxtName.ReadOnly = False
+                TxtInputTest.ReadOnly = False
+                TxtInputQuizzes.ReadOnly = False
+                TxtInputProject.ReadOnly = False
+                TxtInputExam.ReadOnly = False
+                LstRecords.Tag = IsAdding.Yes
+            Else
+                BtnRecordsAdd.Enabled = False
+                BtnRecordsRemove.Enabled = True
+                BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
+                BtnRecordsSquare.Enabled = Not RecordsIsSorted()
+                BtnRecordsDown.Enabled = LstRecords.SelectedIndex < LstRecords.Items.Count - 1
+                ChkRecords.Enabled = False
+                TxtName.ReadOnly = True
+                TxtInputTest.ReadOnly = True
+                TxtInputQuizzes.ReadOnly = True
+                TxtInputProject.ReadOnly = True
+                TxtInputExam.ReadOnly = True
+                LstRecords.Tag = IsAdding.No
+            End If
         End If
         GetInputs()
         ShowResult(InputedRecord)
