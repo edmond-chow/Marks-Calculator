@@ -899,7 +899,7 @@ Public Class FrmMain
             )
             Dim Iterator As IEnumerable(Of Record) = Downloads
             If NotSameCount > 0 Then
-                Dim Result As DialogResult = MessageBox.Show(Me, "Some of the records of the data source have the same ""ID"" as one of the local records, which is not matching the same fields. Would you like to replace it with the local one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
+                Dim Result As DialogResult = MessageBox.Show(Me, "Some of the records of the data source have the same ""ID"" as one of the local records, which is not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
                 If Result = DialogResult.No Then
                     Iterator = Iterator.Where(
                         Function(Record As Record) As Boolean
