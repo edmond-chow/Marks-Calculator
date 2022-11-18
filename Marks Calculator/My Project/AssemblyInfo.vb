@@ -9,7 +9,7 @@ Imports System.Runtime.InteropServices
 ' Review the values of the assembly attributes
 
 <Assembly: AssemblyTitle("Marks Calculator")>
-<Assembly: AssemblyDescription("For more information, see https://github.com/edmond-chow/Marks-Calculator")>
+<Assembly: AssemblyDescription("For more information, see https://github.com/edmond-chow/Marks-Calculator-V2")>
 <Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Marks Calculator")>
 <Assembly: AssemblyCopyright("© 周卓禧 (Edmond), 謝家裕 (Johnson). All rights reserved.")>
@@ -31,7 +31,7 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")>
 
-<Assembly: AssemblyVersion("1.0.0.0")>
-<Assembly: AssemblyFileVersion("1.0.0.0")>
+<Assembly: AssemblyVersion("2.0.0.0")>
+<Assembly: AssemblyFileVersion("2.0.0.0")>
 <Assembly: NeutralResourcesLanguage("en")>
 <Assembly: AssemblyKeyFile("key.snk")>

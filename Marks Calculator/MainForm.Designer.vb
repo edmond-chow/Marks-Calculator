@@ -72,10 +72,19 @@ Partial Class FrmMain
         Me.LstRecords = New System.Windows.Forms.ListBox()
         Me.TxtRecordsSearch = New MetroFramework.Controls.MetroTextBox()
         Me.ChkRecordsSearch = New MetroFramework.Controls.MetroCheckBox()
+        Me.GrpDataSource = New System.Windows.Forms.GroupBox()
+        Me.TxtDataSourceTable = New MetroFramework.Controls.MetroTextBox()
+        Me.TxtDataSourceDatabase = New MetroFramework.Controls.MetroTextBox()
+        Me.LblDataSourceTable = New MetroFramework.Controls.MetroLabel()
+        Me.LblDataSourceDatabase = New MetroFramework.Controls.MetroLabel()
+        Me.BtnDataSourceUpload = New MetroFramework.Controls.MetroButton()
+        Me.BtnDataSourceDownload = New MetroFramework.Controls.MetroButton()
+        Me.BtnDataSourceConnect = New MetroFramework.Controls.MetroButton()
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
         Me.GrpRecords.SuspendLayout()
+        Me.GrpDataSource.SuspendLayout()
         Me.SuspendLayout()
         '
         'PrbMain
@@ -313,7 +322,7 @@ Partial Class FrmMain
         Me.GrpStatistics.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
         Me.GrpStatistics.Location = New System.Drawing.Point(23, 273)
         Me.GrpStatistics.Name = "GrpStatistics"
-        Me.GrpStatistics.Size = New System.Drawing.Size(500, 200)
+        Me.GrpStatistics.Size = New System.Drawing.Size(500, 225)
         Me.GrpStatistics.TabIndex = 4
         Me.GrpStatistics.TabStop = False
         Me.GrpStatistics.Text = "Statistics"
@@ -477,10 +486,10 @@ Partial Class FrmMain
         Me.GrpRecords.Controls.Add(Me.TxtRecordsSearch)
         Me.GrpRecords.Controls.Add(Me.ChkRecordsSearch)
         Me.GrpRecords.Font = New System.Drawing.Font("微軟正黑體", 9.0!)
-        Me.GrpRecords.Location = New System.Drawing.Point(529, 63)
+        Me.GrpRecords.Location = New System.Drawing.Point(529, 172)
         Me.GrpRecords.Name = "GrpRecords"
-        Me.GrpRecords.Size = New System.Drawing.Size(275, 410)
-        Me.GrpRecords.TabIndex = 5
+        Me.GrpRecords.Size = New System.Drawing.Size(275, 326)
+        Me.GrpRecords.TabIndex = 6
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
         '
@@ -513,9 +522,9 @@ Partial Class FrmMain
         Me.ChkRecords.AutoSize = True
         Me.ChkRecords.Location = New System.Drawing.Point(6, 49)
         Me.ChkRecords.Name = "ChkRecords"
-        Me.ChkRecords.Size = New System.Drawing.Size(140, 15)
+        Me.ChkRecords.Size = New System.Drawing.Size(148, 15)
         Me.ChkRecords.TabIndex = 6
-        Me.ChkRecords.Text = "Allow Repeated Name"
+        Me.ChkRecords.Text = "Allow Duplicated Name"
         Me.ChkRecords.UseVisualStyleBackColor = True
         '
         'BtnRecordsAdd
@@ -544,14 +553,14 @@ Partial Class FrmMain
         Me.LstRecords.ItemHeight = 16
         Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(263, 286)
+        Me.LstRecords.Size = New System.Drawing.Size(263, 202)
         Me.LstRecords.TabIndex = 7
         '
         'TxtRecordsSearch
         '
         Me.TxtRecordsSearch.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 362)
+        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 278)
         Me.TxtRecordsSearch.Name = "TxtRecordsSearch"
         Me.TxtRecordsSearch.Size = New System.Drawing.Size(263, 21)
         Me.TxtRecordsSearch.TabIndex = 8
@@ -560,18 +569,98 @@ Partial Class FrmMain
         '
         Me.ChkRecordsSearch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.ChkRecordsSearch.AutoSize = True
-        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 389)
+        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 305)
         Me.ChkRecordsSearch.Name = "ChkRecordsSearch"
         Me.ChkRecordsSearch.Size = New System.Drawing.Size(155, 15)
         Me.ChkRecordsSearch.TabIndex = 9
         Me.ChkRecordsSearch.Text = "Using Regular Expression"
         Me.ChkRecordsSearch.UseVisualStyleBackColor = True
         '
+        'GrpDataSource
+        '
+        Me.GrpDataSource.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.GrpDataSource.Controls.Add(Me.TxtDataSourceTable)
+        Me.GrpDataSource.Controls.Add(Me.TxtDataSourceDatabase)
+        Me.GrpDataSource.Controls.Add(Me.LblDataSourceTable)
+        Me.GrpDataSource.Controls.Add(Me.LblDataSourceDatabase)
+        Me.GrpDataSource.Controls.Add(Me.BtnDataSourceUpload)
+        Me.GrpDataSource.Controls.Add(Me.BtnDataSourceDownload)
+        Me.GrpDataSource.Controls.Add(Me.BtnDataSourceConnect)
+        Me.GrpDataSource.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
+        Me.GrpDataSource.Location = New System.Drawing.Point(529, 63)
+        Me.GrpDataSource.Name = "GrpDataSource"
+        Me.GrpDataSource.Size = New System.Drawing.Size(275, 103)
+        Me.GrpDataSource.TabIndex = 5
+        Me.GrpDataSource.TabStop = False
+        Me.GrpDataSource.Text = "MySQL Data Source"
+        '
+        'TxtDataSourceTable
+        '
+        Me.TxtDataSourceTable.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.TxtDataSourceTable.Location = New System.Drawing.Point(75, 76)
+        Me.TxtDataSourceTable.Name = "TxtDataSourceTable"
+        Me.TxtDataSourceTable.Size = New System.Drawing.Size(194, 21)
+        Me.TxtDataSourceTable.TabIndex = 5
+        '
+        'TxtDataSourceDatabase
+        '
+        Me.TxtDataSourceDatabase.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.TxtDataSourceDatabase.Location = New System.Drawing.Point(75, 49)
+        Me.TxtDataSourceDatabase.Name = "TxtDataSourceDatabase"
+        Me.TxtDataSourceDatabase.Size = New System.Drawing.Size(194, 21)
+        Me.TxtDataSourceDatabase.TabIndex = 4
+        '
+        'LblDataSourceTable
+        '
+        Me.LblDataSourceTable.AutoSize = True
+        Me.LblDataSourceTable.Location = New System.Drawing.Point(6, 77)
+        Me.LblDataSourceTable.Name = "LblDataSourceTable"
+        Me.LblDataSourceTable.Size = New System.Drawing.Size(39, 19)
+        Me.LblDataSourceTable.TabIndex = 0
+        Me.LblDataSourceTable.Text = "Table"
+        '
+        'LblDataSourceDatabase
+        '
+        Me.LblDataSourceDatabase.AutoSize = True
+        Me.LblDataSourceDatabase.Location = New System.Drawing.Point(6, 50)
+        Me.LblDataSourceDatabase.Name = "LblDataSourceDatabase"
+        Me.LblDataSourceDatabase.Size = New System.Drawing.Size(63, 19)
+        Me.LblDataSourceDatabase.TabIndex = 0
+        Me.LblDataSourceDatabase.Text = "Database"
+        '
+        'BtnDataSourceUpload
+        '
+        Me.BtnDataSourceUpload.Location = New System.Drawing.Point(87, 22)
+        Me.BtnDataSourceUpload.Name = "BtnDataSourceUpload"
+        Me.BtnDataSourceUpload.Size = New System.Drawing.Size(75, 21)
+        Me.BtnDataSourceUpload.TabIndex = 2
+        Me.BtnDataSourceUpload.Text = "Upload"
+        '
+        'BtnDataSourceDownload
+        '
+        Me.BtnDataSourceDownload.Location = New System.Drawing.Point(168, 22)
+        Me.BtnDataSourceDownload.Name = "BtnDataSourceDownload"
+        Me.BtnDataSourceDownload.Size = New System.Drawing.Size(75, 21)
+        Me.BtnDataSourceDownload.TabIndex = 3
+        Me.BtnDataSourceDownload.Text = "Download"
+        '
+        'BtnDataSourceConnect
+        '
+        Me.BtnDataSourceConnect.Location = New System.Drawing.Point(6, 22)
+        Me.BtnDataSourceConnect.Name = "BtnDataSourceConnect"
+        Me.BtnDataSourceConnect.Size = New System.Drawing.Size(75, 21)
+        Me.BtnDataSourceConnect.TabIndex = 1
+        Me.BtnDataSourceConnect.Text = "Connect"
+        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(827, 495)
+        Me.ClientSize = New System.Drawing.Size(827, 520)
+        Me.Controls.Add(Me.GrpDataSource)
         Me.Controls.Add(Me.PrbMain)
         Me.Controls.Add(Me.LblName)
         Me.Controls.Add(Me.TxtName)
@@ -583,7 +672,7 @@ Partial Class FrmMain
         Me.Name = "FrmMain"
         Me.Padding = New System.Windows.Forms.Padding(20, 60, 20, 19)
         Me.Style = MetroFramework.MetroColorStyle.Green
-        Me.Text = "Calculation of Module Grade"
+        Me.Text = "Module Grade"
         Me.Theme = MetroFramework.MetroThemeStyle.Light
         Me.GrpInput.ResumeLayout(False)
         Me.GrpInput.PerformLayout()
@@ -593,6 +682,8 @@ Partial Class FrmMain
         Me.GrpStatistics.PerformLayout()
         Me.GrpRecords.ResumeLayout(False)
         Me.GrpRecords.PerformLayout()
+        Me.GrpDataSource.ResumeLayout(False)
+        Me.GrpDataSource.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -647,4 +738,12 @@ Partial Class FrmMain
     Private WithEvents BtnRecordsDown As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsUp As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsSquare As MetroFramework.Controls.MetroButton
+    Friend WithEvents GrpDataSource As GroupBox
+    Private WithEvents TxtDataSourceTable As MetroFramework.Controls.MetroTextBox
+    Private WithEvents TxtDataSourceDatabase As MetroFramework.Controls.MetroTextBox
+    Friend WithEvents LblDataSourceTable As MetroFramework.Controls.MetroLabel
+    Friend WithEvents LblDataSourceDatabase As MetroFramework.Controls.MetroLabel
+    Friend WithEvents BtnDataSourceUpload As MetroFramework.Controls.MetroButton
+    Friend WithEvents BtnDataSourceDownload As MetroFramework.Controls.MetroButton
+    Friend WithEvents BtnDataSourceConnect As MetroFramework.Controls.MetroButton
 End Class
