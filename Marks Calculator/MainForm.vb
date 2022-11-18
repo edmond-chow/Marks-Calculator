@@ -1068,7 +1068,11 @@ Public Class FrmMain
             Try
                 DataSourceConnection = New MySqlConnection("DATASOURCE=" + DataSourceInfo.Host + ";USERNAME=" + DataSourceInfo.Username + ";PASSWORD=" + DataSourceInfo.Password + ";")
                 Connection = ConnectState.Connecting
-                Await DataSourceConnection.OpenAsync().ConfigureAwait(True)
+                Await Task.Run(
+                    Async Function() As Task
+                        Await DataSourceConnection.OpenAsync().ConfigureAwait(False)
+                    End Function
+                ).ConfigureAwait(True)
                 Connection = ConnectState.Connected
             Catch Exception As Exception
                 Connection = ConnectState.Disconnected
@@ -1076,7 +1080,11 @@ Public Class FrmMain
             End Try
         ElseIf Connection = ConnectState.Connected Then
             Connection = ConnectState.Disconnecting
-            Await DataSourceConnection.CloseAsync().ConfigureAwait(True)
+            Await Task.Run(
+                Async Function() As Task
+                    Await DataSourceConnection.CloseAsync().ConfigureAwait(False)
+                End Function
+            ).ConfigureAwait(True)
             Connection = ConnectState.Disconnected
         End If
     End Sub
