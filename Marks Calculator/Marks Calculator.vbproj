@@ -206,6 +206,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApplicationEvents.vb" />
     <Compile Include="ConnectionForm.Designer.vb">
       <DependentUpon>ConnectionForm.vb</DependentUpon>
     </Compile>
