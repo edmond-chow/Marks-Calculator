@@ -1806,7 +1806,7 @@ Public Class FrmMain
 #Region "Fields"
 
             <MarshalAs(UnmanagedType.ByValArray, SizeConst:=3)>
-            Public rgrc As RECT()
+            Public rgrc() As RECT
             Public lppos As WINDOWPOS
 
 #End Region
