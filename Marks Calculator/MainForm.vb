@@ -1307,6 +1307,7 @@ Public Class FrmMain
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
+        Const HTCAPTION As Integer = 2
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
                 If WindowState = FormWindowState.Maximized Then
@@ -1326,12 +1327,13 @@ Public Class FrmMain
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 If X >= 23 AndAlso X < Size.Width - 23 AndAlso Y >= 63 AndAlso Y < Size.Height - 23 Then
-                ElseIf X < 5 OrElse X >= Size.Width - 5 OrElse Y < 5 OrElse Y >= Size.Height - 5 Then
-                    If X >= Size.Width - 5 AndAlso Y >= Size.Height - 5 Then
-                        MyBase.WndProc(m)
-                    End If
                 Else
-                    MyBase.WndProc(m)
+                    If X >= Size.Width - 23 AndAlso Y >= Size.Height - 23 Then
+                        MyBase.WndProc(m)
+                    Else
+                        m.Result = New IntPtr(HTCAPTION)
+                        Return
+                    End If
                 End If
             Case Else
                 MyBase.WndProc(m)
