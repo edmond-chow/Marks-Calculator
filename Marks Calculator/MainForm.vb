@@ -91,6 +91,11 @@ Public Class FrmMain
     ''' </summary>
     Private IsDataControlsLocking As Boolean
 
+    ''' <summary>
+    ''' 表示表單拖動前所截取的位置
+    ''' </summary>
+    Private Captured As Point?
+
 #End Region
 
 #Region "Constructors"
@@ -110,6 +115,7 @@ Public Class FrmMain
         Reserved = Nothing
         DataSourceConnection = Nothing
         IsDataControlsLocking = False
+        Captured = Nothing
     End Sub
 
 #End Region
@@ -989,6 +995,13 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        For Each Control As Control In Controls
+            If TypeOf Control Is GroupBox Then
+                AddHandler Control.MouseDown, AddressOf AnyFirstLayerSubControls_MouseDown
+                AddHandler Control.MouseMove, AddressOf AnyFirstLayerSubControls_MouseMove
+                AddHandler Control.MouseUp, AddressOf AnyFirstLayerSubControls_MouseUp
+            End If
+        Next
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
                 Return (Tuple.Field, True)
@@ -1304,9 +1317,39 @@ Public Class FrmMain
         LastWindowState = WindowState
     End Sub
 
+    Private Sub AnyFirstLayerSubControls_MouseDown(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseDown
+        If TypeOf sender IsNot Control Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        Dim CaptureMouse As New Point(CType(sender, Control).Location.X + e.Location.X, CType(sender, Control).Location.Y + e.Location.Y)
+        '（計算某一控制項的游標相對於表單的位置，即 控制項在表單的位置 + 游標相對於控制項的位置）
+        If CaptureMouse.X >= 23 AndAlso CaptureMouse.X < Size.Width - 23 AndAlso CaptureMouse.Y >= 63 AndAlso CaptureMouse.Y < Size.Height - 23 Then
+        Else
+            Captured = CaptureMouse
+        End If
+    End Sub
+
+    Private Sub AnyFirstLayerSubControls_MouseMove(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseMove
+        If TypeOf sender IsNot Control Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        If Captured.HasValue Then
+            Location = New Point(Location.X + CType(sender, Control).Location.X + e.Location.X - Captured.Value.X, Location.Y + CType(sender, Control).Location.Y + e.Location.Y - Captured.Value.Y)
+            '（透過 目前游標相對於螢幕的位置 - 游標相對於表單的位置，計算目前的表單位置，目前游標相對於螢幕的位置 即 表單相對於螢幕的位置 + 控制項在表單的位置 + 游標相對於控制項的位置）
+        End If
+    End Sub
+
+    Private Sub AnyFirstLayerSubControls_MouseUp(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseUp
+        If TypeOf sender IsNot Control Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        Captured = Nothing
+    End Sub
+
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
+        Const WM_LBUTTONDOWN As Integer = &H201
         Const HTCAPTION As Integer = 2
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
@@ -1335,6 +1378,8 @@ Public Class FrmMain
                         Return
                     End If
                 End If
+            Case WM_LBUTTONDOWN
+                Text = "Hello"
             Case Else
                 MyBase.WndProc(m)
         End Select
