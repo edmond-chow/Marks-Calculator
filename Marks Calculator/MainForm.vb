@@ -113,6 +113,7 @@ Public Class FrmMain
         LastSize = Size
         RandomNumberGenerator = New Random()
         Reserved = Nothing
+        DataSourceInfo = Nothing
         DataSourceConnection = Nothing
         IsDataControlsLocking = False
         Captured = Nothing
@@ -1481,7 +1482,7 @@ Public Class FrmMain
 
 #Region "Properties"
 
-        Public Shared ReadOnly Property Scale(Number As Double) As String
+        Friend Shared ReadOnly Property Scale(Number As Double) As String
             Get
                 Return (Number * 100).ToString() + "%"
             End Get
