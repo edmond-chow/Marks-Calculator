@@ -1349,7 +1349,6 @@ Public Class FrmMain
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
-        Const WM_LBUTTONDOWN As Integer = &H201
         Const HTCAPTION As Integer = 2
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
@@ -1378,8 +1377,6 @@ Public Class FrmMain
                         Return
                     End If
                 End If
-            Case WM_LBUTTONDOWN
-                Text = "Hello"
             Case Else
                 MyBase.WndProc(m)
         End Select
