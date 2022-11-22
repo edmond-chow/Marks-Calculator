@@ -506,7 +506,7 @@ Public Class FrmMain
                 Catch Exception As Exception
                 End Try
             Else
-                IsMatched = Data(i).StudentName.IndexOf(TxtRecordsSearch.Text) <> -1
+                IsMatched = Data(i).StudentName.Contains(TxtRecordsSearch.Text)
             End If
             If IsMatched Then
                 LstRecords.Items.Add(Data.Item(i).StudentName)
