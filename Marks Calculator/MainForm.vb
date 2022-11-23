@@ -1334,7 +1334,7 @@ Public Class FrmMain
         End If
         Dim CaptureMouse As New Point(CType(sender, Control).Location.X + e.Location.X, CType(sender, Control).Location.Y + e.Location.Y)
         '（計算某一控制項的游標相對於表單的位置，即 控制項在表單的位置 + 游標相對於控制項的位置）
-        If CaptureMouse.X >= 23 + 100 AndAlso CaptureMouse.X < ClientSize.Width - 23 - 100 AndAlso CaptureMouse.Y >= 63 + 100 AndAlso CaptureMouse.Y < ClientSize.Height - 23 - 100 Then
+        If CaptureMouse.X >= Border AndAlso CaptureMouse.X < ClientSize.Width - Border AndAlso CaptureMouse.Y >= BorderWithTitle AndAlso CaptureMouse.Y < ClientSize.Height - Border Then
         Else
             Captured = CaptureMouse
         End If
@@ -1365,6 +1365,7 @@ Public Class FrmMain
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
         Const HTNOWHERE As Integer = 0
+        Const HTCLIENT As Integer = 1
         Const HTCAPTION As Integer = 2
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
@@ -1393,14 +1394,17 @@ Public Class FrmMain
                     BorderX = XFrame + Border
                     BorderY = YFrame + Border
                 End If
-                If X - BorderX >= Border AndAlso X < Size.Width - Border - BorderX AndAlso Y - BorderY >= BorderWithTitle AndAlso Y < Size.Height - Border - BorderY Then
-                    m.Result = New IntPtr(HTNOWHERE)
+                If X - BorderX >= Border AndAlso X < ClientSize.Width - Border AndAlso Y - BorderY >= BorderWithTitle AndAlso Y < ClientSize.Height - Border Then
+                    m.Result = New IntPtr(HTNOWHERE) '（在視窗中間的內容部分）
                     Return
                 Else
-                    If X >= Size.Width - Border - BorderX AndAlso Y >= Size.Height - Border - BorderY Then
-                        MyBase.WndProc(m)
+                    If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
+                        MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
+                    ElseIf Y <= BorderWithTitle Then
+                        m.Result = New IntPtr(HTCAPTION) '（在視窗標題列的部分）
+                        Return
                     Else
-                        m.Result = New IntPtr(HTCAPTION)
+                        m.Result = New IntPtr(HTCLIENT) '（在視窗邊框的部分）
                         Return
                     End If
                 End If
