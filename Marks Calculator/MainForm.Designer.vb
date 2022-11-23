@@ -80,11 +80,13 @@ Partial Class FrmMain
         Me.BtnDataSourceUpload = New MetroFramework.Controls.MetroButton()
         Me.BtnDataSourceDownload = New MetroFramework.Controls.MetroButton()
         Me.BtnDataSourceConnect = New MetroFramework.Controls.MetroButton()
+        Me.PanMain = New System.Windows.Forms.Panel()
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
         Me.GrpRecords.SuspendLayout()
         Me.GrpDataSource.SuspendLayout()
+        Me.PanMain.SuspendLayout()
         Me.SuspendLayout()
         '
         'PrbMain
@@ -99,7 +101,7 @@ Partial Class FrmMain
         'LblName
         '
         Me.LblName.AutoSize = True
-        Me.LblName.Location = New System.Drawing.Point(23, 64)
+        Me.LblName.Location = New System.Drawing.Point(0, 1)
         Me.LblName.Name = "LblName"
         Me.LblName.Size = New System.Drawing.Size(45, 19)
         Me.LblName.TabIndex = 0
@@ -107,7 +109,7 @@ Partial Class FrmMain
         '
         'TxtName
         '
-        Me.TxtName.Location = New System.Drawing.Point(74, 63)
+        Me.TxtName.Location = New System.Drawing.Point(51, 0)
         Me.TxtName.Name = "TxtName"
         Me.TxtName.ReadOnly = True
         Me.TxtName.Size = New System.Drawing.Size(200, 21)
@@ -125,7 +127,7 @@ Partial Class FrmMain
         Me.GrpInput.Controls.Add(Me.LblInputExam)
         Me.GrpInput.Controls.Add(Me.TxtInputExam)
         Me.GrpInput.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
-        Me.GrpInput.Location = New System.Drawing.Point(23, 90)
+        Me.GrpInput.Location = New System.Drawing.Point(0, 27)
         Me.GrpInput.Name = "GrpInput"
         Me.GrpInput.Size = New System.Drawing.Size(500, 95)
         Me.GrpInput.TabIndex = 2
@@ -224,7 +226,7 @@ Partial Class FrmMain
         Me.GrpResult.Controls.Add(Me.LblReusltRemarks)
         Me.GrpResult.Controls.Add(Me.TxtReusltRemarks)
         Me.GrpResult.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
-        Me.GrpResult.Location = New System.Drawing.Point(23, 191)
+        Me.GrpResult.Location = New System.Drawing.Point(0, 128)
         Me.GrpResult.Name = "GrpResult"
         Me.GrpResult.Size = New System.Drawing.Size(500, 76)
         Me.GrpResult.TabIndex = 3
@@ -320,7 +322,7 @@ Partial Class FrmMain
         Me.GrpStatistics.Controls.Add(Me.LblStatisticsSd)
         Me.GrpStatistics.Controls.Add(Me.TxtStatisticsSd)
         Me.GrpStatistics.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
-        Me.GrpStatistics.Location = New System.Drawing.Point(23, 273)
+        Me.GrpStatistics.Location = New System.Drawing.Point(0, 210)
         Me.GrpStatistics.Name = "GrpStatistics"
         Me.GrpStatistics.Size = New System.Drawing.Size(500, 225)
         Me.GrpStatistics.TabIndex = 4
@@ -486,7 +488,7 @@ Partial Class FrmMain
         Me.GrpRecords.Controls.Add(Me.TxtRecordsSearch)
         Me.GrpRecords.Controls.Add(Me.ChkRecordsSearch)
         Me.GrpRecords.Font = New System.Drawing.Font("微軟正黑體", 9.0!)
-        Me.GrpRecords.Location = New System.Drawing.Point(529, 172)
+        Me.GrpRecords.Location = New System.Drawing.Point(506, 109)
         Me.GrpRecords.Name = "GrpRecords"
         Me.GrpRecords.Size = New System.Drawing.Size(275, 326)
         Me.GrpRecords.TabIndex = 6
@@ -588,7 +590,7 @@ Partial Class FrmMain
         Me.GrpDataSource.Controls.Add(Me.BtnDataSourceDownload)
         Me.GrpDataSource.Controls.Add(Me.BtnDataSourceConnect)
         Me.GrpDataSource.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
-        Me.GrpDataSource.Location = New System.Drawing.Point(529, 63)
+        Me.GrpDataSource.Location = New System.Drawing.Point(506, 0)
         Me.GrpDataSource.Name = "GrpDataSource"
         Me.GrpDataSource.Size = New System.Drawing.Size(275, 103)
         Me.GrpDataSource.TabIndex = 5
@@ -655,22 +657,32 @@ Partial Class FrmMain
         Me.BtnDataSourceConnect.TabIndex = 1
         Me.BtnDataSourceConnect.Text = "Connect"
         '
+        'PanMain
+        '
+        Me.PanMain.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.PanMain.Controls.Add(Me.TxtName)
+        Me.PanMain.Controls.Add(Me.GrpDataSource)
+        Me.PanMain.Controls.Add(Me.GrpRecords)
+        Me.PanMain.Controls.Add(Me.GrpStatistics)
+        Me.PanMain.Controls.Add(Me.LblName)
+        Me.PanMain.Controls.Add(Me.GrpResult)
+        Me.PanMain.Controls.Add(Me.GrpInput)
+        Me.PanMain.Location = New System.Drawing.Point(23, 63)
+        Me.PanMain.Name = "PanMain"
+        Me.PanMain.Size = New System.Drawing.Size(781, 434)
+        Me.PanMain.TabIndex = 7
+        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(827, 520)
-        Me.Controls.Add(Me.GrpDataSource)
+        Me.Controls.Add(Me.PanMain)
         Me.Controls.Add(Me.PrbMain)
-        Me.Controls.Add(Me.LblName)
-        Me.Controls.Add(Me.TxtName)
-        Me.Controls.Add(Me.GrpInput)
-        Me.Controls.Add(Me.GrpResult)
-        Me.Controls.Add(Me.GrpStatistics)
-        Me.Controls.Add(Me.GrpRecords)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "FrmMain"
-        Me.Padding = New System.Windows.Forms.Padding(20, 60, 20, 19)
         Me.Style = MetroFramework.MetroColorStyle.Green
         Me.Text = "Module Grade"
         Me.Theme = MetroFramework.MetroThemeStyle.Light
@@ -684,8 +696,9 @@ Partial Class FrmMain
         Me.GrpRecords.PerformLayout()
         Me.GrpDataSource.ResumeLayout(False)
         Me.GrpDataSource.PerformLayout()
+        Me.PanMain.ResumeLayout(False)
+        Me.PanMain.PerformLayout()
         Me.ResumeLayout(False)
-        Me.PerformLayout()
 
     End Sub
 
@@ -746,4 +759,5 @@ Partial Class FrmMain
     Friend WithEvents BtnDataSourceUpload As MetroFramework.Controls.MetroButton
     Friend WithEvents BtnDataSourceDownload As MetroFramework.Controls.MetroButton
     Friend WithEvents BtnDataSourceConnect As MetroFramework.Controls.MetroButton
+    Friend WithEvents PanMain As Panel
 End Class

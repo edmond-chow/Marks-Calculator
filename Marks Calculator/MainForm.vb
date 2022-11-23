@@ -35,7 +35,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 表示表單的邊框的粗幼度
     ''' </summary>
-    Private Const Border As Integer = 20
+    Private Const Border As Integer = 23
 
     ''' <summary>
     ''' 表示表單的邊框以及標題列的粗幼度
@@ -1345,10 +1345,6 @@ Public Class FrmMain
             Throw New BranchesShouldNotBeInstantiatedException()
         End If
         If Captured.HasValue Then
-            If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
-                WindowState = FormWindowState.Normal
-                Return
-            End If
             Location = New Point(Location.X + CType(sender, Control).Location.X + e.Location.X - Captured.Value.X, Location.Y + CType(sender, Control).Location.Y + e.Location.Y - Captured.Value.Y)
             '（透過 目前游標相對於螢幕的位置 - 游標相對於表單的位置 ，計算目前的表單位置，目前游標相對於螢幕的位置 即 表單相對於螢幕的位置 + [已撇除 - 在最大化模式下補足表單邊界的長度] + 控制項在表單的位置 + 游標相對於控制項的位置）
         End If
@@ -1365,7 +1361,6 @@ Public Class FrmMain
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
         Const HTNOWHERE As Integer = 0
-        Const HTCLIENT As Integer = 1
         Const HTCAPTION As Integer = 2
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
@@ -1400,11 +1395,8 @@ Public Class FrmMain
                 Else
                     If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
                         MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
-                    ElseIf Y <= BorderWithTitle Then
-                        m.Result = New IntPtr(HTCAPTION) '（在視窗標題列的部分）
-                        Return
                     Else
-                        m.Result = New IntPtr(HTCLIENT) '（在視窗邊框的部分）
+                        m.Result = New IntPtr(HTCAPTION) '（在視窗標題列的部分）
                         Return
                     End If
                 End If
