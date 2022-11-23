@@ -1360,6 +1360,7 @@ Public Class FrmMain
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
+        Const WM_NCLBUTTONDBLCLICK As Integer = &HA3
         Const HTNOWHERE As Integer = 0
         Const HTCAPTION As Integer = 2
         Select Case m.Msg
@@ -1377,7 +1378,7 @@ Public Class FrmMain
                 ElseIf WindowState = FormWindowState.Normal Then
                     LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
                 End If
-            Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
+            Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 Dim BorderX As Integer = 0
@@ -1395,10 +1396,21 @@ Public Class FrmMain
                 Else
                     If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
                         MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
-                    Else
+                    ElseIf WindowState <> FormWindowState.Maximized OrElse Y - BorderY <= BorderWithTitle Then '（限制在最大化時只能夠在標題列拖放）
                         m.Result = New IntPtr(HTCAPTION) '（在視窗標題列的部分）
                         Return
                     End If
+                End If
+            Case WM_NCLBUTTONDBLCLICK '（透過對訊息 WM_NCLBUTTONDBLCLICK 的捕獲，實現視窗非客戶端區域雙擊有效範圍的限制）
+                Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
+                Dim BorderY As Integer = 0
+                If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                    Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+                    Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
+                    BorderY = YFrame + Border
+                End If
+                If Y - BorderY <= BorderWithTitle Then
+                    MyBase.WndProc(m)
                 End If
             Case Else
                 MyBase.WndProc(m)
