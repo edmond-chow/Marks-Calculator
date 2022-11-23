@@ -1324,6 +1324,7 @@ Public Class FrmMain
             Else
                 Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
             End If
+            Resizable = WindowState <> FormWindowState.Maximized
         End If
         LastWindowState = WindowState
     End Sub
