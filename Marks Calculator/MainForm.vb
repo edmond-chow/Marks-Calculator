@@ -133,11 +133,12 @@ Public Class FrmMain
             Dim RandomNumber As Integer = 0
             While True
                 RandomNumber = RandomNumberGenerator.Next(100000000, 999999999)
-                If Data.LongCount(
+                Dim Count As Long = Data.LongCount(
                     Function(Record As Record) As Boolean
                         Return Record.ID = RandomNumber
                     End Function
-                ) = 0 Then
+                )
+                If Count = 0 Then
                     Exit While
                 End If
             End While
@@ -213,7 +214,7 @@ Public Class FrmMain
     ''' 鎖定控制項的篩選器
     ''' </summary>
     ''' <returns></returns>
-    Private Property Selector As IEnumerable(Of (FieldInfo, Object))
+    Private Property Selector As IEnumerable(Of (Field As FieldInfo, Value As Object))
         Get
             Return GetType(FrmMain).GetRuntimeFields().Where(
                 Function(Field As FieldInfo) As Boolean
@@ -223,16 +224,16 @@ Public Class FrmMain
                         Field.FieldType = GetType(ListBox)
                 End Function
             ).Select(
-                Function(Field As FieldInfo) As (FieldInfo, Object)
+                Function(Field As FieldInfo) As (Field As FieldInfo, Value As Object)
                     Return (Field, Field.GetValue(Me))
                 End Function
             ).Select(
-                Function(Tuple As (Field As FieldInfo, Value As Object)) As (FieldInfo, Object)
+                Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
                     Return (Tuple.Field, Tuple.Value.GetType().GetProperty("Enabled").GetValue(Tuple.Value))
                 End Function
             )
         End Get
-        Set(Tuples As IEnumerable(Of (FieldInfo, Object)))
+        Set(Tuples As IEnumerable(Of (Field As FieldInfo, Value As Object)))
             For Each Tuple As (Field As FieldInfo, Value As Object) In Tuples
                 Tuple.Field.FieldType.GetProperty("Enabled").SetValue(Tuple.Field.GetValue(Me), Tuple.Value)
             Next
@@ -243,7 +244,7 @@ Public Class FrmMain
     ''' 用來存儲資料來源的訊息
     ''' </summary>
     ''' <returns></returns>
-    Friend Property Source As (Host As String, Username As String, Password As String)
+    Private Property Source As (Host As String, Username As String, Password As String)
         Get
             Return DataSourceInfo
         End Get
@@ -900,11 +901,12 @@ Public Class FrmMain
                 GetType(Record).GetProperty("ProjectMarks").SetValue(Temp, DataReader("Project"))
                 GetType(Record).GetProperty("ExamMarks").SetValue(Temp, DataReader("Exam"))
                 GetType(Record).GetProperty("ID").SetValue(Temp, DataReader("ID"))
-                If DownloadExcepts.LongCount(
-                       Function(Record As Record) As Boolean
-                           Return Record.ID = Temp.ID
-                       End Function
-                   ) = 1 Then
+                Dim DownloadExceptsCount As Long = DownloadExcepts.LongCount(
+                    Function(Record As Record) As Boolean
+                        Return Record.ID = Temp.ID
+                    End Function
+                )
+                If DownloadExceptsCount = 1 Then
                     Continue While
                 Else
                     Dim ExceptEnumerable As IEnumerable(Of Record) = Downloads.Where(
@@ -970,11 +972,12 @@ Public Class FrmMain
                     End Function
                 )
                 If DuplicationEnumerable.LongCount() > 0 Then
-                    If DuplicationEnumerable.LongCount(
-                           Function(Tuple As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                               Return Tuple.IsDuplicated = False
-                           End Function
-                    ) > 0 Then
+                    Dim DuplicationEnumerableCount As Long = DuplicationEnumerable.LongCount(
+                        Function(Tuple As (ID As Integer, IsDuplicated As Integer)) As Boolean
+                            Return Tuple.IsDuplicated = False
+                        End Function
+                    )
+                    If DuplicationEnumerableCount > 0 Then
                         Data.Remove(Data.Where(
                             Function(Record As Record) As Boolean
                                 Return Record.ID = IteratorRecord.ID
@@ -996,13 +999,6 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        For Each Control As Control In Controls
-            If TypeOf Control Is GroupBox Then
-                AddHandler Control.MouseDown, AddressOf AnyFirstLayerSubControls_MouseDown
-                AddHandler Control.MouseMove, AddressOf AnyFirstLayerSubControls_MouseMove
-                AddHandler Control.MouseUp, AddressOf AnyFirstLayerSubControls_MouseUp
-            End If
-        Next
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
                 Return (Tuple.Field, True)
@@ -1119,7 +1115,11 @@ Public Class FrmMain
 
     Private Async Sub BtnDataSourceConnect_Click(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Click
         If Connection = ConnectState.Disconnected Then
-            Dim Result As DialogResult = FrmConnect.ShowDialog(Me)
+            Dim Result As DialogResult = New FrmConnect(
+                Sub(Tuple As (Host As String, Username As String, Password As String))
+                    Source = Tuple
+                End Sub
+            ).ShowDialog(Me)
             If Result = DialogResult.Cancel Then
                 Return
             End If
@@ -1324,7 +1324,7 @@ Public Class FrmMain
         End If
         Dim CaptureMouse As New Point(CType(sender, Control).Location.X + e.Location.X, CType(sender, Control).Location.Y + e.Location.Y)
         '（計算某一控制項的游標相對於表單的位置，即 控制項在表單的位置 + 游標相對於控制項的位置）
-        If CaptureMouse.X >= 23 AndAlso CaptureMouse.X < Size.Width - 23 AndAlso CaptureMouse.Y >= 63 AndAlso CaptureMouse.Y < Size.Height - 23 Then
+        If CaptureMouse.X >= 23 + 100 AndAlso CaptureMouse.X < ClientSize.Width - 23 - 100 AndAlso CaptureMouse.Y >= 63 + 100 AndAlso CaptureMouse.Y < ClientSize.Height - 23 - 100 Then
         Else
             Captured = CaptureMouse
         End If
@@ -1335,8 +1335,12 @@ Public Class FrmMain
             Throw New BranchesShouldNotBeInstantiatedException()
         End If
         If Captured.HasValue Then
+            If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                WindowState = FormWindowState.Normal
+                Return
+            End If
             Location = New Point(Location.X + CType(sender, Control).Location.X + e.Location.X - Captured.Value.X, Location.Y + CType(sender, Control).Location.Y + e.Location.Y - Captured.Value.Y)
-            '（透過 目前游標相對於螢幕的位置 - 游標相對於表單的位置，計算目前的表單位置，目前游標相對於螢幕的位置 即 表單相對於螢幕的位置 + 控制項在表單的位置 + 游標相對於控制項的位置）
+            '（透過 目前游標相對於螢幕的位置 - 游標相對於表單的位置 ，計算目前的表單位置，目前游標相對於螢幕的位置 即 表單相對於螢幕的位置 + [已撇除 - 在最大化模式下補足表單邊界的長度] + 控制項在表單的位置 + 游標相對於控制項的位置）
         End If
     End Sub
 
@@ -1350,18 +1354,19 @@ Public Class FrmMain
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_NCCALCSIZE As Integer = &H83
         Const WM_NCHITTEST As Integer = &H84
+        Const HTNOWHERE As Integer = 0
         Const HTCAPTION As Integer = 2
         Select Case m.Msg
             Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
-                If WindowState = FormWindowState.Maximized Then
-                    Dim X As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
-                    Dim Y As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+                If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                    Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
+                    Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
                     Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
                     Dim Params As Native.NCCALCSIZE_PARAMS = Marshal.PtrToStructure(Of Native.NCCALCSIZE_PARAMS)(m.LParam)
-                    Params.rgrc(0).left += X + Border
-                    Params.rgrc(0).top += Y + Border
-                    Params.rgrc(0).right -= X + Border
-                    Params.rgrc(0).bottom -= Y + Border
+                    Params.rgrc(0).left += XFrame + Border
+                    Params.rgrc(0).top += YFrame + Border
+                    Params.rgrc(0).right -= XFrame + Border
+                    Params.rgrc(0).bottom -= YFrame + Border
                     Marshal.StructureToPtr(Params, m.LParam, True)
                 ElseIf WindowState = FormWindowState.Normal Then
                     LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
@@ -1369,9 +1374,20 @@ Public Class FrmMain
             Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
-                If X >= 23 AndAlso X < Size.Width - 23 AndAlso Y >= 63 AndAlso Y < Size.Height - 23 Then
+                Dim BorderX As Integer = 0
+                Dim BorderY As Integer = 0
+                If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                    Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
+                    Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+                    Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
+                    BorderX = XFrame + Border
+                    BorderY = YFrame + Border
+                End If
+                If X - BorderX >= 23 AndAlso X < Size.Width - 23 - BorderX AndAlso Y - BorderY >= 63 AndAlso Y < Size.Height - 23 - BorderY Then
+                    m.Result = New IntPtr(HTNOWHERE)
+                    Return
                 Else
-                    If X >= Size.Width - 23 AndAlso Y >= Size.Height - 23 Then
+                    If X >= Size.Width - 23 - BorderX AndAlso Y >= Size.Height - 23 - BorderY Then
                         MyBase.WndProc(m)
                     Else
                         m.Result = New IntPtr(HTCAPTION)

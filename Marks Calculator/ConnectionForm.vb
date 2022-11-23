@@ -4,13 +4,20 @@
 
 Public Class FrmConnect
 
+#Region "Fields"
+
+    Private ReadOnly Action As Action(Of (Host As String, Username As String, Password As String))
+
+#End Region
+
 #Region "Constructors"
 
-    Public Sub New()
+    Public Sub New(Action As Action(Of (Host As String, Username As String, Password As String)))
         ' 設計工具需要此呼叫。
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
+        Me.Action = Action
     End Sub
 
 #End Region
@@ -19,9 +26,7 @@ Public Class FrmConnect
 
     Private Sub BtnOK_Click(sender As Object, e As EventArgs) Handles BtnOK.Click
         DialogResult = DialogResult.OK
-        If TryCast(Owner, FrmMain) IsNot Nothing Then
-            TryCast(Owner, FrmMain).Source = (TxtHost.Text, TxtUsername.Text, TxtPassword.Text)
-        End If
+        Action?.Invoke((TxtHost.Text, TxtUsername.Text, TxtPassword.Text))
     End Sub
 
     Private Sub BtnCancel_Click(sender As Object, e As EventArgs) Handles BtnCancel.Click
