@@ -322,7 +322,7 @@ Partial Class FrmMain
         Me.GrpStatistics.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
         Me.GrpStatistics.Location = New System.Drawing.Point(23, 273)
         Me.GrpStatistics.Name = "GrpStatistics"
-        Me.GrpStatistics.Size = New System.Drawing.Size(500, 225)
+        Me.GrpStatistics.Size = New System.Drawing.Size(500, 224)
         Me.GrpStatistics.TabIndex = 4
         Me.GrpStatistics.TabStop = False
         Me.GrpStatistics.Text = "Statistics"
@@ -488,7 +488,7 @@ Partial Class FrmMain
         Me.GrpRecords.Font = New System.Drawing.Font("微軟正黑體", 9.0!)
         Me.GrpRecords.Location = New System.Drawing.Point(529, 172)
         Me.GrpRecords.Name = "GrpRecords"
-        Me.GrpRecords.Size = New System.Drawing.Size(275, 326)
+        Me.GrpRecords.Size = New System.Drawing.Size(275, 325)
         Me.GrpRecords.TabIndex = 6
         Me.GrpRecords.TabStop = False
         Me.GrpRecords.Text = "Records"
@@ -553,14 +553,14 @@ Partial Class FrmMain
         Me.LstRecords.ItemHeight = 16
         Me.LstRecords.Location = New System.Drawing.Point(6, 70)
         Me.LstRecords.Name = "LstRecords"
-        Me.LstRecords.Size = New System.Drawing.Size(263, 202)
+        Me.LstRecords.Size = New System.Drawing.Size(263, 201)
         Me.LstRecords.TabIndex = 7
         '
         'TxtRecordsSearch
         '
         Me.TxtRecordsSearch.Anchor = CType(((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 278)
+        Me.TxtRecordsSearch.Location = New System.Drawing.Point(6, 277)
         Me.TxtRecordsSearch.Name = "TxtRecordsSearch"
         Me.TxtRecordsSearch.Size = New System.Drawing.Size(263, 21)
         Me.TxtRecordsSearch.TabIndex = 8
@@ -569,7 +569,7 @@ Partial Class FrmMain
         '
         Me.ChkRecordsSearch.Anchor = CType((System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left), System.Windows.Forms.AnchorStyles)
         Me.ChkRecordsSearch.AutoSize = True
-        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 305)
+        Me.ChkRecordsSearch.Location = New System.Drawing.Point(6, 304)
         Me.ChkRecordsSearch.Name = "ChkRecordsSearch"
         Me.ChkRecordsSearch.Size = New System.Drawing.Size(155, 15)
         Me.ChkRecordsSearch.TabIndex = 9
@@ -670,7 +670,6 @@ Partial Class FrmMain
         Me.Controls.Add(Me.GrpRecords)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "FrmMain"
-        Me.Padding = New System.Windows.Forms.Padding(20, 60, 20, 19)
         Me.Style = MetroFramework.MetroColorStyle.Green
         Me.Text = "Module Grade"
         Me.Theme = MetroFramework.MetroThemeStyle.Light

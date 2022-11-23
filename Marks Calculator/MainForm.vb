@@ -32,6 +32,16 @@ Public Class FrmMain
     ''' </summary>
     Private Const DebugTimeout As Integer = 1000
 
+    ''' <summary>
+    ''' 表示表單的邊框的粗幼度
+    ''' </summary>
+    Private Const Border As Integer = 20
+
+    ''' <summary>
+    ''' 表示表單的邊框以及標題列的粗幼度
+    ''' </summary>
+    Private Const BorderWithTitle As Integer = Border + 40
+
 #End Region
 
 #Region "Fields"
@@ -1383,11 +1393,11 @@ Public Class FrmMain
                     BorderX = XFrame + Border
                     BorderY = YFrame + Border
                 End If
-                If X - BorderX >= 23 AndAlso X < Size.Width - 23 - BorderX AndAlso Y - BorderY >= 63 AndAlso Y < Size.Height - 23 - BorderY Then
+                If X - BorderX >= Border AndAlso X < Size.Width - Border - BorderX AndAlso Y - BorderY >= BorderWithTitle AndAlso Y < Size.Height - Border - BorderY Then
                     m.Result = New IntPtr(HTNOWHERE)
                     Return
                 Else
-                    If X >= Size.Width - 23 - BorderX AndAlso Y >= Size.Height - 23 - BorderY Then
+                    If X >= Size.Width - Border - BorderX AndAlso Y >= Size.Height - Border - BorderY Then
                         MyBase.WndProc(m)
                     Else
                         m.Result = New IntPtr(HTCAPTION)
