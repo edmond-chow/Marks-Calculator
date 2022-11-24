@@ -62,7 +62,6 @@ Partial Class FrmConnect
         Me.TxtHost.Name = "TxtHost"
         Me.TxtHost.Size = New System.Drawing.Size(150, 23)
         Me.TxtHost.TabIndex = 1
-        Me.TxtHost.Text = "localhost"
         '
         'TxtUsername
         '
@@ -73,7 +72,6 @@ Partial Class FrmConnect
         Me.TxtUsername.Name = "TxtUsername"
         Me.TxtUsername.Size = New System.Drawing.Size(150, 23)
         Me.TxtUsername.TabIndex = 2
-        Me.TxtUsername.Text = "root"
         '
         'LblPassword
         '
@@ -92,7 +90,6 @@ Partial Class FrmConnect
         Me.TxtPassword.Font = New System.Drawing.Font("微軟正黑體", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(136, Byte))
         Me.TxtPassword.Location = New System.Drawing.Point(82, 70)
         Me.TxtPassword.Name = "TxtPassword"
-        Me.TxtPassword.PasswordChar = Global.Microsoft.VisualBasic.ChrW(8226)
         Me.TxtPassword.Size = New System.Drawing.Size(150, 23)
         Me.TxtPassword.TabIndex = 3
         '

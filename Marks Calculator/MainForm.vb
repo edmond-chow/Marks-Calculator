@@ -123,7 +123,7 @@ Public Class FrmMain
         LastSize = Size
         RandomNumberGenerator = New Random()
         Reserved = Nothing
-        DataSourceInfo = Nothing
+        DataSourceInfo = ("localhost", "root", "")
         DataSourceConnection = Nothing
         IsDataControlsLocking = False
         Captured = Nothing
@@ -1126,6 +1126,9 @@ Public Class FrmMain
     Private Async Sub BtnDataSourceConnect_Click(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Click
         If Connection = ConnectState.Disconnected Then
             Dim Result As DialogResult = New FrmConnect(
+                Function()
+                    Return Source
+                End Function,
                 Sub(Tuple As (Host As String, Username As String, Password As String))
                     Source = Tuple
                 End Sub
