@@ -2,8 +2,6 @@
 ' Purpose:      Used to calculate student grades.
 ' Programmer:   Chow Cheuk Hei, Tse Ka Yu on 2 / 10 / 2022
 
-Imports System.Reflection
-
 Public Class FrmConnect
 
 #Region "Constants"
