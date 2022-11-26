@@ -102,9 +102,9 @@ Public Class FrmMain
     Private IsDataControlsLocking As Boolean
 
     ''' <summary>
-    ''' 表示表單拖動前所截取的位置
+    ''' 建立進度條控制項
     ''' </summary>
-    Private Captured As Point?
+    Private ReadOnly PrbMain As ProgressBar
 
 #End Region
 
@@ -126,7 +126,17 @@ Public Class FrmMain
         DataSourceInfo = ("localhost", "root", "")
         DataSourceConnection = Nothing
         IsDataControlsLocking = False
-        Captured = Nothing
+        PrbMain = New ProgressBar() With {
+            .Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right,
+            .Location = New Point(-1, -5),
+            .Name = "PrbMain",
+            .Size = New Size(829, 10),
+            .TabIndex = 0,
+            .Style = ProgressBarStyle.Marquee,
+            .MarqueeAnimationSpeed = 10,
+            .Enabled = False
+        }
+        Controls.Add(PrbMain)
     End Sub
 
 #End Region
@@ -571,23 +581,6 @@ Public Class FrmMain
             Exception = Exception.InnerException
         End While
     End Sub
-
-    Private Function GetLocationOfClient(Relative As Control) As Point
-        Dim [Return] As New Point
-        While Relative IsNot Me
-            [Return] = New Point([Return].X + Relative.Location.X, [Return].Y + Relative.Location.Y)
-            Relative = Relative.Parent
-        End While
-    End Function
-
-    Private Function GetLocationOfClientWithCursor(sender As Object, e As MouseEventArgs) As Point
-        If TypeOf sender IsNot Control Then
-            Throw New BranchesShouldNotBeInstantiatedException()
-        End If
-        Dim LocationOfClient As Point = GetLocationOfClient(CType(sender, Control))
-        Return New Point(LocationOfClient.X + e.Location.X, LocationOfClient.Y + e.Location.Y)
-        '（計算某一控制項的游標相對於表單的位置，即 控制項在表單的位置 + 游標相對於控制項的位置）
-    End Function
 
     Private Shared Async Function DebugTest() As Task
         If Environment.CommandLine.Contains("debug") Then
@@ -1034,7 +1027,6 @@ Public Class FrmMain
         FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: " + Record.CAComponents
         GrpResult.Text += " [" + Record.ModuleResult + "]"
-        PrbMain.ProgressBarStyle = ProgressBarStyle.Marquee
         Await ReadDataFile().ConfigureAwait(True)
         ShowStatistics()
         RecordsSearch(
@@ -1347,33 +1339,6 @@ Public Class FrmMain
             Resizable = WindowState <> FormWindowState.Maximized
         End If
         LastWindowState = WindowState
-    End Sub
-
-    Private Sub AnyFirstLayerSubControls_MouseDown(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseDown
-        Dim CaptureMouse As Point = GetLocationOfClientWithCursor(sender, e)
-        If CaptureMouse.X >= Border AndAlso CaptureMouse.X < ClientSize.Width - Border AndAlso CaptureMouse.Y >= BorderWithTitle AndAlso CaptureMouse.Y < ClientSize.Height - Border Then
-        Else
-            Captured = CaptureMouse
-        End If
-    End Sub
-
-    Private Sub AnyFirstLayerSubControls_MouseMove(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseMove
-        If Captured.HasValue Then
-            If WindowState = FormWindowState.Maximized Then
-                WindowState = FormWindowState.Normal
-            End If
-            Dim LocationOfScreenWithCursor As Point = PointToScreen(GetLocationOfClientWithCursor(sender, e))
-            '（Control.PointToScreen(p As Point) As Point 計算目前游標相對於螢幕的位置）
-            Location = New Point(LocationOfScreenWithCursor.X - Captured.Value.X, LocationOfScreenWithCursor.Y - Captured.Value.Y)
-            '（計算目前游標相對於表單的位置，即 目前游標相對於螢幕的位置 - 游標相對於表單的先前位置）
-        End If
-    End Sub
-
-    Private Sub AnyFirstLayerSubControls_MouseUp(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseUp
-        If TypeOf sender IsNot Control Then
-            Throw New BranchesShouldNotBeInstantiatedException()
-        End If
-        Captured = Nothing
     End Sub
 
     Protected Overrides Sub WndProc(ByRef m As Message)

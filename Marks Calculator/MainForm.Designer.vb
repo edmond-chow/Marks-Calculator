@@ -23,7 +23,6 @@ Partial Class FrmMain
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FrmMain))
-        Me.PrbMain = New MetroFramework.Controls.MetroProgressBar()
         Me.LblName = New MetroFramework.Controls.MetroLabel()
         Me.TxtName = New MetroFramework.Controls.MetroTextBox()
         Me.GrpInput = New System.Windows.Forms.GroupBox()
@@ -88,15 +87,6 @@ Partial Class FrmMain
         Me.GrpDataSource.SuspendLayout()
         Me.PanMain.SuspendLayout()
         Me.SuspendLayout()
-        '
-        'PrbMain
-        '
-        Me.PrbMain.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
-            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.PrbMain.Location = New System.Drawing.Point(0, 0)
-        Me.PrbMain.Name = "PrbMain"
-        Me.PrbMain.Size = New System.Drawing.Size(827, 5)
-        Me.PrbMain.TabIndex = 0
         '
         'LblName
         '
@@ -680,7 +670,6 @@ Partial Class FrmMain
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(827, 520)
         Me.Controls.Add(Me.PanMain)
-        Me.Controls.Add(Me.PrbMain)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "FrmMain"
         Me.Style = MetroFramework.MetroColorStyle.Green
@@ -701,8 +690,6 @@ Partial Class FrmMain
         Me.ResumeLayout(False)
 
     End Sub
-
-    Private WithEvents PrbMain As MetroFramework.Controls.MetroProgressBar
     Private WithEvents LblName As MetroFramework.Controls.MetroLabel
     Private WithEvents TxtName As MetroFramework.Controls.MetroTextBox
     Private WithEvents GrpInput As GroupBox
@@ -751,13 +738,13 @@ Partial Class FrmMain
     Private WithEvents BtnRecordsDown As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsUp As MetroFramework.Controls.MetroButton
     Private WithEvents BtnRecordsSquare As MetroFramework.Controls.MetroButton
-    Friend WithEvents GrpDataSource As GroupBox
+    Private WithEvents GrpDataSource As GroupBox
     Private WithEvents TxtDataSourceTable As MetroFramework.Controls.MetroTextBox
     Private WithEvents TxtDataSourceDatabase As MetroFramework.Controls.MetroTextBox
-    Friend WithEvents LblDataSourceTable As MetroFramework.Controls.MetroLabel
-    Friend WithEvents LblDataSourceDatabase As MetroFramework.Controls.MetroLabel
-    Friend WithEvents BtnDataSourceUpload As MetroFramework.Controls.MetroButton
-    Friend WithEvents BtnDataSourceDownload As MetroFramework.Controls.MetroButton
-    Friend WithEvents BtnDataSourceConnect As MetroFramework.Controls.MetroButton
-    Friend WithEvents PanMain As Panel
+    Private WithEvents LblDataSourceTable As MetroFramework.Controls.MetroLabel
+    Private WithEvents LblDataSourceDatabase As MetroFramework.Controls.MetroLabel
+    Private WithEvents BtnDataSourceUpload As MetroFramework.Controls.MetroButton
+    Private WithEvents BtnDataSourceDownload As MetroFramework.Controls.MetroButton
+    Private WithEvents BtnDataSourceConnect As MetroFramework.Controls.MetroButton
+    Private WithEvents PanMain As Panel
 End Class
