@@ -133,7 +133,7 @@ Public Class FrmMain
             .Size = New Size(829, 10),
             .TabIndex = 0,
             .Style = ProgressBarStyle.Marquee,
-            .MarqueeAnimationSpeed = 10,
+            .MarqueeAnimationSpeed = 1,
             .Enabled = False
         }
         Controls.Add(PrbMain)
