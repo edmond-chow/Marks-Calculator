@@ -288,7 +288,7 @@ Public Class FrmMain
             BtnDataSourceConnect.Tag = State
             If State = ConnectState.Connecting Then
                 BtnDataSourceConnect.Enabled = False
-                TmrMain.Enabled = True
+                Progress = True
             ElseIf State = ConnectState.Connected Then
                 BtnDataSourceConnect.Text = "Disconnect"
                 BtnDataSourceConnect.Enabled = True
@@ -296,10 +296,10 @@ Public Class FrmMain
                 BtnDataSourceDownload.Enabled = True
                 TxtDataSourceDatabase.Enabled = True
                 TxtDataSourceTable.Enabled = True
-                TmrMain.Enabled = False
+                Progress = False
             ElseIf State = ConnectState.Disconnecting Then
                 BtnDataSourceConnect.Enabled = False
-                TmrMain.Enabled = True
+                Progress = True
             ElseIf State = ConnectState.Disconnected Then
                 BtnDataSourceConnect.Text = "Connect"
                 BtnDataSourceConnect.Enabled = True
@@ -307,7 +307,7 @@ Public Class FrmMain
                 BtnDataSourceDownload.Enabled = False
                 TxtDataSourceDatabase.Enabled = False
                 TxtDataSourceTable.Enabled = False
-                TmrMain.Enabled = False
+                Progress = False
             Else
                 Throw New BranchesShouldNotBeInstantiatedException()
             End If
@@ -319,11 +319,7 @@ Public Class FrmMain
     ''' </summary>
     Private WriteOnly Property ConnectLock As Boolean
         Set(State As Boolean)
-            If State Then
-                TmrMain.Enabled = True
-            Else
-                TmrMain.Enabled = False
-            End If
+            Progress = State
             BtnDataSourceConnect.Enabled = Not State
             BtnDataSourceUpload.Enabled = Not State
             BtnDataSourceDownload.Enabled = Not State
@@ -359,6 +355,18 @@ Public Class FrmMain
                 Dim Index As Integer = LstRecords.SelectedIndex
                 LstRecords.SelectedIndex = -1
                 LstRecords.SelectedIndex = Index
+            End If
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' 表示進度條是否顯示
+    ''' </summary>
+    Private WriteOnly Property Progress As Boolean
+        Set(Value As Boolean)
+            TmrMain.Enabled = Value
+            If Value = False Then
+                DrawProgressTrack(CreateGraphics())
             End If
         End Set
     End Property
@@ -421,7 +429,7 @@ Public Class FrmMain
 #Region "Methods"
 
     Private Sub SuspendControls()
-        TmrMain.Enabled = True
+        Progress = True
         Reserved = Selector.ToList()
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
@@ -431,7 +439,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub ResumeControls()
-        TmrMain.Enabled = False
+        Progress = False
         Selector = Reserved
     End Sub
 
