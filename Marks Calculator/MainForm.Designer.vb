@@ -22,6 +22,7 @@ Partial Class FrmMain
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FrmMain))
         Me.LblName = New MetroFramework.Controls.MetroLabel()
         Me.TxtName = New MetroFramework.Controls.MetroTextBox()
@@ -80,6 +81,7 @@ Partial Class FrmMain
         Me.BtnDataSourceDownload = New MetroFramework.Controls.MetroButton()
         Me.BtnDataSourceConnect = New MetroFramework.Controls.MetroButton()
         Me.PanMain = New System.Windows.Forms.Panel()
+        Me.TmrMain = New System.Windows.Forms.Timer(Me.components)
         Me.GrpInput.SuspendLayout()
         Me.GrpResult.SuspendLayout()
         Me.GrpStatistics.SuspendLayout()
@@ -664,6 +666,10 @@ Partial Class FrmMain
         Me.PanMain.Size = New System.Drawing.Size(781, 434)
         Me.PanMain.TabIndex = 7
         '
+        'TmrMain
+        '
+        Me.TmrMain.Interval = 10
+        '
         'FrmMain
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
@@ -747,4 +753,5 @@ Partial Class FrmMain
     Private WithEvents BtnDataSourceDownload As MetroFramework.Controls.MetroButton
     Private WithEvents BtnDataSourceConnect As MetroFramework.Controls.MetroButton
     Private WithEvents PanMain As Panel
+    Private WithEvents TmrMain As Timer
 End Class

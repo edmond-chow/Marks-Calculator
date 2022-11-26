@@ -13,6 +13,7 @@ Imports System.Threading
 Imports System.Data.Common
 Imports MetroFramework.Controls
 Imports MetroFramework.Forms
+Imports MetroFramework.Drawing
 Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports MySql.Data.MySqlClient
@@ -41,6 +42,16 @@ Public Class FrmMain
     ''' 表示表單的邊框以及標題列的粗幼度
     ''' </summary>
     Private Const BorderWithTitle As Integer = Border + 40
+
+    ''' <summary>
+    ''' 表示進度條的闊度
+    ''' </summary>
+    Private Const ProgressBarWidth As Integer = 250
+
+    ''' <summary>
+    ''' 表示進度條的高度
+    ''' </summary>
+    Private Const ProgressBarHeight As Integer = 5
 
 #End Region
 
@@ -102,9 +113,9 @@ Public Class FrmMain
     Private IsDataControlsLocking As Boolean
 
     ''' <summary>
-    ''' 建立進度條控制項
+    ''' 表示進度條的指數
     ''' </summary>
-    Private ReadOnly PrbMain As ProgressBar
+    Private ProgressIndex As Integer
 
 #End Region
 
@@ -126,17 +137,7 @@ Public Class FrmMain
         DataSourceInfo = ("localhost", "root", "")
         DataSourceConnection = Nothing
         IsDataControlsLocking = False
-        PrbMain = New ProgressBar() With {
-            .Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right,
-            .Location = New Point(-1, -5),
-            .Name = "PrbMain",
-            .Size = New Size(829, 10),
-            .TabIndex = 0,
-            .Style = ProgressBarStyle.Marquee,
-            .MarqueeAnimationSpeed = 1,
-            .Enabled = False
-        }
-        Controls.Add(PrbMain)
+        ProgressIndex = 0
     End Sub
 
 #End Region
@@ -287,7 +288,7 @@ Public Class FrmMain
             BtnDataSourceConnect.Tag = State
             If State = ConnectState.Connecting Then
                 BtnDataSourceConnect.Enabled = False
-                PrbMain.Show()
+                TmrMain.Enabled = True
             ElseIf State = ConnectState.Connected Then
                 BtnDataSourceConnect.Text = "Disconnect"
                 BtnDataSourceConnect.Enabled = True
@@ -295,10 +296,10 @@ Public Class FrmMain
                 BtnDataSourceDownload.Enabled = True
                 TxtDataSourceDatabase.Enabled = True
                 TxtDataSourceTable.Enabled = True
-                PrbMain.Hide()
+                TmrMain.Enabled = False
             ElseIf State = ConnectState.Disconnecting Then
                 BtnDataSourceConnect.Enabled = False
-                PrbMain.Show()
+                TmrMain.Enabled = True
             ElseIf State = ConnectState.Disconnected Then
                 BtnDataSourceConnect.Text = "Connect"
                 BtnDataSourceConnect.Enabled = True
@@ -306,7 +307,7 @@ Public Class FrmMain
                 BtnDataSourceDownload.Enabled = False
                 TxtDataSourceDatabase.Enabled = False
                 TxtDataSourceTable.Enabled = False
-                PrbMain.Hide()
+                TmrMain.Enabled = False
             Else
                 Throw New BranchesShouldNotBeInstantiatedException()
             End If
@@ -319,9 +320,9 @@ Public Class FrmMain
     Private WriteOnly Property ConnectLock As Boolean
         Set(State As Boolean)
             If State Then
-                PrbMain.Show()
+                TmrMain.Enabled = True
             Else
-                PrbMain.Hide()
+                TmrMain.Enabled = False
             End If
             BtnDataSourceConnect.Enabled = Not State
             BtnDataSourceUpload.Enabled = Not State
@@ -420,7 +421,7 @@ Public Class FrmMain
 #Region "Methods"
 
     Private Sub SuspendControls()
-        PrbMain.Show()
+        TmrMain.Enabled = True
         Reserved = Selector.ToList()
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
@@ -430,7 +431,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub ResumeControls()
-        PrbMain.Hide()
+        TmrMain.Enabled = False
         Selector = Reserved
     End Sub
 
@@ -1014,6 +1015,20 @@ Public Class FrmMain
         End Try
     End Function
 
+    Private Sub DrawProgressTrack(Paint As Graphics)
+        Dim Boundary As New Rectangle(New Point(0, 0), New Size(ClientSize.Width, ProgressBarHeight))
+        Dim Brusher As New SolidBrush(MetroPaint.GetStyleColor(Style))
+        Paint.FillRectangle(Brusher, Boundary)
+    End Sub
+
+    Private Sub DrawProgressBar(Paint As Graphics, ProgressLocationX As Integer)
+        ProgressLocationX = ProgressLocationX Mod (ClientSize.Width + ProgressBarWidth)
+        ProgressLocationX -= ProgressBarWidth
+        Dim Boundary As New Rectangle(New Point(ProgressLocationX, 0), New Size(ProgressBarWidth, ProgressBarHeight))
+        Dim Brusher As New SolidBrush(Color.GreenYellow)
+        Paint.FillRectangle(Brusher, Boundary)
+    End Sub
+
 #End Region
 
 #Region "Handles"
@@ -1027,6 +1042,7 @@ Public Class FrmMain
         FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: " + Record.CAComponents
         GrpResult.Text += " [" + Record.ModuleResult + "]"
+        WindowButtonsRequest() '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
         Await ReadDataFile().ConfigureAwait(True)
         ShowStatistics()
         RecordsSearch(
@@ -1037,7 +1053,6 @@ Public Class FrmMain
         If Not IsNotTheSame(Data) Then
             ChkRecords.Checked = True
         End If
-        WindowButtonsRequest() '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
         TxtDataSourceDatabase.Text = "marks"
         TxtDataSourceTable.Text = Date.Now.Year.ToString()
         Connection = ConnectState.Disconnected
@@ -1399,6 +1414,13 @@ Public Class FrmMain
             Case Else
                 MyBase.WndProc(m)
         End Select
+    End Sub
+
+    Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
+        ProgressIndex = If(ProgressIndex <= 10000, ProgressIndex + 5, ProgressIndex Mod (ClientSize.Width + ProgressBarWidth))
+        Dim Graphics As Graphics = CreateGraphics()
+        DrawProgressTrack(Graphics)
+        DrawProgressBar(Graphics, ProgressIndex)
     End Sub
 
 #End Region
