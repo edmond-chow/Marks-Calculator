@@ -1355,6 +1355,7 @@ Public Class FrmMain
                 End If
             Next
             If WindowState = FormWindowState.Normal Then
+                Owner.Show() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去分層視窗之底層陰影的修復）
                 FocusMeRequest() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
             Else
                 Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）

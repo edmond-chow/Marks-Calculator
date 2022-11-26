@@ -678,6 +678,7 @@ Partial Class FrmMain
         Me.Controls.Add(Me.PanMain)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "FrmMain"
+        Me.ShadowType = MetroFramework.Forms.MetroForm.MetroFormShadowType.Flat
         Me.Style = MetroFramework.MetroColorStyle.Green
         Me.Text = "Module Grade"
         Me.Theme = MetroFramework.MetroThemeStyle.Light
