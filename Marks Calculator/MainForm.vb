@@ -1341,6 +1341,13 @@ Public Class FrmMain
         End If
     End Sub
 
+    Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
+        ProgressIndex = If(ProgressIndex <= 10000, ProgressIndex + 5, ProgressIndex Mod (ClientSize.Width + ProgressBarWidth))
+        Dim Graphics As Graphics = CreateGraphics() '（透過繪製進度條，保持視窗的標題列位置能夠捕獲相認的訊息）
+        DrawProgressTrack(Graphics)
+        DrawProgressBar(Graphics, ProgressIndex)
+    End Sub
+
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
         If LastWindowState <> WindowState Then
             Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
@@ -1423,13 +1430,6 @@ Public Class FrmMain
             Case Else
                 MyBase.WndProc(m)
         End Select
-    End Sub
-
-    Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
-        ProgressIndex = If(ProgressIndex <= 10000, ProgressIndex + 5, ProgressIndex Mod (ClientSize.Width + ProgressBarWidth))
-        Dim Graphics As Graphics = CreateGraphics()
-        DrawProgressTrack(Graphics)
-        DrawProgressBar(Graphics, ProgressIndex)
     End Sub
 
 #End Region
