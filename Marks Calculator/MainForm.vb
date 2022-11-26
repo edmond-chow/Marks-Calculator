@@ -572,6 +572,23 @@ Public Class FrmMain
         End While
     End Sub
 
+    Private Function GetLocationOfClient(Relative As Control) As Point
+        Dim [Return] As New Point
+        While Relative IsNot Me
+            [Return] = New Point([Return].X + Relative.Location.X, [Return].Y + Relative.Location.Y)
+            Relative = Relative.Parent
+        End While
+    End Function
+
+    Private Function GetLocationOfClientWithCursor(sender As Object, e As MouseEventArgs) As Point
+        If TypeOf sender IsNot Control Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        Dim LocationOfClient As Point = GetLocationOfClient(CType(sender, Control))
+        Return New Point(LocationOfClient.X + e.Location.X, LocationOfClient.Y + e.Location.Y)
+        '（計算某一控制項的游標相對於表單的位置，即 控制項在表單的位置 + 游標相對於控制項的位置）
+    End Function
+
     Private Shared Async Function DebugTest() As Task
         If Environment.CommandLine.Contains("debug") Then
             Await Task.Run(
@@ -1333,11 +1350,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub AnyFirstLayerSubControls_MouseDown(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseDown
-        If TypeOf sender IsNot Control Then
-            Throw New BranchesShouldNotBeInstantiatedException()
-        End If
-        Dim CaptureMouse As New Point(CType(sender, Control).Location.X + e.Location.X, CType(sender, Control).Location.Y + e.Location.Y)
-        '（計算某一控制項的游標相對於表單的位置，即 控制項在表單的位置 + 游標相對於控制項的位置）
+        Dim CaptureMouse As Point = GetLocationOfClientWithCursor(sender, e)
         If CaptureMouse.X >= Border AndAlso CaptureMouse.X < ClientSize.Width - Border AndAlso CaptureMouse.Y >= BorderWithTitle AndAlso CaptureMouse.Y < ClientSize.Height - Border Then
         Else
             Captured = CaptureMouse
@@ -1345,12 +1358,14 @@ Public Class FrmMain
     End Sub
 
     Private Sub AnyFirstLayerSubControls_MouseMove(sender As Object, e As MouseEventArgs) Handles PrbMain.MouseMove
-        If TypeOf sender IsNot Control Then
-            Throw New BranchesShouldNotBeInstantiatedException()
-        End If
         If Captured.HasValue Then
-            Location = New Point(Location.X + CType(sender, Control).Location.X + e.Location.X - Captured.Value.X, Location.Y + CType(sender, Control).Location.Y + e.Location.Y - Captured.Value.Y)
-            '（透過 目前游標相對於螢幕的位置 - 游標相對於表單的位置 ，計算目前的表單位置，目前游標相對於螢幕的位置 即 表單相對於螢幕的位置 + [已撇除 - 在最大化模式下補足表單邊界的長度] + 控制項在表單的位置 + 游標相對於控制項的位置）
+            If WindowState = FormWindowState.Maximized Then
+                WindowState = FormWindowState.Normal
+            End If
+            Dim LocationOfScreenWithCursor As Point = PointToScreen(GetLocationOfClientWithCursor(sender, e))
+            '（Control.PointToScreen(p As Point) As Point 計算目前游標相對於螢幕的位置）
+            Location = New Point(LocationOfScreenWithCursor.X - Captured.Value.X, LocationOfScreenWithCursor.Y - Captured.Value.Y)
+            '（計算目前游標相對於表單的位置，即 目前游標相對於螢幕的位置 - 游標相對於表單的先前位置）
         End If
     End Sub
 
