@@ -379,9 +379,8 @@ Public Class FrmMain
     ''' <returns></returns>
     Protected Overrides ReadOnly Property CreateParams As CreateParams
         Get
-            Const WS_MINIMIZEBOX As Integer = &H20000
             Dim Params As CreateParams = MyBase.CreateParams
-            Params.Style = Params.Style Or WS_MINIMIZEBOX
+            Params.Style = Params.Style Or Native.WS_MINIMIZEBOX
             Return Params
         End Get
     End Property
@@ -1044,6 +1043,20 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim ExStyle As Integer = 0
+        For Each PropertyCreateParams As PropertyInfo In GetType(Panel).GetRuntimeProperties()
+            If PropertyCreateParams.Name = "CreateParams" Then
+                Dim Params As Object = PropertyCreateParams.GetValue(PanMain)
+                For Each PropertyExStyle As PropertyInfo In PropertyCreateParams.PropertyType.GetRuntimeProperties()
+                    If PropertyExStyle.Name = "ExStyle" Then
+                        ExStyle = CType(PropertyExStyle.GetValue(Params), Integer)
+                        Exit For
+                    End If
+                Next
+                Exit For
+            End If
+        Next
+        Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
                 Return (Tuple.Field, True)
@@ -1376,13 +1389,8 @@ Public Class FrmMain
     End Sub
 
     Protected Overrides Sub WndProc(ByRef m As Message)
-        Const WM_NCCALCSIZE As Integer = &H83
-        Const WM_NCHITTEST As Integer = &H84
-        Const WM_NCLBUTTONDBLCLICK As Integer = &HA3
-        Const HTNOWHERE As Integer = 0
-        Const HTCAPTION As Integer = 2
         Select Case m.Msg
-            Case WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
+            Case Native.WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
                 If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
                     Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
                     Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
@@ -1396,7 +1404,7 @@ Public Class FrmMain
                 ElseIf WindowState = FormWindowState.Normal Then
                     LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
                 End If
-            Case WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制）
+            Case Native.WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 Dim BorderX As Integer = 0
@@ -1409,17 +1417,17 @@ Public Class FrmMain
                     BorderY = YFrame + Border
                 End If
                 If X - BorderX >= Border AndAlso X < ClientSize.Width - Border AndAlso Y - BorderY >= BorderWithTitle AndAlso Y < ClientSize.Height - Border Then
-                    m.Result = New IntPtr(HTNOWHERE) '（在視窗中間的內容部分）
+                    m.Result = New IntPtr(Native.HTNOWHERE) '（在視窗中間的內容部分）
                     Return
                 Else
                     If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
                         MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
                     ElseIf WindowState <> FormWindowState.Maximized OrElse Y - BorderY <= BorderWithTitle Then '（限制在最大化時只能夠在標題列拖放）
-                        m.Result = New IntPtr(HTCAPTION) '（在視窗標題列的部分）
+                        m.Result = New IntPtr(Native.HTCAPTION) '（在視窗標題列的部分）
                         Return
                     End If
                 End If
-            Case WM_NCLBUTTONDBLCLICK '（透過對訊息 WM_NCLBUTTONDBLCLICK 的捕獲，實現視窗非客戶端區域雙擊有效範圍的限制）
+            Case Native.WM_NCLBUTTONDBLCLICK '（透過對訊息 WM_NCLBUTTONDBLCLICK 的捕獲，實現視窗非客戶端區域雙擊有效範圍的限制）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 Dim BorderY As Integer = 0
                 If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
@@ -1808,13 +1816,25 @@ Public Class FrmMain
         Public Const SM_CXSIZEFRAME As Integer = 32
         Public Const SM_CYSIZEFRAME As Integer = 33
         Public Const SM_CXPADDEDBORDER As Integer = 92
+        Public Const GWL_EXSTYLE As Integer = -20
+        Public Const WM_NCCALCSIZE As Integer = &H83
+        Public Const WM_NCHITTEST As Integer = &H84
+        Public Const WM_NCLBUTTONDBLCLICK As Integer = &HA3
+        Public Const HTNOWHERE As Integer = 0
+        Public Const HTCAPTION As Integer = 2
+        Public Const WS_MINIMIZEBOX As Integer = &H20000
+        Public Const WS_EX_COMPOSITED As Integer = &H2000000
 
 #End Region
 
 #Region "Decorations"
 
         <DllImport("user32.dll")>
-        Public Shared Function GetSystemMetrics(smIndex As Integer) As Integer
+        Public Shared Function GetSystemMetrics(nIndex As Integer) As Integer
+        End Function
+
+        <DllImport("user32.dll")>
+        Public Shared Function SetWindowLong(hWnd As IntPtr, nIndex As Integer, dwNewLong As Integer) As Integer
         End Function
 
 #End Region
