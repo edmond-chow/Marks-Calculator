@@ -366,7 +366,9 @@ Public Class FrmMain
         Set(Value As Boolean)
             TmrMain.Enabled = Value
             If Value = False Then
-                DrawProgressTrack(CreateGraphics())
+                Dim Graphics As Graphics = CreateGraphics()
+                DrawProgressTrack(Graphics)
+                Graphics.Dispose()
             End If
         End Set
     End Property
@@ -1346,6 +1348,7 @@ Public Class FrmMain
         Dim Graphics As Graphics = CreateGraphics() '（透過繪製進度條，保持視窗的標題列位置能夠捕獲相認的訊息）
         DrawProgressTrack(Graphics)
         DrawProgressBar(Graphics, ProgressIndex)
+        Graphics.Dispose()
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
