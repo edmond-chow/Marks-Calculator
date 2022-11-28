@@ -1043,20 +1043,6 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Dim ExStyle As Integer = 0
-        For Each PropertyCreateParams As PropertyInfo In GetType(Panel).GetRuntimeProperties()
-            If PropertyCreateParams.Name = "CreateParams" Then
-                Dim Params As Object = PropertyCreateParams.GetValue(PanMain)
-                For Each PropertyExStyle As PropertyInfo In PropertyCreateParams.PropertyType.GetRuntimeProperties()
-                    If PropertyExStyle.Name = "ExStyle" Then
-                        ExStyle = CType(PropertyExStyle.GetValue(Params), Integer)
-                        Exit For
-                    End If
-                Next
-                Exit For
-            End If
-        Next
-        Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
                 Return (Tuple.Field, True)
@@ -1080,6 +1066,23 @@ Public Class FrmMain
         TxtDataSourceTable.Text = Date.Now.Year.ToString()
         Connection = ConnectState.Disconnected
         State = FormState.LoadHasFinish
+    End Sub
+
+    Private Sub FrmMain_Paint(sender As Object, e As PaintEventArgs) Handles Me.Paint
+        Dim ExStyle As Integer = 0
+        For Each PropertyCreateParams As PropertyInfo In GetType(Panel).GetRuntimeProperties()
+            If PropertyCreateParams.Name = "CreateParams" Then
+                Dim Params As Object = PropertyCreateParams.GetValue(PanMain)
+                For Each PropertyExStyle As PropertyInfo In PropertyCreateParams.PropertyType.GetRuntimeProperties()
+                    If PropertyExStyle.Name = "ExStyle" Then
+                        ExStyle = CType(PropertyExStyle.GetValue(Params), Integer)
+                        Exit For
+                    End If
+                Next
+                Exit For
+            End If
+        Next
+        Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
     End Sub
 
     Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
