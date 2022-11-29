@@ -287,6 +287,7 @@ Public Class FrmMain
         Set(State As ConnectState)
             BtnDataSourceConnect.Tag = State
             If State = ConnectState.Connecting Then
+                BtnDataSourceConnect.Text = "Connecting"
                 BtnDataSourceConnect.Enabled = False
                 Progress = True
             ElseIf State = ConnectState.Connected Then
@@ -298,6 +299,7 @@ Public Class FrmMain
                 TxtDataSourceTable.Enabled = True
                 Progress = False
             ElseIf State = ConnectState.Disconnecting Then
+                BtnDataSourceConnect.Text = "Disconnecting"
                 BtnDataSourceConnect.Enabled = False
                 Progress = True
             ElseIf State = ConnectState.Disconnected Then
@@ -1196,8 +1198,8 @@ Public Class FrmMain
                 ).ConfigureAwait(True)
                 Connection = ConnectState.Connected
             Catch Exception As Exception
-                Connection = ConnectState.Disconnected
                 ShowException(Exception)
+                Connection = ConnectState.Disconnected
             End Try
         ElseIf Connection = ConnectState.Connected Then
             Connection = ConnectState.Disconnecting
