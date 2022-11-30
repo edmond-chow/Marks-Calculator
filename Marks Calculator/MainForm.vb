@@ -392,7 +392,7 @@ Public Class FrmMain
 #Region "Enumerations"
 
     ''' <summary>
-    ''' 表示控制項正在輸入數據
+    ''' 表示表單或控制項正在輸入數據
     ''' </summary>
     Private Enum IsTyping
         Yes = 1
@@ -400,9 +400,25 @@ Public Class FrmMain
     End Enum
 
     ''' <summary>
-    ''' 表示控制項正在插入數據
+    ''' 表示表單或控制項正在插入數據
     ''' </summary>
     Private Enum IsAdding
+        Yes = 1
+        No = 2
+    End Enum
+
+    ''' <summary>
+    ''' 表示表單或控制項正在重置大小
+    ''' </summary>
+    Private Enum IsResizing
+        Yes = 1
+        No = 2
+    End Enum
+
+    ''' <summary>
+    ''' 表示表單或控制項已進行初始化
+    ''' </summary>
+    Private Enum IsInitialized
         Yes = 1
         No = 2
     End Enum
@@ -698,6 +714,41 @@ Public Class FrmMain
                     End Sub
                 ).ConfigureAwait(True)
                 WindowButtonsRequest()
+                Exit For
+            End If
+        Next
+    End Sub
+
+    Private Async Sub WindowButtonsStyle(Show As Boolean)
+        Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+        Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+        Dim IntegrityCheck(MetroFormButtonTag.GetEnumValues().Length - 1) As (Tag As Object, Validated As Boolean)
+        For i As Integer = 0 To IntegrityCheck.Length - 1
+            IntegrityCheck(i) = (MetroFormButtonTag.GetEnumValues()(i), False)
+        Next
+        For Each Control As Control In Controls
+            If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
+                If Show Then
+                    Control.Show()
+                Else
+                    Control.Hide()
+                End If
+                For i As Integer = 0 To IntegrityCheck.Length - 1
+                    If IntegrityCheck(i).Tag = Control.Tag Then
+                        IntegrityCheck(i) = (IntegrityCheck(i).Tag, True)
+                        Exit For
+                    End If
+                Next
+            End If
+        Next
+        For Each Check As (Object, Validated As Boolean) In IntegrityCheck
+            If Check.Validated = False Then
+                Await Task.Run(
+                    Sub()
+                        Thread.Sleep(1)
+                    End Sub
+                ).ConfigureAwait(True)
+                WindowButtonsStyle(Show)
                 Exit For
             End If
         Next
@@ -1032,10 +1083,9 @@ Public Class FrmMain
         Paint.FillRectangle(Brusher, Boundary)
     End Sub
 
-    Private Sub DrawProgressBar(Paint As Graphics, ProgressLocationX As Integer)
-        ProgressLocationX = ProgressLocationX Mod (ClientSize.Width + ProgressBarWidth)
-        ProgressLocationX -= ProgressBarWidth
-        Dim Boundary As New Rectangle(New Point(ProgressLocationX, 0), New Size(ProgressBarWidth, ProgressBarHeight))
+    Private Sub DrawProgressBar(Paint As Graphics)
+        ProgressIndex = ProgressIndex Mod (ClientSize.Width + ProgressBarWidth)
+        Dim Boundary As New Rectangle(New Point(ProgressIndex - ProgressBarWidth, 0), New Size(ProgressBarWidth, ProgressBarHeight))
         Dim Brusher As New SolidBrush(Color.GreenYellow)
         Paint.FillRectangle(Brusher, Boundary)
     End Sub
@@ -1050,6 +1100,8 @@ Public Class FrmMain
                 Return (Tuple.Field, True)
             End Function
         )
+        Tag = IsResizing.No
+        PanMain.Tag = IsInitialized.No
         FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: " + Record.CAComponents
         GrpResult.Text += " [" + Record.ModuleResult + "]"
@@ -1071,20 +1123,23 @@ Public Class FrmMain
     End Sub
 
     Private Sub FrmMain_Paint(sender As Object, e As PaintEventArgs) Handles Me.Paint
-        Dim ExStyle As Integer = 0
-        For Each PropertyCreateParams As PropertyInfo In GetType(Panel).GetRuntimeProperties()
-            If PropertyCreateParams.Name = "CreateParams" Then
-                Dim Params As Object = PropertyCreateParams.GetValue(PanMain)
-                For Each PropertyExStyle As PropertyInfo In PropertyCreateParams.PropertyType.GetRuntimeProperties()
-                    If PropertyExStyle.Name = "ExStyle" Then
-                        ExStyle = CType(PropertyExStyle.GetValue(Params), Integer)
-                        Exit For
-                    End If
-                Next
-                Exit For
-            End If
-        Next
-        Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
+        If PanMain.Tag = IsInitialized.No Then
+            PanMain.Tag = IsInitialized.Yes
+            Dim ExStyle As Integer = 0
+            For Each PropertyCreateParams As PropertyInfo In GetType(Panel).GetRuntimeProperties()
+                If PropertyCreateParams.Name = "CreateParams" Then
+                    Dim Params As Object = PropertyCreateParams.GetValue(PanMain)
+                    For Each PropertyExStyle As PropertyInfo In PropertyCreateParams.PropertyType.GetRuntimeProperties()
+                        If PropertyExStyle.Name = "ExStyle" Then
+                            ExStyle = CType(PropertyExStyle.GetValue(Params), Integer)
+                            Exit For
+                        End If
+                    Next
+                    Exit For
+                End If
+            Next
+            Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
+        End If
     End Sub
 
     Private Async Sub FrmMain_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
@@ -1362,11 +1417,23 @@ Public Class FrmMain
     End Sub
 
     Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
-        ProgressIndex = If(ProgressIndex <= 10000, ProgressIndex + 5, ProgressIndex Mod (ClientSize.Width + ProgressBarWidth))
-        Dim Graphics As Graphics = CreateGraphics() '（透過繪製進度條，保持視窗的標題列位置能夠捕獲相認的訊息）
-        DrawProgressTrack(Graphics)
-        DrawProgressBar(Graphics, ProgressIndex)
-        Graphics.Dispose()
+        If Tag = IsResizing.No Then
+            Dim Graphics As Graphics = CreateGraphics() '（透過繪製進度條，保持視窗的標題列位置能夠捕獲相認的訊息）
+            DrawProgressTrack(Graphics)
+            DrawProgressBar(Graphics)
+            Graphics.Dispose()
+            ProgressIndex += 5
+        End If
+    End Sub
+
+    Private Sub FrmMain_ResizeBegin(sender As Object, e As EventArgs) Handles Me.ResizeBegin
+        Tag = IsResizing.Yes
+        WindowButtonsStyle(False)
+    End Sub
+
+    Private Sub FrmMain_ResizeEnd(sender As Object, e As EventArgs) Handles Me.ResizeEnd
+        Tag = IsResizing.No
+        WindowButtonsStyle(True)
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
