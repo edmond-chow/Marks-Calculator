@@ -364,7 +364,10 @@ Public Class FrmMain
     ''' <summary>
     ''' 表示進度條是否顯示
     ''' </summary>
-    Private WriteOnly Property Progress As Boolean
+    Private Property Progress As Boolean
+        Get
+            Return TmrMain.Enabled
+        End Get
         Set(Value As Boolean)
             TmrMain.Enabled = Value
             If Value = False Then
@@ -1138,6 +1141,9 @@ Public Class FrmMain
                     Exit For
                 End If
             Next
+            If Native.GetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE) <> ExStyle Then '（驗證 PanMain.CreateParams.ExStyle 為初始狀態）
+                Throw New BranchesShouldNotBeInstantiatedException()
+            End If
             Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
         End If
     End Sub
@@ -1426,14 +1432,25 @@ Public Class FrmMain
         End If
     End Sub
 
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        If Tag = IsResizing.No Then
+            MyBase.OnPaint(e)
+        ElseIf Progress = True Then
+            DrawProgressTrack(e.Graphics)
+            DrawProgressBar(e.Graphics)
+        End If
+    End Sub
+
     Private Sub FrmMain_ResizeBegin(sender As Object, e As EventArgs) Handles Me.ResizeBegin
         Tag = IsResizing.Yes
         WindowButtonsStyle(False)
+        Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, Native.GetWindowLong(Handle, Native.GWL_EXSTYLE) Or Native.WS_EX_COMPOSITED) '（WS_EX_COMPOSITED 只在大小調整時有效）
     End Sub
 
     Private Sub FrmMain_ResizeEnd(sender As Object, e As EventArgs) Handles Me.ResizeEnd
         Tag = IsResizing.No
         WindowButtonsStyle(True)
+        Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, Native.GetWindowLong(Handle, Native.GWL_EXSTYLE) And Not Native.WS_EX_COMPOSITED)
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
@@ -1907,6 +1924,10 @@ Public Class FrmMain
 
         <DllImport("user32.dll")>
         Public Shared Function SetWindowLong(hWnd As IntPtr, nIndex As Integer, dwNewLong As Integer) As Integer
+        End Function
+
+        <DllImport("user32.dll")>
+        Public Shared Function GetWindowLong(hWnd As IntPtr, nIndex As Integer) As Integer
         End Function
 
 #End Region
