@@ -103,11 +103,6 @@ Public Class FrmMain
     Private DataSourceInfo As (Host As String, Username As String, Password As String)
 
     ''' <summary>
-    ''' 用來存儲錯誤的訊息
-    ''' </summary>
-    Private ErrorMessage As (owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon)
-
-    ''' <summary>
     ''' 用來存儲資料來源的執行個體
     ''' </summary>
     Private DataSourceConnection As MySqlConnection
@@ -276,18 +271,6 @@ Public Class FrmMain
         End Get
         Set(Tuple As (Host As String, Username As String, Password As String))
             DataSourceInfo = Tuple
-        End Set
-    End Property
-
-    ''' <summary>
-    ''' 用來存儲錯誤的訊息
-    ''' </summary>
-    Private Property Message As (owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon)
-        Get
-            Return ErrorMessage
-        End Get
-        Set(Tuple As (owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon))
-            ErrorMessage = Tuple
         End Set
     End Property
 
