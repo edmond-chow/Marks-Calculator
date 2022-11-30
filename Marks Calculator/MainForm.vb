@@ -1249,6 +1249,7 @@ Public Class FrmMain
             If Result = DialogResult.Cancel Then
                 Return
             End If
+            Dim Catched As Exception = Nothing
             Try
                 DataSourceConnection = New MySqlConnection("DATASOURCE=" + DataSourceInfo.Host + ";USERNAME=" + DataSourceInfo.Username + ";PASSWORD=" + DataSourceInfo.Password + ";")
                 Connection = ConnectState.Connecting
@@ -1259,9 +1260,19 @@ Public Class FrmMain
                 ).ConfigureAwait(True)
                 Connection = ConnectState.Connected
             Catch Exception As Exception
-                ShowException(Exception)
-                Connection = ConnectState.Disconnected
+                Catched = Exception
             End Try
+            If Catched IsNot Nothing Then
+                While Tag = IsResizing.Yes
+                    Await Task.Run(
+                    Sub()
+                        Thread.Sleep(1)
+                    End Sub
+                )
+                End While
+                ShowException(Catched)
+                Connection = ConnectState.Disconnected
+            End If
         ElseIf Connection = ConnectState.Connected Then
             Connection = ConnectState.Disconnecting
             Await Task.Run(
