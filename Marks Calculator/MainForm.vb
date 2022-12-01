@@ -1304,11 +1304,7 @@ Public Class FrmMain
 
     Private Async Sub BtnDataSourceUpload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceUpload.Click
         ConnectLock = True
-        Try
-            Await Upload().ConfigureAwait(True)
-        Catch Exception As Exception
-
-        End Try
+        Await Upload().ConfigureAwait(True)
         ConnectLock = False
     End Sub
 
