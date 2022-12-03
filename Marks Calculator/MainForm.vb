@@ -53,6 +53,21 @@ Public Class FrmMain
     ''' </summary>
     Private Const ProgressBarHeight As Integer = 5
 
+    ''' <summary>
+    ''' 表示進度條水平位移的變化量
+    ''' </summary>
+    Private Const ProgressBarDeltaX As Integer = 5
+
+    ''' <summary>
+    ''' 表示隨機數的最大值
+    ''' </summary>
+    Private Const RandomNumberMaximum As Integer = 999999999
+
+    ''' <summary>
+    ''' 表示隨機數的最小值
+    ''' </summary>
+    Private Const RandomNumberMinimum As Integer = 100000000
+
 #End Region
 
 #Region "Fields"
@@ -153,7 +168,7 @@ Public Class FrmMain
             Dim MyRecord As Record = (TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
             Dim RandomNumber As Integer = 0
             While True
-                RandomNumber = RandomNumberGenerator.Next(100000000, 999999999)
+                RandomNumber = RandomNumberGenerator.Next(RandomNumberMinimum, RandomNumberMaximum)
                 Dim Count As Long = Data.LongCount(
                     Function(Record As Record) As Boolean
                         Return Record.ID = RandomNumber
@@ -717,7 +732,7 @@ Public Class FrmMain
         End If
     End Sub
 
-    Private Async Sub WindowButtonsRequest()
+    Private Async Sub WindowButtonsRequest(Action As Action(Of Control))
         Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
         Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
         Dim IntegrityCheck(MetroFormButtonTag.GetEnumValues().Length - 1) As (Tag As Object, Validated As Boolean)
@@ -726,7 +741,7 @@ Public Class FrmMain
         Next
         For Each Control As Control In Controls
             If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
-                Control.TabStop = False
+                Action.Invoke(Control)
                 For i As Integer = 0 To IntegrityCheck.Length - 1
                     If IntegrityCheck(i).Tag = Control.Tag Then
                         IntegrityCheck(i) = (IntegrityCheck(i).Tag, True)
@@ -742,42 +757,7 @@ Public Class FrmMain
                         Thread.Sleep(1)
                     End Sub
                 ).ConfigureAwait(True)
-                WindowButtonsRequest()
-                Exit For
-            End If
-        Next
-    End Sub
-
-    Private Async Sub WindowButtonsStyle(Show As Boolean)
-        Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
-        Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-        Dim IntegrityCheck(MetroFormButtonTag.GetEnumValues().Length - 1) As (Tag As Object, Validated As Boolean)
-        For i As Integer = 0 To IntegrityCheck.Length - 1
-            IntegrityCheck(i) = (MetroFormButtonTag.GetEnumValues()(i), False)
-        Next
-        For Each Control As Control In Controls
-            If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
-                If Show Then
-                    Control.Show()
-                Else
-                    Control.Hide()
-                End If
-                For i As Integer = 0 To IntegrityCheck.Length - 1
-                    If IntegrityCheck(i).Tag = Control.Tag Then
-                        IntegrityCheck(i) = (IntegrityCheck(i).Tag, True)
-                        Exit For
-                    End If
-                Next
-            End If
-        Next
-        For Each Check As (Object, Validated As Boolean) In IntegrityCheck
-            If Check.Validated = False Then
-                Await Task.Run(
-                    Sub()
-                        Thread.Sleep(1)
-                    End Sub
-                ).ConfigureAwait(True)
-                WindowButtonsStyle(Show)
+                WindowButtonsRequest(Action)
                 Exit For
             End If
         Next
@@ -1134,7 +1114,12 @@ Public Class FrmMain
         FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: " + Record.CAComponents
         GrpResult.Text += " [" + Record.ModuleResult + "]"
-        WindowButtonsRequest() '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
+        WindowButtonsRequest(
+            Sub(Control As Control)
+                Control.TabStop = False
+            End Sub
+        )
+        '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
         Await ReadDataFile().ConfigureAwait(True)
         ShowStatistics()
         RecordsSearch(
@@ -1457,7 +1442,7 @@ Public Class FrmMain
             DrawProgressTrack(Graphics)
             DrawProgressBar(Graphics)
             Graphics.Dispose()
-            ProgressIndex += 5
+            ProgressIndex += ProgressBarDeltaX
         End If
     End Sub
 
@@ -1477,13 +1462,21 @@ Public Class FrmMain
 
     Private Sub FrmMain_ResizeBegin(sender As Object, e As EventArgs) Handles Me.ResizeBegin
         Tag = IsResizing.Yes
-        WindowButtonsStyle(False)
+        WindowButtonsRequest(
+            Sub(Control As Control)
+                Control.Hide()
+            End Sub
+        )
         Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, Native.GetWindowLong(Handle, Native.GWL_EXSTYLE) Or Native.WS_EX_COMPOSITED) '（WS_EX_COMPOSITED 只在大小調整時有效）
     End Sub
 
     Private Sub FrmMain_ResizeEnd(sender As Object, e As EventArgs) Handles Me.ResizeEnd
         Tag = IsResizing.No
-        WindowButtonsStyle(True)
+        WindowButtonsRequest(
+            Sub(Control As Control)
+                Control.Show()
+            End Sub
+        )
         Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, Native.GetWindowLong(Handle, Native.GWL_EXSTYLE) And Not Native.WS_EX_COMPOSITED)
     End Sub
 
