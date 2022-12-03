@@ -18,6 +18,7 @@ Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports MySql.Data.MySqlClient
 Imports System.Buffers
+Imports MetroFramework
 
 Public Class FrmMain
 
@@ -1461,12 +1462,17 @@ Public Class FrmMain
         End If
     End Sub
 
+    Protected Overrides Sub OnPaintBackground(e As PaintEventArgs)
+        MyBase.OnPaintBackground(e)
+        If Progress = True Then
+            DrawProgressTrack(e.Graphics)
+            DrawProgressBar(e.Graphics)
+        End If
+    End Sub
+
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
         If Tag = IsResizing.No Then
             MyBase.OnPaint(e)
-        ElseIf Progress = True Then
-            DrawProgressTrack(e.Graphics)
-            DrawProgressBar(e.Graphics)
         End If
     End Sub
 
