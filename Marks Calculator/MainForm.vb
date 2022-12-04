@@ -110,7 +110,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 鎖定控制項的保留項
     ''' </summary>
-    Private Reserved As List(Of (FieldInfo, Object))
+    Private Reserved As List(Of (Field As FieldInfo, Value As Object))
 
     ''' <summary>
     ''' 用來存儲資料來源的訊息
@@ -469,7 +469,7 @@ Public Class FrmMain
         Progress = True
         Reserved = Selector.ToList()
         Selector = Selector.Select(
-            Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
+            Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
                 Return (Tuple.Field, False)
             End Function
         )
@@ -1116,7 +1116,7 @@ Public Class FrmMain
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Selector = Selector.Select(
-            Function(Tuple As (Field As FieldInfo, Object)) As (FieldInfo, Object)
+            Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
                 Return (Tuple.Field, True)
             End Function
         )
