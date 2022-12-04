@@ -732,15 +732,26 @@ Public Class FrmMain
         End If
     End Sub
 
-    Private Async Sub WindowButtonsRequest(Action As Action(Of Control))
-        Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+    Private Sub WindowButtonsRequest(Action As Action(Of Control))
         Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-        Dim IntegrityCheck(MetroFormButtonTag.GetEnumValues().Length - 1) As (Tag As Object, Validated As Boolean)
+        WindowButtonsRequest(Action, MetroFormButtonTag.GetEnumValues())
+    End Sub
+
+    Private Async Sub WindowButtonsRequest(Action As Action(Of Control), Validation As Array)
+        Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
+        Dim IntegrityCheck(Validation.Length - 1) As (Tag As Object, Validated As Boolean)
         For i As Integer = 0 To IntegrityCheck.Length - 1
-            IntegrityCheck(i) = (MetroFormButtonTag.GetEnumValues()(i), False)
+            IntegrityCheck(i) = (Validation(i), False)
         Next
         For Each Control As Control In Controls
-            If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag Then
+            Dim TagIsValidated As Boolean = False
+            For Each ValidationTag As Object In Validation
+                If Control.Tag.GetType() = ValidationTag.GetType() AndAlso Control.Tag = ValidationTag Then
+                    TagIsValidated = True
+                    Exit For
+                End If
+            Next
+            If Control.GetType() = MetroFormButtonType AndAlso TagIsValidated = True Then
                 Action.Invoke(Control)
                 For i As Integer = 0 To IntegrityCheck.Length - 1
                     If IntegrityCheck(i).Tag = Control.Tag Then
@@ -750,7 +761,7 @@ Public Class FrmMain
                 Next
             End If
         Next
-        For Each Check As (Object, Validated As Boolean) In IntegrityCheck
+        For Each Check As (Tag As Object, Validated As Boolean) In IntegrityCheck
             If Check.Validated = False Then
                 Await Task.Run(
                     Sub()
@@ -1482,17 +1493,18 @@ Public Class FrmMain
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
         If LastWindowState <> WindowState Then
-            Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
             Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-            For Each Control As Control In Controls '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
-                If Control.GetType() = MetroFormButtonType AndAlso Control.Tag.GetType() = MetroFormButtonTag AndAlso Control.Tag = MetroFormButtonTag.GetEnumValues()(1) Then
+            WindowButtonsRequest(
+                Sub(Control As Control)
                     If WindowState = FormWindowState.Normal Then
                         Control.Text = "1"
                     ElseIf WindowState = FormWindowState.Maximized Then
                         Control.Text = "2"
                     End If
-                End If
-            Next
+                End Sub,
+                New Object() {MetroFormButtonTag.GetEnumValues()(1)}
+            )
+            '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
             If WindowState = FormWindowState.Normal Then
                 Owner.Show() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去分層視窗之底層陰影的修復）
                 FocusMeRequest() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
