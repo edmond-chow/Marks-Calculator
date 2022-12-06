@@ -34,7 +34,6 @@ Public Class FrmConnect
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
-        TxtPassword.PasswordChar = PasswordChar
         Me.Getter = Getter
         Me.Setter = Setter
     End Sub
@@ -60,6 +59,7 @@ Public Class FrmConnect
         TxtHost.Text = Data.Host
         TxtUsername.Text = Data.Username
         TxtPassword.Text = Data.Password
+        TxtPassword.PasswordChar = PasswordChar
     End Sub
 
     Private Sub BtnOK_Click(sender As Object, e As EventArgs) Handles BtnOK.Click

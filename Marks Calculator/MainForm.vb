@@ -132,6 +132,11 @@ Public Class FrmMain
     ''' </summary>
     Private ProgressIndex As Integer
 
+    ''' <summary>
+    ''' 表示連線訊息的表單
+    ''' </summary>
+    Private ReadOnly FrmConnection As FrmConnect
+
 #End Region
 
 #Region "Constructors"
@@ -141,18 +146,15 @@ Public Class FrmMain
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
-        Data = New List(Of Record)()
-        Temp = True
-        DataFile = Nothing
-        State = FormState.Initializing
-        LastWindowState = WindowState
-        LastSize = Size
         RandomNumberGenerator = New Random()
-        Reserved = Nothing
-        DataSourceInfo = ("localhost", "root", "")
-        DataSourceConnection = Nothing
-        IsDataControlsLocking = False
-        ProgressIndex = 0
+        FrmConnection = New FrmConnect(
+            Function()
+                Return Source
+            End Function,
+            Sub(Tuple As (Host As String, Username As String, Password As String))
+                Source = Tuple
+            End Sub
+        )
     End Sub
 
 #End Region
@@ -385,7 +387,9 @@ Public Class FrmMain
         End Get
         Set(Value As Boolean)
             TmrMain.Enabled = Value
-            If Value = False Then
+            If Value Then
+                ProgressIndex = 0
+            Else
                 Dim Graphics As Graphics = CreateGraphics()
                 DrawProgressTrack(Graphics)
                 Graphics.Dispose()
@@ -666,6 +670,8 @@ Public Class FrmMain
 
     Private Async Function ReadDataFile() As Task
         SuspendControls()
+        Data = New List(Of Record)()
+        Temp = True
         Try
             If File.Exists(FileName) Then
                 DataFile = File.Open(FileName, FileMode.Open)
@@ -695,10 +701,11 @@ Public Class FrmMain
             End If
         Catch Exception As Exception
             ShowException(Exception)
-            Data = New List(Of Record)()
+            Data.Clear()
+            DataFile = Nothing
         End Try
         If Not IsNotTheSameID(Data) Then
-            Data = New List(Of Record)()
+            Data.Clear()
         End If
         Await DebugTest().ConfigureAwait(True)
         ResumeControls()
@@ -718,6 +725,8 @@ Public Class FrmMain
         Catch Exception As Exception
             ShowException(Exception)
         End Try
+        Data = Nothing
+        Temp = Nothing
         ResumeControls()
     End Function
 
@@ -1115,6 +1124,10 @@ Public Class FrmMain
 #Region "Handles"
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        State = FormState.Initializing
+        LastWindowState = WindowState
+        LastSize = Size
+        DataSourceInfo = ("localhost", "root", "")
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
                 Return (Tuple.Field, True)
@@ -1144,6 +1157,7 @@ Public Class FrmMain
         TxtDataSourceDatabase.Text = "marks"
         TxtDataSourceTable.Text = Date.Now.Year.ToString()
         Connection = ConnectState.Disconnected
+        DataControlsLock = False
         State = FormState.LoadHasFinish
     End Sub
 
@@ -1260,15 +1274,7 @@ Public Class FrmMain
 
     Private Async Sub BtnDataSourceConnect_Click(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Click
         If Connection = ConnectState.Disconnected Then
-            Dim Result As DialogResult = New FrmConnect(
-                Function()
-                    Return Source
-                End Function,
-                Sub(Tuple As (Host As String, Username As String, Password As String))
-                    Source = Tuple
-                End Sub
-            ).ShowDialog(Me)
-            If Result = DialogResult.Cancel Then
+            If FrmConnection.ShowDialog(Me) = DialogResult.Cancel Then
                 Return
             End If
             Try
