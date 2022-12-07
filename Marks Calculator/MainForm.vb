@@ -839,7 +839,6 @@ Public Class FrmMain
     ''' <returns></returns>
     Private Async Function Upload() As Task
         Try
-            Await DebugTest().ConfigureAwait(False)
             If Data.Count = 0 Then
                 Return
             End If
