@@ -6,18 +6,19 @@ Imports System.IO
 Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Runtime.Serialization
+Imports System.Runtime.CompilerServices
 Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading
 Imports System.Data.Common
+Imports System.Buffers
 Imports MetroFramework.Controls
 Imports MetroFramework.Forms
 Imports MetroFramework.Drawing
 Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports MySql.Data.MySqlClient
-Imports System.Buffers
 
 Public Class FrmMain
 
@@ -67,6 +68,11 @@ Public Class FrmMain
     ''' 表示隨機數的最小值
     ''' </summary>
     Private Const RandomNumberMinimum As Integer = 100000000
+
+    ''' <summary>
+    ''' 原生的上下文
+    ''' </summary>
+    Private ReadOnly OriginalContext As SynchronizationContext
 
 #End Region
 
@@ -155,6 +161,7 @@ Public Class FrmMain
                 Source = Tuple
             End Sub
         )
+        OriginalContext = SynchronizationContext.Current
     End Sub
 
 #End Region
@@ -398,6 +405,16 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
+    ''' 表示表單被創建時的上下文
+    ''' </summary>
+    ''' <returns></returns>
+    Private ReadOnly Property Context As SynchronizationContext
+        Get
+            Return OriginalContext
+        End Get
+    End Property
+
+    ''' <summary>
     ''' 實現 Windows 視窗的最細化功能（對於 Form.FormBorderStyle 為 FormBorderStyle.None 的視窗）
     ''' </summary>
     ''' <returns></returns>
@@ -619,6 +636,10 @@ Public Class FrmMain
         Return True
     End Function
 
+    ''' <summary>
+    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(False)，以便回調至表單的 UI 線程
+    ''' </summary>
+    ''' <param name="Exception"></param>
     Private Sub ShowException(Exception As Exception)
         ShowException(Exception,
             Sub()
@@ -626,7 +647,13 @@ Public Class FrmMain
         )
     End Sub
 
+    ''' <summary>
+    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(False)，以便回調至表單的 UI 線程
+    ''' </summary>
+    ''' <param name="Exception"></param>
+    ''' <param name="Action"></param>
     Private Async Sub ShowException(Exception As Exception, Action As Action)
+        Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
             Await Task.Run(
                 Sub()
@@ -647,7 +674,17 @@ Public Class FrmMain
         Action.Invoke()
     End Sub
 
+    ''' <summary>
+    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(False)，以便回調至表單的 UI 線程
+    ''' </summary>
+    ''' <param name="owner"></param>
+    ''' <param name="text"></param>
+    ''' <param name="caption"></param>
+    ''' <param name="buttons"></param>
+    ''' <param name="icon"></param>
+    ''' <returns></returns>
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
+        Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
             Await Task.Run(
                 Sub()
@@ -658,6 +695,10 @@ Public Class FrmMain
         Return MessageBox.Show(owner, text, caption, buttons, icon)
     End Function
 
+    ''' <summary>
+    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(True)，以便回調至先前的上下文
+    ''' </summary>
+    ''' <returns></returns>
     Private Shared Async Function DebugTest() As Task
         If Environment.CommandLine.Contains("debug") Then
             Await Task.Run(
@@ -798,6 +839,7 @@ Public Class FrmMain
     ''' <returns></returns>
     Private Async Function Upload() As Task
         Try
+            Await DebugTest().ConfigureAwait(False)
             If Data.Count = 0 Then
                 Return
             End If
@@ -805,29 +847,29 @@ Public Class FrmMain
             SqlCommand.Append("CREATE DATABASE IF NOT EXISTS `")
             SqlCommand.Append(TxtDataSourceDatabase.Text)
             SqlCommand.Append("`;")
-            Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(True)
+            Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
             SqlCommand.Clear()
             SqlCommand.Append("CREATE TABLE IF NOT EXISTS `")
             SqlCommand.Append(TxtDataSourceDatabase.Text)
             SqlCommand.Append("`.`")
             SqlCommand.Append(TxtDataSourceTable.Text)
             SqlCommand.Append("`( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL );")
-            Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(True)
+            Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
             SqlCommand.Clear()
             SqlCommand.Append("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '")
             SqlCommand.Append(TxtDataSourceDatabase.Text)
             SqlCommand.Append("' AND TABLE_NAME = '")
             SqlCommand.Append(TxtDataSourceTable.Text)
             SqlCommand.Append("';")
-            Dim DataReader As DbDataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(True)
+            Dim DataReader As DbDataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
             Dim IntegrityCheck() As (Field As Object, Type As Object, Validated As Boolean) = {
                 ("ID", "int", False), ("StudentName", "text", False), ("Test", "double", False), ("Quizzes", "double", False), ("Project", "double", False), ("Exam", "double", False)
             }
-            While Await DataReader.ReadAsync().ConfigureAwait(True)
+            While Await DataReader.ReadAsync().ConfigureAwait(False)
                 For i As Integer = 0 To IntegrityCheck.Length - 1
                     If DataReader("COLUMN_NAME") = IntegrityCheck(i).Field Then
                         If DataReader("DATA_TYPE") <> IntegrityCheck(i).Type Then
-                            Await ShowMessage(Me, "Some of the pairs of a field and data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(True)
+                            Await ShowMessage(Me, "Some of the pairs of a field and data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
                             DataReader.Close()
                             Return
                         End If
@@ -848,7 +890,7 @@ Public Class FrmMain
                     SqlCommand.Append("` ")
                     SqlCommand.Append(IntegrityCheck(i).Type.ToString().ToUpper())
                     SqlCommand.Append(" NOT NULL;")
-                    Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(True)
+                    Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
                 End If
             Next
             Dim DuplicationCheck As New List(Of (ID As Integer, IsDuplicated As Integer))()
@@ -861,9 +903,9 @@ Public Class FrmMain
                 SqlCommand.Append("` WHERE `ID` = '")
                 SqlCommand.Append(Record.ID.ToString())
                 SqlCommand.Append("' AND `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL;")
-                DataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(True)
+                DataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
                 Dim IsDuplicated As Integer = False
-                While Await DataReader.ReadAsync().ConfigureAwait(True)
+                While Await DataReader.ReadAsync().ConfigureAwait(False)
                     Dim Temp As Record = True
                     GetType(Record).GetProperty("StudentName").SetValue(Temp, DataReader("StudentName"))
                     GetType(Record).GetProperty("TestMarks").SetValue(Temp, DataReader("Test"))
@@ -890,7 +932,7 @@ Public Class FrmMain
             )
             Dim Iterator As IEnumerable(Of Record) = Data
             If NotSameCount > 0 Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the local records have the same ""ID"" as one or more than one of the records of the data source, which is not matching the same fields. Would you like to replace it with the local one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(True)
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the local records have the same ""ID"" as one or more than one of the records of the data source, which is not matching the same fields. Would you like to replace it with the local one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
                 If Result = DialogResult.No Then
                     Iterator = Iterator.Where(
                         Function(Record As Record) As Boolean
@@ -919,7 +961,7 @@ Public Class FrmMain
                 SqlCommand.Append("` WHERE `ID` = '")
                 SqlCommand.Append(Duplication.ID.ToString())
                 SqlCommand.Append("' AND `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL;")
-                Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(True)
+                Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
             Next
             For Each Record As Record In Iterator
                 SqlCommand.Clear()
@@ -940,7 +982,7 @@ Public Class FrmMain
                 SqlCommand.Append("', '")
                 SqlCommand.Append(Record.ExamMarks.ToString())
                 SqlCommand.Append("' );")
-                Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(True)
+                Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
             Next
         Catch Exception As Exception
             ShowException(Exception)
@@ -968,17 +1010,17 @@ Public Class FrmMain
             SqlCommand.Append("' AND TABLE_NAME = '")
             SqlCommand.Append(TxtDataSourceTable.Text)
             SqlCommand.Append("';")
-            Dim DataReader As DbDataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(True)
+            Dim DataReader As DbDataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
             Dim IntegrityCheck() As (Field As Object, Type As Object, Validated As Boolean) = {
                 ("ID", "int", False), ("StudentName", "text", False), ("Test", "double", False), ("Quizzes", "double", False), ("Project", "double", False), ("Exam", "double", False)
             }
             Dim TableValidated As Boolean = False
-            While Await DataReader.ReadAsync().ConfigureAwait(True)
+            While Await DataReader.ReadAsync().ConfigureAwait(False)
                 TableValidated = True
                 For i As Integer = 0 To IntegrityCheck.Length - 1
                     If DataReader("COLUMN_NAME") = IntegrityCheck(i).Field Then
                         If DataReader("DATA_TYPE") <> IntegrityCheck(i).Type Then
-                            Await ShowMessage(Me, "Some of the pairs of a field and data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(True)
+                            Await ShowMessage(Me, "Some of the pairs of a field and data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
                             DataReader.Close()
                             Return
                         End If
@@ -989,10 +1031,10 @@ Public Class FrmMain
             DataReader.Close()
             For i As Integer = 0 To IntegrityCheck.Length - 1
                 If TableValidated = False Then
-                    Await ShowMessage(Me, "The table of the data source are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(True)
+                    Await ShowMessage(Me, "The table of the data source are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
                     Return
                 ElseIf IntegrityCheck(i).Validated = False Then
-                    Await ShowMessage(Me, "Some of the fields of the table of the data source are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(True)
+                    Await ShowMessage(Me, "Some of the fields of the table of the data source are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
                     Return
                 End If
             Next
@@ -1002,10 +1044,10 @@ Public Class FrmMain
             SqlCommand.Append("`.`")
             SqlCommand.Append(TxtDataSourceTable.Text)
             SqlCommand.Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL;")
-            DataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(True)
+            DataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
             Dim DownloadExcepts As New List(Of Integer)
             Dim Downloads As New List(Of Record)()
-            While Await DataReader.ReadAsync().ConfigureAwait(True)
+            While Await DataReader.ReadAsync().ConfigureAwait(False)
                 Dim Temp As Record = True
                 GetType(Record).GetProperty("StudentName").SetValue(Temp, DataReader("StudentName"))
                 GetType(Record).GetProperty("TestMarks").SetValue(Temp, DataReader("Test"))
@@ -1057,7 +1099,7 @@ Public Class FrmMain
             )
             Dim Iterator As IEnumerable(Of Record) = Downloads
             If NotSameCount > 0 Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records of the data source have the same ""ID"" as one of the local records, which is not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(True)
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records of the data source have the same ""ID"" as one of the local records, which is not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
                 If Result = DialogResult.No Then
                     Iterator = Iterator.Where(
                         Function(Record As Record) As Boolean
@@ -2022,3 +2064,60 @@ Public Class FrmMain
     End Class
 
 End Class
+
+Friend Module AwaitableObject
+
+#Region "Extension"
+
+    <Extension>
+    Public Function GetAwaiter(Context As SynchronizationContext) As SynchronizationContextAwaiter
+        Return New SynchronizationContextAwaiter(Context)
+    End Function
+
+#End Region
+
+    Public Structure SynchronizationContextAwaiter
+        Implements INotifyCompletion
+
+#Region "Fields"
+
+        Private ReadOnly Context As SynchronizationContext
+
+#End Region
+
+#Region "Constructors"
+
+        Public Sub New(Context As SynchronizationContext)
+            Me.Context = Context
+        End Sub
+
+#End Region
+
+#Region "Properties"
+
+        Public ReadOnly Property IsCompleted As Boolean
+            Get
+                Return Context Is SynchronizationContext.Current
+            End Get
+        End Property
+
+#End Region
+
+#Region "Methods"
+
+        Public Sub OnCompleted(continuation As Action) Implements INotifyCompletion.OnCompleted
+            Context.Post(
+            Sub(State As Object)
+                CType(State, Action).Invoke()
+            End Sub,
+            continuation)
+        End Sub
+
+        Public Sub GetResult()
+        End Sub
+
+#End Region
+
+    End Structure
+
+End Module
