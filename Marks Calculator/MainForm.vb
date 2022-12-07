@@ -1484,7 +1484,6 @@ Public Class FrmMain
                 Control.Hide()
             End Sub
         )
-        Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, Native.GetWindowLong(Handle, Native.GWL_EXSTYLE) Or Native.WS_EX_COMPOSITED) '（WS_EX_COMPOSITED 只在大小調整時有效）
     End Sub
 
     Private Sub FrmMain_ResizeEnd(sender As Object, e As EventArgs) Handles Me.ResizeEnd
@@ -1494,7 +1493,6 @@ Public Class FrmMain
                 Control.Show()
             End Sub
         )
-        Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, Native.GetWindowLong(Handle, Native.GWL_EXSTYLE) And Not Native.WS_EX_COMPOSITED)
     End Sub
 
     Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
