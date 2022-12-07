@@ -18,6 +18,7 @@ Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports MySql.Data.MySqlClient
 Imports System.Buffers
+Imports System.Runtime.CompilerServices
 
 Public Class FrmMain
 
@@ -797,11 +798,11 @@ Public Class FrmMain
     ''' </summary>
     ''' <returns></returns>
     Private Async Function Upload() As Task
-        If Data.Count = 0 Then
-            Return
-        End If
-        Dim SqlCommand As New StringBuilder()
         Try
+            If Data.Count = 0 Then
+                Return
+            End If
+            Dim SqlCommand As New StringBuilder()
             SqlCommand.Append("CREATE DATABASE IF NOT EXISTS `")
             SqlCommand.Append(TxtDataSourceDatabase.Text)
             SqlCommand.Append("`;")
