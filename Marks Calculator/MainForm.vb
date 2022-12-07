@@ -18,7 +18,6 @@ Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports MySql.Data.MySqlClient
 Imports System.Buffers
-Imports System.Runtime.CompilerServices
 
 Public Class FrmMain
 
