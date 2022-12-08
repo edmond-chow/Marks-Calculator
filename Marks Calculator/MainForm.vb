@@ -715,7 +715,9 @@ Public Class FrmMain
             If TypeOf Capture Is SocketException Then
                 Const WSAECONNRESET As Integer = 10054
                 If CType(Capture, SocketException).ErrorCode = WSAECONNRESET Then
-                    Await FleetingBuffer().ConfigureAwait(True)
+                    While DataControlsLock
+                        Await FleetingBuffer().ConfigureAwait(True)
+                    End While
                     BtnDataSourceConnect.PerformClick()
                 End If
                 Exit While
@@ -845,9 +847,6 @@ Public Class FrmMain
     ''' <returns></returns>
     Private Async Function Upload() As Task
         Try
-            If Data.Count = 0 Then
-                Return
-            End If
             Dim SqlCommand As New StringBuilder()
             SqlCommand.Append("CREATE DATABASE IF NOT EXISTS `")
             SqlCommand.Append(TxtDataSourceDatabase.Text)
