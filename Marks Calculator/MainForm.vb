@@ -975,20 +975,7 @@ Public Class FrmMain
                 Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
             Next
         Catch Exception As Exception
-            ShowException(Exception,
-                Async Sub()
-                    If TypeOf Exception Is InvalidOperationException Then
-                        While Connection = ConnectState.Connected
-                            BtnDataSourceConnect.PerformClick()
-                            Await Task.Run(
-                                Sub()
-                                    Thread.Sleep(1)
-                                End Sub
-                            ).ConfigureAwait(True)
-                        End While
-                    End If
-                End Sub
-            )
+            ShowException(Exception)
         End Try
     End Function
 
