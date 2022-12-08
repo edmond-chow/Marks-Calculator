@@ -13,6 +13,7 @@ Imports System.Text.RegularExpressions
 Imports System.Threading
 Imports System.Data.Common
 Imports System.Buffers
+Imports System.Net.Sockets
 Imports MetroFramework.Controls
 Imports MetroFramework.Forms
 Imports MetroFramework.Drawing
@@ -646,11 +647,7 @@ Public Class FrmMain
     Private Async Sub ShowException(Exception As Exception, Action As Action)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
-            Await Task.Run(
-                Sub()
-                    Thread.Sleep(1)
-                End Sub
-            ).ConfigureAwait(True)
+            Await FleetingBuffer().ConfigureAwait(True)
         End While
         While Exception IsNot Nothing
             MessageBox.Show(Me,
@@ -677,11 +674,7 @@ Public Class FrmMain
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
-            Await Task.Run(
-                Sub()
-                    Thread.Sleep(1)
-                End Sub
-            ).ConfigureAwait(True)
+            Await FleetingBuffer().ConfigureAwait(True)
         End While
         Return MessageBox.Show(owner, text, caption, buttons, icon)
     End Function
@@ -699,6 +692,36 @@ Public Class FrmMain
             ).ConfigureAwait(False)
         End If
     End Function
+
+    ''' <summary>
+    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(True)，以便回調至先前的上下文
+    ''' </summary>
+    ''' <returns></returns>
+    Private Shared Async Function FleetingBuffer() As Task
+        Await Task.Run(
+            Sub()
+                Thread.Sleep(1)
+            End Sub
+        ).ConfigureAwait(False)
+    End Function
+
+    ''' <summary>
+    ''' 檢查連線狀態是否被強制中斷
+    ''' </summary>
+    ''' <param name="Capture"></param>
+    Private Async Sub SocketState(Capture As Exception)
+        While Capture IsNot Nothing
+            Capture = Capture.InnerException
+            If TypeOf Capture Is SocketException Then
+                Const WSAECONNRESET As Integer = 10054
+                If CType(Capture, SocketException).ErrorCode = WSAECONNRESET Then
+                    Await FleetingBuffer().ConfigureAwait(True)
+                    BtnDataSourceConnect.PerformClick()
+                End If
+                Exit While
+            End If
+        End While
+    End Sub
 
     Private Async Function ReadDataFile() As Task
         SuspendControls()
@@ -764,11 +787,7 @@ Public Class FrmMain
 
     Private Async Sub FocusMeRequest()
         If FocusMe() = False Then
-            Await Task.Run(
-                Sub()
-                    Thread.Sleep(1)
-                End Sub
-            ).ConfigureAwait(True)
+            Await FleetingBuffer().ConfigureAwait(True)
             FocusMeRequest()
         End If
     End Sub
@@ -804,11 +823,7 @@ Public Class FrmMain
         Next
         For Each Check As (Tag As Object, Validated As Boolean) In IntegrityCheck
             If Check.Validated = False Then
-                Await Task.Run(
-                    Sub()
-                        Thread.Sleep(1)
-                    End Sub
-                ).ConfigureAwait(True)
+                Await FleetingBuffer().ConfigureAwait(True)
                 WindowButtonsRequest(Action)
                 Exit For
             End If
@@ -976,6 +991,7 @@ Public Class FrmMain
             Next
         Catch Exception As Exception
             ShowException(Exception)
+            Throw
         End Try
     End Function
 
@@ -1135,6 +1151,7 @@ Public Class FrmMain
             Next
         Catch Exception As Exception
             ShowException(Exception)
+            Throw
         End Try
     End Function
 
@@ -1222,19 +1239,11 @@ Public Class FrmMain
             e.Cancel = True
             If Connection = ConnectState.Connected Then
                 While DataControlsLock
-                    Await Task.Run(
-                        Sub()
-                            Thread.Sleep(1)
-                        End Sub
-                    ).ConfigureAwait(True)
+                    Await FleetingBuffer().ConfigureAwait(True)
                 End While
                 BtnDataSourceConnect.PerformClick()
                 While Connection <> ConnectState.Disconnected
-                    Await Task.Run(
-                        Sub()
-                            Thread.Sleep(1)
-                        End Sub
-                    ).ConfigureAwait(True)
+                    Await FleetingBuffer().ConfigureAwait(True)
                 End While
             End If
             Await WriteDataFile().ConfigureAwait(True)
@@ -1338,13 +1347,21 @@ Public Class FrmMain
 
     Private Async Sub BtnDataSourceUpload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceUpload.Click
         ConnectLock = True
-        Await Upload().ConfigureAwait(True)
+        Try
+            Await Upload().ConfigureAwait(True)
+        Catch Exception As Exception
+            SocketState(Exception)
+        End Try
         ConnectLock = False
     End Sub
 
     Private Async Sub BtnDataSourceDownload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceDownload.Click
         ConnectLock = True
-        Await Download().ConfigureAwait(True)
+        Try
+            Await Download().ConfigureAwait(True)
+        Catch Exception As Exception
+            SocketState(Exception)
+        End Try
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         ShowStatistics()
         RecordsSearch(
