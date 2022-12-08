@@ -636,10 +636,6 @@ Public Class FrmMain
         Return True
     End Function
 
-    ''' <summary>
-    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(False)，以便回調至表單的 UI 線程
-    ''' </summary>
-    ''' <param name="Exception"></param>
     Private Sub ShowException(Exception As Exception)
         ShowException(Exception,
             Sub()
@@ -647,11 +643,6 @@ Public Class FrmMain
         )
     End Sub
 
-    ''' <summary>
-    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(False)，以便回調至表單的 UI 線程
-    ''' </summary>
-    ''' <param name="Exception"></param>
-    ''' <param name="Action"></param>
     Private Async Sub ShowException(Exception As Exception, Action As Action)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
@@ -984,7 +975,20 @@ Public Class FrmMain
                 Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
             Next
         Catch Exception As Exception
-            ShowException(Exception)
+            ShowException(Exception,
+                Async Sub()
+                    If TypeOf Exception Is InvalidOperationException Then
+                        While Connection = ConnectState.Connected
+                            BtnDataSourceConnect.PerformClick()
+                            Await Task.Run(
+                                Sub()
+                                    Thread.Sleep(1)
+                                End Sub
+                            ).ConfigureAwait(True)
+                        End While
+                    End If
+                End Sub
+            )
         End Try
     End Function
 
