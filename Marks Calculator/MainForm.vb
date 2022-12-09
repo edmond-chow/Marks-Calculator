@@ -637,14 +637,7 @@ Public Class FrmMain
         Return True
     End Function
 
-    Private Sub ShowException(Exception As Exception)
-        ShowException(Exception,
-            Sub()
-            End Sub
-        )
-    End Sub
-
-    Private Async Sub ShowException(Exception As Exception, Action As Action)
+    Private Async Sub ShowException(Exception As Exception)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
             Await FleetingBuffer().ConfigureAwait(True)
@@ -659,7 +652,6 @@ Public Class FrmMain
             , Exception.Source, MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
             Exception = Exception.InnerException
         End While
-        Action.Invoke()
     End Sub
 
     ''' <summary>
@@ -873,7 +865,7 @@ Public Class FrmMain
                 For i As Integer = 0 To IntegrityCheck.Length - 1
                     If DataReader("COLUMN_NAME") = IntegrityCheck(i).Field Then
                         If DataReader("DATA_TYPE") <> IntegrityCheck(i).Type Then
-                            Await ShowMessage(Me, "Some of the pairs of a field and data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                            Await ShowMessage(Me, "Some of the pairs of a field and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
                             DataReader.Close()
                             Return
                         End If
@@ -1025,7 +1017,7 @@ Public Class FrmMain
                 For i As Integer = 0 To IntegrityCheck.Length - 1
                     If DataReader("COLUMN_NAME") = IntegrityCheck(i).Field Then
                         If DataReader("DATA_TYPE") <> IntegrityCheck(i).Type Then
-                            Await ShowMessage(Me, "Some of the pairs of a field and data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                            Await ShowMessage(Me, "Some of the pairs of a field and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
                             DataReader.Close()
                             Return
                         End If
@@ -1327,11 +1319,8 @@ Public Class FrmMain
                 ).ConfigureAwait(True)
                 Connection = ConnectState.Connected
             Catch Exception As Exception
-                ShowException(Exception,
-                    Sub()
-                        Connection = ConnectState.Disconnected
-                    End Sub
-                )
+                ShowException(Exception)
+                Connection = ConnectState.Disconnected
             End Try
         ElseIf Connection = ConnectState.Connected Then
             Connection = ConnectState.Disconnecting
