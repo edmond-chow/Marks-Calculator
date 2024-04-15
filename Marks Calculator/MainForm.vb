@@ -130,6 +130,11 @@ Public Class FrmMain
     Private DataSourceConnection As MySqlConnection
 
     ''' <summary>
+    ''' 用來存儲資料來源讀取器的執行個體
+    ''' </summary>
+    Private DataReader As DbDataReader
+
+    ''' <summary>
     ''' 用來表示數據正在鎖定的執行個體
     ''' </summary>
     Private IsDataControlsLocking As Boolean
@@ -384,6 +389,70 @@ Public Class FrmMain
                 LstRecords.SelectedIndex = Index
             End If
         End Set
+    End Property
+
+    Private ReadOnly Property UploadCmd As String
+        Get
+            Dim Db As String = TxtDataSourceDatabase.Text
+            Dim Tb As String = TxtDataSourceTable.Text
+            Dim Nl As String = Environment.NewLine
+            Dim Result As New StringBuilder()
+            Result.Append("CREATE DATABASE IF NOT EXISTS `").Append(Db).Append("`; ").Append(Nl) ' ALTER TABLE `marks`.`2024` ADD CONSTRAINT PRIMARY KEY (Exam)
+            Result.Append("CREATE TABLE IF NOT EXISTS `").Append(Db).Append("`.`").Append(Tb).Append("`( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
+            Result.Append("IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE ( TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' ) AND ( ( COLUMN_NAME = 'ID' AND NOT DATA_TYPE = 'INT' ) OR ( COLUMN_NAME = 'StudentName' AND NOT DATA_TYPE = 'TEXT' ) OR ( COLUMN_NAME = 'Test' AND NOT DATA_TYPE = 'DOUBLE' ) OR ( COLUMN_NAME = 'Quizzes' AND NOT DATA_TYPE = 'DOUBLE' ) OR ( COLUMN_NAME = 'Project' AND NOT DATA_TYPE = 'DOUBLE' ) OR ( COLUMN_NAME = 'Exam' AND NOT DATA_TYPE = 'DOUBLE' ) ) ) THEN ").Append(Nl)
+            Result.Append("    IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
+            Result.Append("    IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' ) THEN ").Append(Nl)
+            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `StudentName` TEXT NOT NULL; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
+            Result.Append("    IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' ) THEN ").Append(Nl)
+            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Test` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
+            Result.Append("    IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' ) THEN ").Append(Nl)
+            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Quizzes` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
+            Result.Append("    IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' ) THEN ").Append(Nl)
+            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Project` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
+            Result.Append("    IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' ) THEN ").Append(Nl)
+            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Exam` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
+            For Each Record In Data
+                Result.Append("    INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("`( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+            Next
+            Result.Append("ELSE ").Append(Nl)
+            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("END IF; ").Append(Nl)
+            Return Result.ToString()
+        End Get
+    End Property
+
+    Private ReadOnly Property DownloadCmd As String
+        Get
+            Dim Db As String = TxtDataSourceDatabase.Text
+            Dim Tb As String = TxtDataSourceTable.Text
+            Dim Nl As String = Environment.NewLine
+            Dim Result As New StringBuilder()
+            Result.Append("IF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND TABLE_TYPE = 'BASE TABLE' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 2 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND DATA_TYPE = 'INT' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND DATA_TYPE = 'TEXT' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSE ").Append(Nl)
+            Result.Append("    SELECT DISTINCT * FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL; ").Append(Nl)
+            Result.Append("END IF; ").Append(Nl)
+            Return Result.ToString()
+        End Get
     End Property
 
     ''' <summary>
@@ -824,227 +893,39 @@ Public Class FrmMain
         Next
     End Sub
 
-    ''' <summary>
-    ''' 把本地的數據上傳到資料來源中的某一個表格將會保證以下事項：<br></br>
-    ''' <br></br>
-    ''' 1. 如果相應的資料庫不存在則會建立一個<br></br>
-    ''' 2. 如果相應的表格不存在則會建立一個<br></br>
-    ''' 3. 在相應的表格當中查找表格所包含的欄位，並確保相應的欄位是存在的，以及驗證相應的欄位是具有正確的資料類型，如果不能滿足上述條件則會終止流程<br></br>
-    ''' 4. 如果表格不存在相應的欄位，則會重新加入<br></br>
-    ''' 5. 檢查本地的數據與資料庫的數據中具有相同 ID 的數據，其中不會篩選到資料庫的數據中任何一個欄位當中為 Null 的數據，然後把其中的 ID 記錄下來，然後檢查一筆或多筆在資料來源中的數據與本地具有相同 ID 的唯一數據，加上重複性標誌。<br></br>
-    ''' 6. 如果重覆性標誌不只是數據的重複，則會詢問是否需要撇除本地數據的取代或終止流程<br></br>
-    ''' 7. 把重複的數據從數據庫中移除<br></br>
-    ''' 8. 把經過篩選的數據上傳到數據庫
-    ''' </summary>
-    ''' <returns></returns>
     Private Async Function Upload() As Task
         Try
-            Dim SqlCommand As New StringBuilder()
-            SqlCommand.Append("CREATE DATABASE IF NOT EXISTS `")
-            SqlCommand.Append(TxtDataSourceDatabase.Text)
-            SqlCommand.Append("`;")
-            Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
-            SqlCommand.Clear()
-            SqlCommand.Append("CREATE TABLE IF NOT EXISTS `")
-            SqlCommand.Append(TxtDataSourceDatabase.Text)
-            SqlCommand.Append("`.`")
-            SqlCommand.Append(TxtDataSourceTable.Text)
-            SqlCommand.Append("`( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL );")
-            Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
-            SqlCommand.Clear()
-            SqlCommand.Append("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '")
-            SqlCommand.Append(TxtDataSourceDatabase.Text)
-            SqlCommand.Append("' AND TABLE_NAME = '")
-            SqlCommand.Append(TxtDataSourceTable.Text)
-            SqlCommand.Append("';")
-            Dim DataReader As DbDataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
-            Dim IntegrityCheck() As (Field As Object, Type As Object, Validated As Boolean) = {
-                ("ID", "int", False), ("StudentName", "text", False), ("Test", "double", False), ("Quizzes", "double", False), ("Project", "double", False), ("Exam", "double", False)
-            }
-            While Await DataReader.ReadAsync().ConfigureAwait(False)
-                For i As Integer = 0 To IntegrityCheck.Length - 1
-                    If DataReader("COLUMN_NAME") = IntegrityCheck(i).Field Then
-                        If DataReader("DATA_TYPE") <> IntegrityCheck(i).Type Then
-                            Await ShowMessage(Me, "Some of the pairs of a field and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
-                            DataReader.Close()
-                            Return
-                        End If
-                        IntegrityCheck(i) = (IntegrityCheck(i).Field, IntegrityCheck(i).Type, True)
-                    End If
-                Next
-            End While
-            DataReader.Close()
-            For i As Integer = 0 To IntegrityCheck.Length - 1
-                If IntegrityCheck(i).Validated = False Then
-                    SqlCommand.Clear()
-                    SqlCommand.Append("ALTER TABLE `")
-                    SqlCommand.Append(TxtDataSourceDatabase.Text)
-                    SqlCommand.Append("`.`")
-                    SqlCommand.Append(TxtDataSourceTable.Text)
-                    SqlCommand.Append("` ADD `")
-                    SqlCommand.Append(IntegrityCheck(i).Field.ToString())
-                    SqlCommand.Append("` ")
-                    SqlCommand.Append(IntegrityCheck(i).Type.ToString().ToUpper())
-                    SqlCommand.Append(" NOT NULL;")
-                    Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
-                End If
-            Next
-            Dim DuplicationCheck As New List(Of (ID As Integer, IsDuplicated As Integer))()
-            For Each Record As Record In Data
-                SqlCommand.Clear()
-                SqlCommand.Append("SELECT * FROM `")
-                SqlCommand.Append(TxtDataSourceDatabase.Text)
-                SqlCommand.Append("`.`")
-                SqlCommand.Append(TxtDataSourceTable.Text)
-                SqlCommand.Append("` WHERE `ID` = '")
-                SqlCommand.Append(Record.ID.ToString())
-                SqlCommand.Append("' AND `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL;")
-                DataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
-                Dim IsDuplicated As Integer = False
-                While Await DataReader.ReadAsync().ConfigureAwait(False)
-                    Dim Temp As Record = True
-                    GetType(Record).GetProperty("StudentName").SetValue(Temp, DataReader("StudentName"))
-                    GetType(Record).GetProperty("TestMarks").SetValue(Temp, DataReader("Test"))
-                    GetType(Record).GetProperty("QuizzesMarks").SetValue(Temp, DataReader("Quizzes"))
-                    GetType(Record).GetProperty("ProjectMarks").SetValue(Temp, DataReader("Project"))
-                    GetType(Record).GetProperty("ExamMarks").SetValue(Temp, DataReader("Exam"))
-                    GetType(Record).GetProperty("ID").SetValue(Temp, DataReader("ID"))
-                    If Record <> Temp Then
-                        DuplicationCheck.Add((Record.ID, False))
-                        IsDuplicated = False
-                        Exit While
-                    End If
-                    IsDuplicated = True
-                End While
-                If IsDuplicated Then
-                    DuplicationCheck.Add((Record.ID, True))
-                End If
-                DataReader.Close()
-            Next
-            Dim NotSameCount As Long = DuplicationCheck.LongCount(
-                Function(Check As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                    Return Not Check.IsDuplicated
-                End Function
-            )
-            Dim Iterator As IEnumerable(Of Record) = Data
-            If NotSameCount > 0 Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the local records have the same ""ID"" as one or more than one of the records of the data source, which is not matching the same fields. Would you like to replace it with the local one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
-                If Result = DialogResult.No Then
-                    Iterator = Iterator.Where(
-                        Function(Record As Record) As Boolean
-                            Return DuplicationCheck.LongCount(
-                                Function(Duplication As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                                    Return Duplication.ID = Record.ID AndAlso Duplication.IsDuplicated = False
-                                End Function
-                            ) = 0
-                        End Function
-                    ).ToList()
-                    DuplicationCheck = DuplicationCheck.Where(
-                        Function(Duplication As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                            Return Duplication.IsDuplicated
-                        End Function
-                    ).ToList()
-                ElseIf Result = DialogResult.Cancel Then
-                    Return
-                End If
+            DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
+            If Await DataReader.ReadAsync().ConfigureAwait(False) AndAlso DataReader.GetSchemaTable().Columns("ERROR_CODE") IsNot Nothing Then
+                Select Case DataReader("ERROR_CODE")
+                    Case 1
+                        Await ShowMessage(Me, "Some of the fields and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                End Select
             End If
-            For Each Duplication As (ID As Integer, IsDuplicated As Integer) In DuplicationCheck
-                SqlCommand.Clear()
-                SqlCommand.Append("DELETE FROM `")
-                SqlCommand.Append(TxtDataSourceDatabase.Text)
-                SqlCommand.Append("`.`")
-                SqlCommand.Append(TxtDataSourceTable.Text)
-                SqlCommand.Append("` WHERE `ID` = '")
-                SqlCommand.Append(Duplication.ID.ToString())
-                SqlCommand.Append("' AND `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL;")
-                Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
-            Next
-            For Each Record As Record In Iterator
-                SqlCommand.Clear()
-                SqlCommand.Append("INSERT INTO `")
-                SqlCommand.Append(TxtDataSourceDatabase.Text)
-                SqlCommand.Append("`.`")
-                SqlCommand.Append(TxtDataSourceTable.Text)
-                SqlCommand.Append("`( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '")
-                SqlCommand.Append(Record.ID.ToString())
-                SqlCommand.Append("', '")
-                SqlCommand.Append(Record.StudentName)
-                SqlCommand.Append("', '")
-                SqlCommand.Append(Record.TestMarks.ToString())
-                SqlCommand.Append("', '")
-                SqlCommand.Append(Record.QuizzesMarks.ToString())
-                SqlCommand.Append("', '")
-                SqlCommand.Append(Record.ProjectMarks.ToString())
-                SqlCommand.Append("', '")
-                SqlCommand.Append(Record.ExamMarks.ToString())
-                SqlCommand.Append("' );")
-                Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteScalarAsync().ConfigureAwait(False)
-            Next
+            DataReader.Close()
         Catch Exception As Exception
             ShowException(Exception)
+            If DataReader IsNot Nothing AndAlso DataReader.IsClosed = False Then
+                DataReader.Close()
+            End If
             Throw
         End Try
     End Function
 
-    ''' <summary>
-    ''' 把資料來源中的某一個表格的數據下載到本地將會保證以下事項：<br></br>
-    ''' <br></br>
-    ''' 1. 在相應的表格當中查找表格所包含的欄位，並確保相應的欄位是存在的，以及驗證相應的欄位是具有正確的資料類型，如果不能滿足上述條件則會終止流程<br></br>
-    ''' 2. 如果表格不存在，則會終止流程<br></br>
-    ''' 3. 如果表格不存在相應的欄位，則會終止流程<br></br>
-    ''' 4. 從資料來源當中提取數據，其中不會篩選到資料庫的數據中任何一個欄位當中為 Null 的數據<br></br>
-    ''' 5. 把已提取的數據進行篩選，如果部分數據具有相同的 ID 並且其他的欄位完全相同，則會保留在已提取的數據中，否則把這些已提取數據的從中移除，並把這個共同的 ID 存放在撇除的列表當中<br></br>
-    ''' 6. 檢查本地的數據與已提取的數據中具有相同 ID 的數據，然後把其中的 ID 記錄下來，然後檢查已提取的數據與本地具有相同 ID 的數據，加上重複性標誌。<br></br>
-    ''' 7. 如果重覆性標誌不只是數據的重複，則會詢問是否需要撇除已提取數據的取代或終止流程<br></br>
-    ''' 8. 把經過篩選的已提取數據寫入到本地的數據
-    ''' </summary>
-    ''' <returns></returns>
     Private Async Function Download() As Task
         Try
-            Dim SqlCommand As New StringBuilder()
-            SqlCommand.Append("SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '")
-            SqlCommand.Append(TxtDataSourceDatabase.Text)
-            SqlCommand.Append("' AND TABLE_NAME = '")
-            SqlCommand.Append(TxtDataSourceTable.Text)
-            SqlCommand.Append("';")
-            Dim DataReader As DbDataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
-            Dim IntegrityCheck() As (Field As Object, Type As Object, Validated As Boolean) = {
-                ("ID", "int", False), ("StudentName", "text", False), ("Test", "double", False), ("Quizzes", "double", False), ("Project", "double", False), ("Exam", "double", False)
-            }
-            Dim TableValidated As Boolean = False
-            While Await DataReader.ReadAsync().ConfigureAwait(False)
-                TableValidated = True
-                For i As Integer = 0 To IntegrityCheck.Length - 1
-                    If DataReader("COLUMN_NAME") = IntegrityCheck(i).Field Then
-                        If DataReader("DATA_TYPE") <> IntegrityCheck(i).Type Then
-                            Await ShowMessage(Me, "Some of the pairs of a field and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
-                            DataReader.Close()
-                            Return
-                        End If
-                        IntegrityCheck(i) = (IntegrityCheck(i).Field, IntegrityCheck(i).Type, True)
-                    End If
-                Next
-            End While
-            DataReader.Close()
-            For i As Integer = 0 To IntegrityCheck.Length - 1
-                If TableValidated = False Then
-                    Await ShowMessage(Me, "The table of the data source are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
-                    Return
-                ElseIf IntegrityCheck(i).Validated = False Then
-                    Await ShowMessage(Me, "Some of the fields of the table of the data source are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
-                    Return
-                End If
-            Next
-            SqlCommand.Clear()
-            SqlCommand.Append("SELECT * FROM `")
-            SqlCommand.Append(TxtDataSourceDatabase.Text)
-            SqlCommand.Append("`.`")
-            SqlCommand.Append(TxtDataSourceTable.Text)
-            SqlCommand.Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL;")
-            DataReader = Await New MySqlCommand(SqlCommand.ToString(), DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
-            Dim DownloadExcepts As New List(Of Integer)
-            Dim Downloads As New List(Of Record)()
-            While Await DataReader.ReadAsync().ConfigureAwait(False)
+            DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
+            If Await DataReader.ReadAsync().ConfigureAwait(False) AndAlso DataReader.GetSchemaTable().Columns("ERROR_CODE") IsNot Nothing Then
+                Select Case DataReader("ERROR_CODE")
+                    Case 2
+                        Await ShowMessage(Me, "The data source or the table are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                    Case 3
+                        Await ShowMessage(Me, "Some of the fields may not exist and its data type may not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                End Select
+            End If
+            Dim SourceDownload As New List(Of Record)()
+            Dim Keys As New HashSet(Of Integer)()
+            Do
                 Dim Temp As Record = True
                 GetType(Record).GetProperty("StudentName").SetValue(Temp, DataReader("StudentName"))
                 GetType(Record).GetProperty("TestMarks").SetValue(Temp, DataReader("Test"))
@@ -1052,96 +933,59 @@ Public Class FrmMain
                 GetType(Record).GetProperty("ProjectMarks").SetValue(Temp, DataReader("Project"))
                 GetType(Record).GetProperty("ExamMarks").SetValue(Temp, DataReader("Exam"))
                 GetType(Record).GetProperty("ID").SetValue(Temp, DataReader("ID"))
-                Dim DownloadExceptsCount As Long = DownloadExcepts.LongCount(
-                    Function(Record As Record) As Boolean
-                        Return Record.ID = Temp.ID
-                    End Function
-                )
-                If DownloadExceptsCount = 1 Then
-                    Continue While
-                Else
-                    Dim ExceptEnumerable As IEnumerable(Of Record) = Downloads.Where(
-                        Function(Record As Record) As Boolean
-                            Return Record.ID = Temp.ID
-                        End Function
-                    )
-                    If ExceptEnumerable.LongCount() = 1 Then
-                        Dim Except As Record = ExceptEnumerable.Single()
-                        If Except <> Temp Then
-                            Downloads.Remove(Except)
-                            DownloadExcepts.Add(Except.ID)
-                        End If
-                        Continue While
-                    Else
-                        Downloads.Add(Temp)
-                    End If
-                End If
-            End While
+                SourceDownload.Add(Temp)
+                Keys.Add(Temp.ID)
+            Loop While Await DataReader.ReadAsync().ConfigureAwait(False)
             DataReader.Close()
-            Dim DuplicationCheck As New List(Of (ID As Integer, IsDuplicated As Integer))()
-            For Each DataRecord As Record In Data
-                Dim Enumerable As IEnumerable(Of Record) = Downloads.Where(
-                    Function(Record As Record) As Boolean
-                        Return Record.ID = DataRecord.ID
-                    End Function
-                )
-                If Enumerable.LongCount() = 1 Then
-                    DuplicationCheck.Add((Enumerable.Single().ID, Enumerable.Single() = DataRecord))
-                End If
-            Next
-            Dim NotSameCount As Long = DuplicationCheck.LongCount(
-                Function(Check As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                    Return Not Check.IsDuplicated
-                End Function
-            )
-            Dim Iterator As IEnumerable(Of Record) = Downloads
-            If NotSameCount > 0 Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records of the data source have the same ""ID"" as one of the local records, which is not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
-                If Result = DialogResult.No Then
-                    Iterator = Iterator.Where(
-                        Function(Record As Record) As Boolean
-                            Return DuplicationCheck.LongCount(
-                                Function(Duplication As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                                    Return Duplication.ID = Record.ID AndAlso Duplication.IsDuplicated = False
-                                End Function
-                            ) = 0
-                        End Function
-                    ).ToList()
-                    DuplicationCheck = DuplicationCheck.Where(
-                        Function(Duplication As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                            Return Duplication.IsDuplicated
-                        End Function
-                    ).ToList()
-                ElseIf Result = DialogResult.Cancel Then
+            If Keys.Count < SourceDownload.Count Then
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from data source have the same ""ID"". Would you like to continue with inserting the rest?", Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
+                If Result = DialogResult.Cancel Then
                     Return
                 End If
-            End If
-            For Each IteratorRecord As Record In Iterator
-                Dim DuplicationEnumerable As IEnumerable(Of (ID As Integer, IsDuplicated As Integer)) = DuplicationCheck.Where(
-                    Function(Tuple As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                        Return Tuple.ID = IteratorRecord.ID
-                    End Function
-                )
-                If DuplicationEnumerable.LongCount() > 0 Then
-                    Dim DuplicationEnumerableCount As Long = DuplicationEnumerable.LongCount(
-                        Function(Tuple As (ID As Integer, IsDuplicated As Integer)) As Boolean
-                            Return Tuple.IsDuplicated = False
+                For Each ID As Integer In Keys
+                    Dim Ambiguous As List(Of Record) = SourceDownload.Where(
+                        Function(Source As Record) As Boolean
+                            Return Source.ID = ID
                         End Function
-                    )
-                    If DuplicationEnumerableCount > 0 Then
-                        Data.Remove(Data.Where(
-                            Function(Record As Record) As Boolean
-                                Return Record.ID = IteratorRecord.ID
-                            End Function
-                        ).Single())
-                    Else
-                        Continue For
+                    ).ToList()
+                    If Ambiguous.Count > 1 Then
+                        For Each Source As Record In Ambiguous
+                            SourceDownload.Remove(Source)
+                        Next
                     End If
-                End If
-                Data.Add(IteratorRecord)
+                Next
+            End If
+            Dim LocalReplacement As New List(Of (Local As Record, Source As Record))()
+            For Each Source As Record In SourceDownload.ToList()
+                For Each Local As Record In Data
+                    If Source = Local Then
+                        SourceDownload.Remove(Source)
+                        Exit For
+                    ElseIf Source.ID = Local.ID Then
+                        LocalReplacement.Add((Local, Source))
+                        SourceDownload.Remove(Source)
+                        Exit For
+                    End If
+                Next
             Next
+            If LocalReplacement.Count = 0 Then
+                Data.AddRange(SourceDownload)
+            Else
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from data source have the same ""ID"" to a local record but not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
+                If Result = DialogResult.Yes Then
+                    For Each Replacement In LocalReplacement
+                        Data(Data.IndexOf(Replacement.Local)) = Replacement.Source
+                    Next
+                    Data.AddRange(SourceDownload)
+                ElseIf Result = DialogResult.No Then
+                    Data.AddRange(SourceDownload)
+                End If
+            End If
         Catch Exception As Exception
             ShowException(Exception)
+            If DataReader IsNot Nothing AndAlso DataReader.IsClosed = False Then
+                DataReader.Close()
+            End If
             Throw
         End Try
     End Function
