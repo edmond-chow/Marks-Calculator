@@ -25,14 +25,9 @@ Public Class FrmMain
 #Region "Constants"
 
     ''' <summary>
-    ''' 數據緩存的檔案名稱
+    ''' 本地數據緩存的檔案名稱
     ''' </summary>
     Private Const FileName As String = "Records.json"
-
-    ''' <summary>
-    ''' 除錯時間
-    ''' </summary>
-    Private Const DebugTimeout As Integer = 1000
 
     ''' <summary>
     ''' 表示表單的邊框的粗幼度
@@ -69,11 +64,6 @@ Public Class FrmMain
     ''' </summary>
     Private Const RandomNumberMinimum As Integer = 100000000
 
-    ''' <summary>
-    ''' 原生的上下文
-    ''' </summary>
-    Private ReadOnly OriginalContext As SynchronizationContext
-
 #End Region
 
 #Region "Fields"
@@ -84,14 +74,19 @@ Public Class FrmMain
     Private Data As List(Of Record)
 
     ''' <summary>
-    ''' 用來存儲暫存數據的執行個體
+    ''' 用來暫存一筆數據的執行個體
     ''' </summary>
     Private Temp As Record
 
     ''' <summary>
-    ''' 用來代表數據的文件流
+    ''' 用來代表本地數據緩存的文件流
     ''' </summary>
     Private DataFile As FileStream
+
+    ''' <summary>
+    ''' 表示進度條的偏移量
+    ''' </summary>
+    Private ProgressOffset As Integer
 
     ''' <summary>
     ''' 表示目前的表單狀態
@@ -99,12 +94,12 @@ Public Class FrmMain
     Private State As FormState
 
     ''' <summary>
-    ''' 表示表單上一個視窗狀態
+    ''' 表示表單上一個視窗狀態（對於視窗狀態而言：修改標題列的按鈕）
     ''' </summary>
     Private LastWindowState As FormWindowState
 
     ''' <summary>
-    ''' 表示表單上一個視窗大小
+    ''' 表示表單上一個視窗大小（對於訊息迴圈而言：大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
     ''' </summary>
     Private LastSize As Size
 
@@ -114,34 +109,34 @@ Public Class FrmMain
     Private ReadOnly RandomNumberGenerator As Random
 
     ''' <summary>
-    ''' 鎖定控制項的保留項
+    ''' 原生的上下文（建立表單的構造函數的上下文）
     ''' </summary>
-    Private Reserved As List(Of (Field As FieldInfo, Value As Object))
+    Private ReadOnly OriginalContext As SynchronizationContext
 
     ''' <summary>
-    ''' 用來存儲資料來源的訊息
+    ''' 用來存儲資料來源的連接訊息
     ''' </summary>
     Private DataSourceInfo As (Host As String, Username As String, Password As String)
 
     ''' <summary>
-    ''' 用來存儲資料來源的執行個體
+    ''' 用來連接資料來源的執行個體
     ''' </summary>
     Private DataSourceConnection As MySqlConnection
 
     ''' <summary>
-    ''' 用來存儲資料來源讀取器的執行個體
+    ''' 用來讀取資料來源的執行個體
     ''' </summary>
     Private DataReader As DbDataReader
 
     ''' <summary>
-    ''' 用來表示數據正在鎖定的執行個體
+    ''' 用來表示數據欄位正在鎖定的執行個體（用於防止使用者透過控制項，加入數據）
     ''' </summary>
     Private IsDataControlsLocking As Boolean
 
     ''' <summary>
-    ''' 表示進度條的指數
+    ''' 中斷與恢復全局鎖定控制項的保留項
     ''' </summary>
-    Private ProgressIndex As Integer
+    Private Reserved As List(Of (Field As FieldInfo, Value As Object))
 
     ''' <summary>
     ''' 表示連線訊息的表單
@@ -174,9 +169,8 @@ Public Class FrmMain
 #Region "Properties"
 
     ''' <summary>
-    ''' 表示數據欄位相應的 Record
+    ''' 表示數據輸入欄位的 Record
     ''' </summary>
-    ''' <returns></returns>
     Private ReadOnly Property InputedRecord As Record
         Get
             Dim MyRecord As Record = (TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
@@ -198,9 +192,8 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目相應的上一個 Record
+    ''' 表示 LstRecords 已選取項目的上一個 Record
     ''' </summary>
-    ''' <returns></returns>
     Private Property SelectedPrevRecord As Record
         Get
             If LstRecords.SelectedIndex <= 1 Then
@@ -217,9 +210,8 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目相應的 Record
+    ''' 表示 LstRecords 已選取項目的 Record
     ''' </summary>
-    ''' <returns></returns>
     Private Property SelectedRecord As Record
         Get
             If LstRecords.SelectedIndex = -1 Then
@@ -242,9 +234,8 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目相應的下一個 Record
+    ''' 表示 LstRecords 已選取項目的下一個 Record
     ''' </summary>
-    ''' <returns></returns>
     Private Property SelectedNextRecord As Record
         Get
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
@@ -261,9 +252,8 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 鎖定控制項的篩選器
+    ''' 中斷與恢復全局鎖定控制項的篩選器
     ''' </summary>
-    ''' <returns></returns>
     Private Property Selector As IEnumerable(Of (Field As FieldInfo, Value As Object))
         Get
             Return GetType(FrmMain).GetRuntimeFields().Where(
@@ -291,9 +281,8 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 用來存儲資料來源的訊息
+    ''' 用來存儲資料來源的連接訊息
     ''' </summary>
-    ''' <returns></returns>
     Private Property Source As (Host As String, Username As String, Password As String)
         Get
             Return DataSourceInfo
@@ -361,7 +350,7 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示數據鎖定時的狀態變化
+    ''' 表示數據欄位鎖定時的狀態變化（用於防止使用者透過控制項，加入數據）
     ''' </summary>
     Private Property DataControlsLock As Boolean
         Get
@@ -390,6 +379,18 @@ Public Class FrmMain
         End Set
     End Property
 
+    ''' <summary>
+    ''' 連線至資料庫的 Sql 指令
+    ''' </summary>
+    Private ReadOnly Property ConnectionCmd As String
+        Get
+            Return "DATASOURCE = " + DataSourceInfo.Host + "; USERNAME = " + DataSourceInfo.Username + "; PASSWORD = " + DataSourceInfo.Password + "; "
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' 從資料庫上傳數據的 Sql 指令
+    ''' </summary>
     Private ReadOnly Property UploadCmd As String
         Get
             Dim Db As String = TxtDataSourceDatabase.Text
@@ -451,6 +452,9 @@ Public Class FrmMain
         End Get
     End Property
 
+    ''' <summary>
+    ''' 從資料庫下載數據的 Sql 指令
+    ''' </summary>
     Private ReadOnly Property DownloadCmd As String
         Get
             Dim Db As String = TxtDataSourceDatabase.Text
@@ -488,7 +492,7 @@ Public Class FrmMain
         Set(Value As Boolean)
             TmrMain.Enabled = Value
             If Value Then
-                ProgressIndex = 0
+                ProgressOffset = 0
             Else
                 Dim Graphics As Graphics = CreateGraphics()
                 DrawProgressTrack(Graphics)
@@ -500,7 +504,6 @@ Public Class FrmMain
     ''' <summary>
     ''' 表示表單被創建時的上下文
     ''' </summary>
-    ''' <returns></returns>
     Private ReadOnly Property Context As SynchronizationContext
         Get
             Return OriginalContext
@@ -510,7 +513,6 @@ Public Class FrmMain
     ''' <summary>
     ''' 實現 Windows 視窗的最細化功能（對於 Form.FormBorderStyle 為 FormBorderStyle.None 的視窗）
     ''' </summary>
-    ''' <returns></returns>
     Protected Overrides ReadOnly Property CreateParams As CreateParams
         Get
             Dim Params As CreateParams = MyBase.CreateParams
@@ -579,6 +581,9 @@ Public Class FrmMain
 
 #Region "Methods"
 
+    ''' <summary>
+    ''' 中斷全局鎖定控制項
+    ''' </summary>
     Private Sub SuspendControls()
         Progress = True
         Reserved = Selector.ToList()
@@ -589,6 +594,9 @@ Public Class FrmMain
         )
     End Sub
 
+    ''' <summary>
+    ''' 恢復全局鎖定控制項
+    ''' </summary>
     Private Sub ResumeControls()
         Progress = False
         Selector = Reserved
@@ -676,6 +684,10 @@ Public Class FrmMain
         TxtStatisticsMd.Text = Md.ToString()
     End Sub
 
+    ''' <summary>
+    ''' 在數據列表當中搜尋符合條件的 Record
+    ''' </summary>
+    ''' <param name="IndexFunc">指定當搜尋程序結束的時候， LstRecords 會選取哪一個項目</param>
     Private Sub RecordsSearch(IndexFunc As IndexFunc)
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
@@ -754,7 +766,7 @@ Public Class FrmMain
     ''' <param name="caption"></param>
     ''' <param name="buttons"></param>
     ''' <param name="icon"></param>
-    ''' <returns></returns>
+
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
@@ -766,21 +778,6 @@ Public Class FrmMain
     ''' <summary>
     ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(True)，以便回調至先前的上下文
     ''' </summary>
-    ''' <returns></returns>
-    Private Shared Async Function DebugTest() As Task
-        If Environment.CommandLine.Contains("debug") Then
-            Await Task.Run(
-                Sub()
-                    Thread.Sleep(DebugTimeout)
-                End Sub
-            ).ConfigureAwait(False)
-        End If
-    End Function
-
-    ''' <summary>
-    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(True)，以便回調至先前的上下文
-    ''' </summary>
-    ''' <returns></returns>
     Private Shared Async Function FleetingBuffer() As Task
         Await Task.Run(
             Sub()
@@ -809,6 +806,9 @@ Public Class FrmMain
         End While
     End Sub
 
+    ''' <summary>
+    ''' 讀取本地數據緩存
+    ''' </summary>
     Private Async Function ReadDataFile() As Task
         SuspendControls()
         Data = New List(Of Record)()
@@ -828,13 +828,14 @@ Public Class FrmMain
         If Not IsNotTheSameID(Data) Then
             Data.Clear()
         End If
-        Await DebugTest().ConfigureAwait(True)
         ResumeControls()
     End Function
 
+    ''' <summary>
+    ''' 寫入本地數據緩存
+    ''' </summary>
     Private Async Function WriteDataFile() As Task
         SuspendControls()
-        Await DebugTest().ConfigureAwait(True)
         Try
             If DataFile IsNot Nothing Then
                 Dim JsonBuffer As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
@@ -850,6 +851,9 @@ Public Class FrmMain
         ResumeControls()
     End Function
 
+    ''' <summary>
+    ''' 請求獲得視窗焦點
+    ''' </summary>
     Private Async Sub FocusMeRequest()
         If FocusMe() = False Then
             Await FleetingBuffer().ConfigureAwait(True)
@@ -857,11 +861,20 @@ Public Class FrmMain
         End If
     End Sub
 
+    ''' <summary>
+    ''' 對於所有視窗按鈕中嘗試執行控制項的操作，如果在 Controls 找不到相應的控制項則會繼續重試，直到找到相應的 Tag 來執行操作
+    ''' </summary>
+    ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
     Private Sub WindowButtonsRequest(Action As Action(Of Control))
         Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
         WindowButtonsRequest(Action, MetroFormButtonTag.GetEnumValues())
     End Sub
 
+    ''' <summary>
+    ''' 在被選取的多個視窗按鈕中嘗試執行對於控制項的操作，如果在 Controls 找不到相應的控制項則會繼續重試，直到找到相應的 Tag 來執行操作
+    ''' </summary>
+    ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
+    ''' <param name="Validation">要對於某些給定的視窗按鈕執行操作（在關閉、最大化或者還原、最小化當中選取）</param>
     Private Async Sub WindowButtonsRequest(Action As Action(Of Control), Validation As Array)
         Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
         Dim IntegrityCheck(Validation.Length - 1) As (Tag As Object, Validated As Boolean)
@@ -895,6 +908,9 @@ Public Class FrmMain
         Next
     End Sub
 
+    ''' <summary>
+    ''' 上傳 LstRecords 中的紀錄到 MySql 資料庫
+    ''' </summary>
     Private Async Function Upload() As Task
         Try
             DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
@@ -918,6 +934,9 @@ Public Class FrmMain
         End Try
     End Function
 
+    ''' <summary>
+    ''' 下載 LstRecords 中的紀錄到 MySql 資料庫
+    ''' </summary>
     Private Async Function Download() As Task
         Try
             DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
@@ -998,15 +1017,21 @@ Public Class FrmMain
         End Try
     End Function
 
+    ''' <summary>
+    ''' 繪畫進度軌道
+    ''' </summary>
     Private Sub DrawProgressTrack(Paint As Graphics)
         Dim Boundary As New Rectangle(New Point(0, 0), New Size(ClientSize.Width, ProgressBarHeight))
         Dim Brusher As New SolidBrush(MetroPaint.GetStyleColor(Style))
         Paint.FillRectangle(Brusher, Boundary)
     End Sub
 
+    ''' <summary>
+    ''' 繪畫進度條
+    ''' </summary>
     Private Sub DrawProgressBar(Paint As Graphics)
-        ProgressIndex = ProgressIndex Mod (ClientSize.Width + ProgressBarWidth)
-        Dim Boundary As New Rectangle(New Point(ProgressIndex - ProgressBarWidth, 0), New Size(ProgressBarWidth, ProgressBarHeight))
+        ProgressOffset = ProgressOffset Mod (ClientSize.Width + ProgressBarWidth)
+        Dim Boundary As New Rectangle(New Point(ProgressOffset - ProgressBarWidth, 0), New Size(ProgressBarWidth, ProgressBarHeight))
         Dim Brusher As New SolidBrush(Color.GreenYellow)
         Paint.FillRectangle(Brusher, Boundary)
     End Sub
@@ -1162,7 +1187,7 @@ Public Class FrmMain
                 Return
             End If
             Try
-                DataSourceConnection = New MySqlConnection("DATASOURCE=" + DataSourceInfo.Host + ";USERNAME=" + DataSourceInfo.Username + ";PASSWORD=" + DataSourceInfo.Password + ";")
+                DataSourceConnection = New MySqlConnection(ConnectionCmd)
                 Connection = ConnectState.Connecting
                 Await Task.Run(
                     Async Function() As Task
@@ -1348,7 +1373,7 @@ Public Class FrmMain
             DrawProgressTrack(Graphics)
             DrawProgressBar(Graphics)
             Graphics.Dispose()
-            ProgressIndex += ProgressBarDeltaX
+            ProgressOffset += ProgressBarDeltaX
         End If
     End Sub
 
