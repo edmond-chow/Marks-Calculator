@@ -852,16 +852,6 @@ Public Class FrmMain
     End Function
 
     ''' <summary>
-    ''' 請求獲得視窗焦點
-    ''' </summary>
-    Private Async Sub FocusMeRequest()
-        If FocusMe() = False Then
-            Await FleetingBuffer().ConfigureAwait(True)
-            FocusMeRequest()
-        End If
-    End Sub
-
-    ''' <summary>
     ''' 對於所有視窗按鈕中嘗試執行控制項的操作，如果在 Controls 找不到相應的控制項則會繼續重試，直到找到相應的 Tag 來執行操作
     ''' </summary>
     ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
@@ -874,38 +864,36 @@ Public Class FrmMain
     ''' 在被選取的多個視窗按鈕中嘗試執行對於控制項的操作，如果在 Controls 找不到相應的控制項則會繼續重試，直到找到相應的 Tag 來執行操作
     ''' </summary>
     ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
-    ''' <param name="Validation">要對於某些給定的視窗按鈕執行操作（在關閉、最大化或者還原、最小化當中選取）</param>
-    Private Async Sub WindowButtonsRequest(Action As Action(Of Control), Validation As Array)
+    ''' <param name="Tags">要對於某些給定的視窗按鈕執行操作（在關閉、最大化或者還原、最小化當中選取）</param>
+    Private Sub WindowButtonsRequest(Action As Action(Of Control), ParamArray Tags As Object())
+        WindowButtonsRequest(Action, CType(Tags, Array))
+    End Sub
+
+    ''' <summary>
+    ''' 在被選取的多個視窗按鈕中嘗試執行對於控制項的操作，如果在 Controls 找不到相應的控制項則會繼續重試，直到找到相應的 Tag 來執行操作
+    ''' </summary>
+    ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
+    ''' <param name="Tags">要對於某些給定的視窗按鈕執行操作（在關閉、最大化或者還原、最小化當中選取）</param>
+    Private Async Sub WindowButtonsRequest(Action As Action(Of Control), Tags As Array)
         Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
-        Dim IntegrityCheck(Validation.Length - 1) As (Tag As Object, Validated As Boolean)
-        For i As Integer = 0 To IntegrityCheck.Length - 1
-            IntegrityCheck(i) = (Validation(i), False)
-        Next
-        For Each Control As Control In Controls
-            Dim TagIsValidated As Boolean = False
-            For Each ValidationTag As Object In Validation
-                If Control.Tag.GetType() = ValidationTag.GetType() AndAlso Control.Tag = ValidationTag Then
-                    TagIsValidated = True
-                    Exit For
-                End If
-            Next
-            If Control.GetType() = MetroFormButtonType AndAlso TagIsValidated = True Then
-                Action.Invoke(Control)
-                For i As Integer = 0 To IntegrityCheck.Length - 1
-                    If IntegrityCheck(i).Tag = Control.Tag Then
-                        IntegrityCheck(i) = (IntegrityCheck(i).Tag, True)
+        Dim Exists(Tags.Length - 1) As Boolean
+        Dim Takens As Integer = 0
+        While Takens < Exists.Length
+            For Each Control As Control In Controls
+                For i As Integer = 0 To Tags.Length - 1
+                    If Exists(i) Then
+                    ElseIf Control.GetType() <> MetroFormButtonType Then
+                    ElseIf Control.Tag.GetType() <> Tags(i).GetType() Then
+                    ElseIf Control.Tag = Tags(i) Then
+                        Action.Invoke(Control)
+                        Exists(i) = True
+                        Takens += 1
                         Exit For
                     End If
                 Next
-            End If
-        Next
-        For Each Check As (Tag As Object, Validated As Boolean) In IntegrityCheck
-            If Check.Validated = False Then
-                Await FleetingBuffer().ConfigureAwait(True)
-                WindowButtonsRequest(Action)
-                Exit For
-            End If
-        Next
+            Next
+            Await FleetingBuffer().ConfigureAwait(True)
+        End While
     End Sub
 
     ''' <summary>
@@ -1420,12 +1408,12 @@ Public Class FrmMain
                         Control.Text = "2"
                     End If
                 End Sub,
-                New Object() {MetroFormButtonTag.GetEnumValues()(1)}
+                MetroFormButtonTag.GetEnumValues()(1)
             )
             '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
             If WindowState = FormWindowState.Normal Then
                 Owner.Show() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去分層視窗之底層陰影的修復）
-                FocusMeRequest() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
+                Activate() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
             Else
                 Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
             End If
