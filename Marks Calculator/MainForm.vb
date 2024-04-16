@@ -18,7 +18,6 @@ Imports MetroFramework.Controls
 Imports MetroFramework.Forms
 Imports MetroFramework.Drawing
 Imports Newtonsoft.Json
-Imports Newtonsoft.Json.Linq
 Imports MySql.Data.MySqlClient
 
 Public Class FrmMain
@@ -719,7 +718,7 @@ Public Class FrmMain
         Return True
     End Function
 
-    Private Shared Function IsNotTheSame(Enumerable As IEnumerable(Of IRecord)) As Boolean
+    Private Shared Function IsNotTheSameRecord(Enumerable As IEnumerable(Of IRecord)) As Boolean
         For i As Integer = 0 To Enumerable.Count() - 2
             For j As Integer = 1 To Enumerable.Count() - 1 - i
                 If Enumerable.ElementAt(i).StudentName = Enumerable.ElementAt(i + j).StudentName Then
@@ -813,38 +812,18 @@ Public Class FrmMain
     Private Async Function ReadDataFile() As Task
         SuspendControls()
         Data = New List(Of Record)()
-        Temp = True
+        Temp = New Record()
         Try
-            If File.Exists(FileName) Then
-                DataFile = File.Open(FileName, FileMode.Open)
-                If DataFile.Length = 0 Then
-                    Throw New BranchesShouldNotBeInstantiatedException()
-                End If
-                Dim Json(DataFile.Length - 1) As Byte
-                Await DataFile.ReadAsync(Json, 0, DataFile.Length).ConfigureAwait(True)
-                For Each RecordToken As JToken In JsonConvert.DeserializeObject(Of JArray)(Encoding.UTF8.GetString(Json)).Children()
-                    Dim TempRecord As Record = True
-                    For Each Field As JProperty In RecordToken
-                        Dim PropertyInfo As PropertyInfo = GetType(Record).GetProperty(Field.Name)
-                        If PropertyInfo.PropertyType = GetType(String) Then
-                            PropertyInfo.SetValue(TempRecord, Field.Value.ToString())
-                        ElseIf PropertyInfo.PropertyType = GetType(Double) Then
-                            PropertyInfo.SetValue(TempRecord, Double.Parse(Field.Value.ToString()))
-                        ElseIf PropertyInfo.PropertyType = GetType(Integer) Then
-                            PropertyInfo.SetValue(TempRecord, Integer.Parse(Field.Value.ToString()))
-                        Else
-                            Throw New BranchesShouldNotBeInstantiatedException()
-                        End If
-                    Next
-                    Data.Add(TempRecord)
-                Next
-            Else
-                DataFile = File.Create(FileName)
+            DataFile = File.Open(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read)
+            If DataFile.Length > 0 Then
+                Dim JsonBuffer(DataFile.Length - 1) As Byte
+                Await DataFile.ReadAsync(JsonBuffer, 0, DataFile.Length).ConfigureAwait(True)
+                Data = JsonConvert.DeserializeObject(Of List(Of Record))(Encoding.UTF8.GetString(JsonBuffer))
             End If
         Catch Exception As Exception
             ShowException(Exception)
-            Data.Clear()
             DataFile = Nothing
+            Data.Clear()
         End Try
         If Not IsNotTheSameID(Data) Then
             Data.Clear()
@@ -857,13 +836,12 @@ Public Class FrmMain
         SuspendControls()
         Await DebugTest().ConfigureAwait(True)
         Try
-            If DataFile Is Nothing Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+            If DataFile IsNot Nothing Then
+                Dim JsonBuffer As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
+                DataFile.SetLength(0)
+                Await DataFile.WriteAsync(JsonBuffer, 0, JsonBuffer.Length).ConfigureAwait(True)
+                DataFile.Close()
             End If
-            Dim Json() As Byte = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
-            DataFile.SetLength(0)
-            Await DataFile.WriteAsync(Json, 0, Json.Length).ConfigureAwait(True)
-            DataFile.Close()
         Catch Exception As Exception
             ShowException(Exception)
         End Try
@@ -956,7 +934,7 @@ Public Class FrmMain
             Dim SourceDownload As New List(Of Record)()
             Dim Keys As New HashSet(Of Integer)()
             Do
-                Dim Temp As Record = True
+                Dim Temp As New Record()
                 GetType(Record).GetProperty("StudentName").SetValue(Temp, DataReader("StudentName"))
                 GetType(Record).GetProperty("TestMarks").SetValue(Temp, DataReader("Test"))
                 GetType(Record).GetProperty("QuizzesMarks").SetValue(Temp, DataReader("Quizzes"))
@@ -1065,7 +1043,7 @@ Public Class FrmMain
                 Return 0
             End Function
         )
-        If Not IsNotTheSame(Data) Then
+        If Not IsNotTheSameRecord(Data) Then
             ChkRecords.Checked = True
         End If
         TxtDataSourceDatabase.Text = "marks"
@@ -1304,7 +1282,7 @@ Public Class FrmMain
     End Sub
 
     Private Sub ChkRecords_CheckedChanged(sender As Object, e As EventArgs) Handles ChkRecords.CheckedChanged
-        If Not ChkRecords.Checked AndAlso Not IsNotTheSame(Data) Then
+        If Not ChkRecords.Checked AndAlso Not IsNotTheSameRecord(Data) Then
             MessageBox.Show(Me, "Some of the local records have the same ""StudentName""! But whenever a record is inserted into the local records, it is still avoided all these records match the same ""StudentName"".", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
         End If
     End Sub
@@ -1528,8 +1506,7 @@ Public Class FrmMain
         Friend Const ProjectScale As Double = 0.3
         Friend Const CAScale As Double = 0.4
         Friend Const ExamScale As Double = 0.6
-        Private Const None As String = "[None]"
-        Private Const Invalid As String = "---"
+        Private Const Invalid As String = "[Invaild]"
 
 #End Region
 
@@ -1546,21 +1523,14 @@ Public Class FrmMain
 
 #Region "Constructors"
 
-        Public Sub New(Valid As Boolean)
-            Name = None
-            If Valid = True Then
-                Test = 0
-                Quizzes = 0
-                Project = 0
-                Exam = 0
-                Code = 0
-            Else
-                Test = Double.NaN
-                Quizzes = Double.NaN
-                Project = Double.NaN
-                Exam = Double.NaN
-                Code = 0
-            End If
+        <JsonConstructor>
+        Public Sub New()
+            Name = String.Empty
+            Test = 0
+            Quizzes = 0
+            Project = 0
+            Exam = 0
+            Code = 0
         End Sub
 
         Public Sub New(Name As String)
@@ -1654,16 +1624,14 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property Remarks As String
             Get
-                If ModuleGrade = "F" Then
-                    If ModuleMarks >= 30 Then
-                        Return "Resit Exam"
-                    Else
-                        Return "Restudy"
-                    End If
-                ElseIf ModuleGrade = Invalid Then
+                If ModuleGrade = Invalid Then
                     Return Invalid
-                Else
+                ElseIf ModuleGrade <> "F" Then
                     Return "Pass"
+                ElseIf ModuleMarks >= 30 Then
+                    Return "Resit Exam"
+                Else
+                    Return "Restudy"
                 End If
             End Get
         End Property
@@ -1671,7 +1639,7 @@ Public Class FrmMain
         <JsonProperty>
         Public Property StudentName As String Implements IRecord.StudentName
             Get
-                Return If(Name <> None, Name, String.Empty)
+                Return If(Name <> String.Empty, Name, String.Empty)
             End Get
             Set(Value As String)
                 Name = Value
@@ -1744,7 +1712,7 @@ Public Class FrmMain
         End Function
 
         Public Sub Clear()
-            Name = None
+            Name = String.Empty
             Test = 0
             Quizzes = 0
             Project = 0
@@ -1805,20 +1773,8 @@ Public Class FrmMain
             Return Left.CompareTo(Right) >= 0
         End Operator
 
-        Public Shared Widening Operator CType(Valid As Boolean) As Record
-            Return New Record(Valid)
-        End Operator
-
-        Public Shared Widening Operator CType(Name As String) As Record
-            Return New Record(Name)
-        End Operator
-
         Public Shared Widening Operator CType(Value As (Name As String, Test As Double, Quizzes As Double, Project As Double, Exam As Double)) As Record
             Return New Record(Value.Name, Value.Test, Value.Quizzes, Value.Project, Value.Exam)
-        End Operator
-
-        Public Shared Narrowing Operator CType(Code As Integer) As Record
-            Return New Record(True) With {.ID = Code}
         End Operator
 
 #End Region
