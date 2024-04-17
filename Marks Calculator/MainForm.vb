@@ -109,11 +109,6 @@ Public Class FrmMain
     Private ReadOnly RandomNumberGenerator As Random
 
     ''' <summary>
-    ''' 原生的上下文（建立表單的構造函數的上下文）
-    ''' </summary>
-    Private ReadOnly OriginalContext As SynchronizationContext
-
-    ''' <summary>
     ''' 用來存儲資料來源的連接訊息
     ''' </summary>
     Private DataSourceInfo As (Host As String, Username As String, Password As String)
@@ -155,7 +150,6 @@ Public Class FrmMain
         Data = New List(Of Record)()
         Temp = New Record()
         RandomNumberGenerator = New Random()
-        OriginalContext = SynchronizationContext.Current
         FrmConnection = New FrmConnect(
             Function()
                 Return Source
@@ -504,15 +498,6 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示表單被創建時的上下文
-    ''' </summary>
-    Private ReadOnly Property Context As SynchronizationContext
-        Get
-            Return OriginalContext
-        End Get
-    End Property
-
-    ''' <summary>
     ''' 實現 Windows 視窗的最細化功能（對於 Form.FormBorderStyle 為 FormBorderStyle.None 的視窗）
     ''' </summary>
     Protected Overrides ReadOnly Property CreateParams As CreateParams
@@ -763,9 +748,8 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Exception">未處理的異常對象</param>
     Private Async Sub ShowException(Exception As Exception)
-        Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
-            Await FleetingBuffer().ConfigureAwait(True)
+            Await FleetingBuffer()
         End While
         While Exception IsNot Nothing
             MessageBox.Show(Me,
@@ -780,7 +764,7 @@ Public Class FrmMain
     End Sub
 
     ''' <summary>
-    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(False)，以便回調至表單的 UI 線程
+    ''' 調用這個可等待函數時建議使用 Task，以便回調至表單的 UI 線程
     ''' </summary>
     ''' <param name="owner"></param>
     ''' <param name="text"></param>
@@ -788,22 +772,21 @@ Public Class FrmMain
     ''' <param name="buttons"></param>
     ''' <param name="icon"></param>
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
-        Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
-            Await FleetingBuffer().ConfigureAwait(True)
+            Await FleetingBuffer()
         End While
         Return MessageBox.Show(owner, text, caption, buttons, icon)
     End Function
 
     ''' <summary>
-    ''' 調用這個可等待函數時建議使用 Task.ConfigureAwait(True)，以便回調至先前的上下文
+    ''' 中斷一下
     ''' </summary>
     Private Shared Async Function FleetingBuffer() As Task
         Await Task.Run(
             Sub()
                 Thread.Sleep(1)
             End Sub
-        ).ConfigureAwait(False)
+        )
     End Function
 
     ''' <summary>
@@ -817,7 +800,7 @@ Public Class FrmMain
                 Const WSAECONNRESET As Integer = 10054
                 If CType(Capture, SocketException).ErrorCode = WSAECONNRESET Then
                     While DataControlsLock
-                        Await FleetingBuffer().ConfigureAwait(True)
+                        Await FleetingBuffer()
                     End While
                     BtnDataSourceConnect.PerformClick()
                 End If
@@ -836,12 +819,12 @@ Public Class FrmMain
             DataFile = File.Open(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read)
             If DataFile.Length > 0 Then
                 Dim JsonBuffer(DataFile.Length - 1) As Byte
-                Await DataFile.ReadAsync(JsonBuffer, 0, DataFile.Length).ConfigureAwait(True)
+                Await DataFile.ReadAsync(JsonBuffer, 0, DataFile.Length)
                 Distinct = JsonConvert.DeserializeObject(Of HashSet(Of Record))(Encoding.UTF8.GetString(JsonBuffer))
             End If
             Data.AddRange(Distinct)
             If Not HaveUniqueIDs(Data) Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning).ConfigureAwait(False)
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Dim Reserved As New HashSet(Of Integer)
                 Dim Duplicated As New HashSet(Of Integer)
                 For Each Record As Record In Data
@@ -875,7 +858,7 @@ Public Class FrmMain
             If DataFile IsNot Nothing Then
                 Dim JsonBuffer As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
                 DataFile.SetLength(0)
-                Await DataFile.WriteAsync(JsonBuffer, 0, JsonBuffer.Length).ConfigureAwait(True)
+                Await DataFile.WriteAsync(JsonBuffer, 0, JsonBuffer.Length)
                 DataFile.Close()
             End If
         Catch Exception As Exception
@@ -925,7 +908,7 @@ Public Class FrmMain
                     End If
                 Next
             Next
-            Await FleetingBuffer().ConfigureAwait(True)
+            Await FleetingBuffer()
         End While
     End Sub
 
@@ -934,13 +917,13 @@ Public Class FrmMain
     ''' </summary>
     Private Async Function Upload() As Task
         Try
-            DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
-            If Await DataReader.ReadAsync().ConfigureAwait(False) AndAlso DataReader.VisibleFieldCount = 1 Then
+            DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync()
+            If Await DataReader.ReadAsync() AndAlso DataReader.VisibleFieldCount = 1 Then
                 Select Case DataReader("ERROR_CODE")
                     Case 1
-                        Await ShowMessage(Me, "Some of the fields and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                        Await ShowMessage(Me, "Some of the fields and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
                     Case 4
-                        Await ShowMessage(Me, "The primary key should be specified as ""ID"" whenever exists.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                        Await ShowMessage(Me, "The primary key should be specified as ""ID"" whenever exists.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
                 End Select
                 DataReader.Close()
                 Return
@@ -960,13 +943,13 @@ Public Class FrmMain
     ''' </summary>
     Private Async Function Download() As Task
         Try
-            DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync().ConfigureAwait(False)
-            If Await DataReader.ReadAsync().ConfigureAwait(False) AndAlso DataReader.VisibleFieldCount = 1 Then
+            DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync()
+            If Await DataReader.ReadAsync() AndAlso DataReader.VisibleFieldCount = 1 Then
                 Select Case DataReader("ERROR_CODE")
                     Case 2
-                        Await ShowMessage(Me, "The data source or the table are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                        Await ShowMessage(Me, "The data source or the table are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
                     Case 3
-                        Await ShowMessage(Me, "Some of the fields may not exist and its data type may not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error).ConfigureAwait(False)
+                        Await ShowMessage(Me, "Some of the fields may not exist and its data type may not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
                 End Select
                 DataReader.Close()
                 Return
@@ -983,10 +966,10 @@ Public Class FrmMain
                 GetType(Record).GetProperty("ID").SetValue(Temp, DataReader("ID"))
                 SourceDownload.Add(Temp)
                 Keys.Add(Temp.ID)
-            Loop While Await DataReader.ReadAsync().ConfigureAwait(False)
+            Loop While Await DataReader.ReadAsync()
             DataReader.Close()
             If Keys.Count < SourceDownload.Count Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from data source have the same ""ID"". Would you like to continue with inserting the rest?", Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from data source have the same ""ID"". Would you like to continue with inserting the rest?", Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
                 If Result = DialogResult.Cancel Then
                     Return
                 End If
@@ -1019,7 +1002,7 @@ Public Class FrmMain
             If LocalReplacement.Count = 0 Then
                 Data.AddRange(SourceDownload)
             Else
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from data source have the same ""ID"" to a local record but not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning).ConfigureAwait(False)
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from data source have the same ""ID"" to a local record but not matching the same fields. Would you like to replace it with the new one?", Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
                 If Result = DialogResult.Yes Then
                     For Each Replacement In LocalReplacement
                         Data(Data.IndexOf(Replacement.Local)) = Replacement.Source
@@ -1082,7 +1065,7 @@ Public Class FrmMain
             End Sub
         )
         '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
-        Await ReadDataFile().ConfigureAwait(True)
+        Await ReadDataFile()
         ShowStatistics()
         RecordsSearch(
             Function() As Integer
@@ -1128,14 +1111,14 @@ Public Class FrmMain
             e.Cancel = True
             If Connection = ConnectState.Connected Then
                 While DataControlsLock
-                    Await FleetingBuffer().ConfigureAwait(True)
+                    Await FleetingBuffer()
                 End While
                 BtnDataSourceConnect.PerformClick()
                 While Connection <> ConnectState.Disconnected
-                    Await FleetingBuffer().ConfigureAwait(True)
+                    Await FleetingBuffer()
                 End While
             End If
-            Await WriteDataFile().ConfigureAwait(True)
+            Await WriteDataFile()
             State = FormState.Finalizing
             Close()
         ElseIf State = FormState.CloseHasStarted Then
@@ -1210,11 +1193,7 @@ Public Class FrmMain
             Try
                 DataSourceConnection = New MySqlConnection(ConnectionCmd)
                 Connection = ConnectState.Connecting
-                Await Task.Run(
-                    Async Function() As Task
-                        Await DataSourceConnection.OpenAsync().ConfigureAwait(False)
-                    End Function
-                ).ConfigureAwait(True)
+                Await DataSourceConnection.OpenAsync()
                 Connection = ConnectState.Connected
             Catch Exception As Exception
                 ShowException(Exception)
@@ -1222,11 +1201,7 @@ Public Class FrmMain
             End Try
         ElseIf Connection = ConnectState.Connected Then
             Connection = ConnectState.Disconnecting
-            Await Task.Run(
-                Async Function() As Task
-                    Await DataSourceConnection.CloseAsync().ConfigureAwait(False)
-                End Function
-            ).ConfigureAwait(True)
+            Await DataSourceConnection.CloseAsync()
             Connection = ConnectState.Disconnected
         End If
     End Sub
@@ -1234,7 +1209,7 @@ Public Class FrmMain
     Private Async Sub BtnDataSourceUpload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceUpload.Click
         ConnectLock = True
         Try
-            Await Upload().ConfigureAwait(True)
+            Await Upload()
         Catch Exception As Exception
             SocketState(Exception)
         End Try
@@ -1244,7 +1219,7 @@ Public Class FrmMain
     Private Async Sub BtnDataSourceDownload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceDownload.Click
         ConnectLock = True
         Try
-            Await Download().ConfigureAwait(True)
+            Await Download()
         Catch Exception As Exception
             SocketState(Exception)
         End Try
@@ -1935,61 +1910,3 @@ Public Class FrmMain
     End Class
 
 End Class
-
-Friend Module AwaitableObject
-
-#Region "Extension"
-
-    <Extension>
-    Public Function GetAwaiter(Context As SynchronizationContext) As SynchronizationContextAwaiter
-        Return New SynchronizationContextAwaiter(Context)
-    End Function
-
-#End Region
-
-    Public Structure SynchronizationContextAwaiter
-        Implements INotifyCompletion
-
-#Region "Fields"
-
-        Private ReadOnly Context As SynchronizationContext
-
-#End Region
-
-#Region "Constructors"
-
-        Public Sub New(Context As SynchronizationContext)
-            Me.Context = Context
-        End Sub
-
-#End Region
-
-#Region "Properties"
-
-        Public ReadOnly Property IsCompleted As Boolean
-            Get
-                Return Context Is SynchronizationContext.Current
-            End Get
-        End Property
-
-#End Region
-
-#Region "Methods"
-
-        Public Sub OnCompleted(Continuation As Action) Implements INotifyCompletion.OnCompleted
-            Context.Post(
-                Sub(State As Object)
-                    CType(State, Action).Invoke()
-                End Sub,
-                Continuation
-            )
-        End Sub
-
-        Public Sub GetResult()
-        End Sub
-
-#End Region
-
-    End Structure
-
-End Module
