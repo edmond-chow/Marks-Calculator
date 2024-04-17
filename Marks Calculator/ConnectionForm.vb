@@ -100,6 +100,16 @@ Public Class FrmConnect
         TxtPassword.PasswordChar = PasswordChar
     End Sub
 
+    Private Sub TxtSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtHost.KeyDown, TxtUsername.KeyDown, TxtPassword.KeyDown
+        If sender Is Nothing OrElse TypeOf sender IsNot TextBox Then
+            Throw New NotImplementedException()
+        End If
+        If e.KeyCode = Keys.Enter Then '（實現輸入資料的快速跳轉 Enter 按鍵）
+            SelectNextControl(ActiveControl, True, True, True, True)
+            e.SuppressKeyPress = True
+        End If
+    End Sub
+
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_PAINT As Integer = &HF
         Select Case m.Msg

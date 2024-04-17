@@ -6,7 +6,6 @@ Imports System.IO
 Imports System.Reflection
 Imports System.Runtime.InteropServices
 Imports System.Runtime.Serialization
-Imports System.Runtime.CompilerServices
 Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
@@ -764,7 +763,7 @@ Public Class FrmMain
     End Sub
 
     ''' <summary>
-    ''' 調用這個可等待函數時建議使用 Task，以便回調至表單的 UI 線程
+    ''' 透過訊息視窗顯示執行信息
     ''' </summary>
     ''' <param name="owner"></param>
     ''' <param name="text"></param>
@@ -824,7 +823,7 @@ Public Class FrmMain
             End If
             Data.AddRange(Distinct)
             If Not HaveUniqueIDs(Data) Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Dim Reserved As New HashSet(Of Integer)
                 Dim Duplicated As New HashSet(Of Integer)
                 For Each Record As Record In Data
@@ -1185,6 +1184,27 @@ Public Class FrmMain
         End If
     End Sub
 
+    Private Sub TxtSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtDataSourceDatabase.KeyDown, TxtDataSourceTable.KeyDown
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        If e.KeyCode = Keys.Enter Then '（實現輸入資料的快速跳轉 Enter 按鍵）
+            If Not CType(sender, MetroTextBox).Equals(TxtDataSourceTable) Then
+                SelectNextControl(ActiveControl, True, True, True, True)
+            Else
+                SelectNextControl(TxtName, True, True, True, True)
+            End If
+            e.SuppressKeyPress = True
+        End If
+    End Sub
+
+    Private Sub TxtRecordsSearch_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtRecordsSearch.KeyDown
+        If e.KeyCode = Keys.Enter Then '（實現匹配正則表達式的快速切換 Enter 按鍵）
+            ChkRecordsSearch.Checked = Not ChkRecordsSearch.Checked
+            e.SuppressKeyPress = True
+        End If
+    End Sub
+
     Private Async Sub BtnDataSourceConnect_Click(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Click
         If Connection = ConnectState.Disconnected Then
             If FrmConnection.ShowDialog(Me) = DialogResult.Cancel Then
@@ -1300,6 +1320,35 @@ Public Class FrmMain
                 Return CaptureIndex
             End Function
         )
+    End Sub
+
+    Private Sub Btn_Enter(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Enter, BtnDataSourceUpload.Enter, BtnDataSourceDownload.Enter, BtnRecordsAdd.Enter, BtnRecordsRemove.Enter, BtnRecordsUp.Enter, BtnRecordsSquare.Enter, BtnRecordsDown.Enter
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroButton Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        CType(sender, MetroButton).Highlight = True
+    End Sub
+
+    Private Sub Btn_Leave(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Leave, BtnDataSourceUpload.Leave, BtnDataSourceDownload.Leave, BtnRecordsAdd.Leave, BtnRecordsRemove.Leave, BtnRecordsUp.Leave, BtnRecordsSquare.Leave, BtnRecordsDown.Leave
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroButton Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        CType(sender, MetroButton).Highlight = False
+    End Sub
+
+    Private Sub ChkRecords_Enter(sender As Object, e As EventArgs) Handles ChkRecords.Enter, ChkRecordsSearch.Enter
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        CType(sender, MetroCheckBox).CustomBackground = True
+        CType(sender, MetroCheckBox).BackColor = SystemColors.ControlLight
+    End Sub
+
+    Private Sub ChkRecords_Leave(sender As Object, e As EventArgs) Handles ChkRecords.Leave, ChkRecordsSearch.Leave
+        If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
+            Throw New BranchesShouldNotBeInstantiatedException()
+        End If
+        CType(sender, MetroCheckBox).CustomBackground = False
     End Sub
 
     Private Sub ChkRecords_CheckedChanged(sender As Object, e As EventArgs) Handles ChkRecords.CheckedChanged
