@@ -152,7 +152,10 @@ Public Class FrmMain
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
         MinimumSize = Size
+        Data = New List(Of Record)()
+        Temp = New Record()
         RandomNumberGenerator = New Random()
+        OriginalContext = SynchronizationContext.Current
         FrmConnection = New FrmConnect(
             Function()
                 Return Source
@@ -161,7 +164,6 @@ Public Class FrmMain
                 Source = Tuple
             End Sub
         )
-        OriginalContext = SynchronizationContext.Current
     End Sub
 
 #End Region
@@ -602,6 +604,9 @@ Public Class FrmMain
         Selector = Reserved
     End Sub
 
+    ''' <summary>
+    ''' 取得用戶輸入的資料
+    ''' </summary>
     Private Sub GetInputs()
         TxtName.Text = SelectedRecord.StudentName
         TxtInputTest.Text = SelectedRecord.TestMarks.ToString()
@@ -610,6 +615,10 @@ Public Class FrmMain
         TxtInputExam.Text = SelectedRecord.ExamMarks.ToString()
     End Sub
 
+    ''' <summary>
+    ''' 顯示分數計算結果
+    ''' </summary>
+    ''' <param name="Result">表示分數的記錄</param>
     Private Sub ShowResult(Result As Record)
         If Result.IsReal Then
             TxtResultCA.Text = Result.CAMarks.ToString()
@@ -625,6 +634,9 @@ Public Class FrmMain
         End If
     End Sub
 
+    ''' <summary>
+    ''' 顯示統計數據
+    ''' </summary>
     Private Sub ShowStatistics()
         TxtStatisticsNo.Text = Data.Count.ToString()
         TxtStatisticsA.Text = Data.LongCount(
@@ -669,7 +681,7 @@ Public Class FrmMain
             ) / N
         )
         TxtStatisticsSd.Text = Sd.ToString()
-        Dim Sorted() As Double = Data.Select(
+        Dim Sorted As Double() = Data.Select(
             Function(Record As Record) As Double
                 Return Record.ModuleMarks
             End Function
@@ -710,37 +722,46 @@ Public Class FrmMain
         LstRecords.SelectedIndex = IndexFunc.Invoke()
     End Sub
 
-    Private Function RecordsIsSorted() As Boolean
+    ''' <summary>
+    ''' 檢查數據列表是否已經排序
+    ''' </summary>
+    Private Function RecordsSorted() As Boolean
         For i As Integer = 0 To Data.Count - 2
-            If Not Data.ElementAt(i).CompareTo(Data.ElementAt(i + 1)) <= 0 Then
+            If Data(i).CompareTo(Data(i + 1)) > 0 Then
                 Return False
             End If
         Next
         Return True
     End Function
 
-    Private Shared Function IsNotTheSameID(Enumerable As IEnumerable(Of IReliability)) As Boolean
-        For i As Integer = 0 To Enumerable.Count() - 2
-            For j As Integer = 1 To Enumerable.Count() - 1 - i
-                If Enumerable.ElementAt(i).ID = Enumerable.ElementAt(i + j).ID Then
-                    Return False
-                End If
-            Next
+    ''' <summary>
+    ''' 檢查多筆紀錄是否具有獨特的 ID
+    ''' </summary>
+    ''' <param name="Records">實現了 IReliability 的多筆紀錄列舉器</param>
+    Private Shared Function HaveUniqueIDs(Records As IEnumerable(Of IReliability)) As Boolean
+        Dim Names As New HashSet(Of Integer)()
+        For Each Record As Record In Records
+            Names.Add(Record.ID)
         Next
-        Return True
+        Return Names.Count = Records.Count()
     End Function
 
-    Private Shared Function IsNotTheSameRecord(Enumerable As IEnumerable(Of IRecord)) As Boolean
-        For i As Integer = 0 To Enumerable.Count() - 2
-            For j As Integer = 1 To Enumerable.Count() - 1 - i
-                If Enumerable.ElementAt(i).StudentName = Enumerable.ElementAt(i + j).StudentName Then
-                    Return False
-                End If
-            Next
+    ''' <summary>
+    ''' 檢查多筆紀錄是否具有獨特的 StudentName
+    ''' </summary>
+    ''' <param name="Records">實現了 IRecord 的多筆紀錄列舉器</param>
+    Private Shared Function HaveUniqueNames(Records As IEnumerable(Of IRecord)) As Boolean
+        Dim Names As New HashSet(Of String)()
+        For Each Record As Record In Records
+            Names.Add(Record.StudentName)
         Next
-        Return True
+        Return Names.Count = Records.Count()
     End Function
 
+    ''' <summary>
+    ''' 透過訊息視窗顯示異常對象，其中包括整個內部異常的鏈條
+    ''' </summary>
+    ''' <param name="Exception">未處理的異常對象</param>
     Private Async Sub ShowException(Exception As Exception)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
@@ -766,7 +787,6 @@ Public Class FrmMain
     ''' <param name="caption"></param>
     ''' <param name="buttons"></param>
     ''' <param name="icon"></param>
-
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
         Await Context '（回調至表單的 UI 線程）
         While Tag = IsResizing.Yes
@@ -811,23 +831,38 @@ Public Class FrmMain
     ''' </summary>
     Private Async Function ReadDataFile() As Task
         SuspendControls()
-        Data = New List(Of Record)()
-        Temp = New Record()
         Try
+            Dim Distinct As New HashSet(Of Record)
             DataFile = File.Open(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read)
             If DataFile.Length > 0 Then
                 Dim JsonBuffer(DataFile.Length - 1) As Byte
                 Await DataFile.ReadAsync(JsonBuffer, 0, DataFile.Length).ConfigureAwait(True)
-                Data = JsonConvert.DeserializeObject(Of List(Of Record))(Encoding.UTF8.GetString(JsonBuffer))
+                Distinct = JsonConvert.DeserializeObject(Of HashSet(Of Record))(Encoding.UTF8.GetString(JsonBuffer))
+            End If
+            Data.AddRange(Distinct)
+            If Not HaveUniqueIDs(Data) Then
+                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning).ConfigureAwait(False)
+                Dim Reserved As New HashSet(Of Integer)
+                Dim Duplicated As New HashSet(Of Integer)
+                For Each Record As Record In Data
+                    If Reserved.Contains(Record.ID) Then
+                        Duplicated.Add(Record.ID)
+                    End If
+                    Reserved.Add(Record.ID)
+                Next
+                For Each ID As Integer In Duplicated
+                    Reserved.Remove(ID)
+                Next
+                Data = Data.Where(
+                    Function(Record As Record) As Boolean
+                        Return Reserved.Contains(Record.ID)
+                    End Function
+                ).ToList()
             End If
         Catch Exception As Exception
             ShowException(Exception)
             DataFile = Nothing
-            Data.Clear()
         End Try
-        If Not IsNotTheSameID(Data) Then
-            Data.Clear()
-        End If
         ResumeControls()
     End Function
 
@@ -846,8 +881,6 @@ Public Class FrmMain
         Catch Exception As Exception
             ShowException(Exception)
         End Try
-        Data = Nothing
-        Temp = Nothing
         ResumeControls()
     End Function
 
@@ -1056,7 +1089,7 @@ Public Class FrmMain
                 Return 0
             End Function
         )
-        If Not IsNotTheSameRecord(Data) Then
+        If Not HaveUniqueNames(Data) Then
             ChkRecords.Checked = True
         End If
         TxtDataSourceDatabase.Text = "marks"
@@ -1295,8 +1328,8 @@ Public Class FrmMain
     End Sub
 
     Private Sub ChkRecords_CheckedChanged(sender As Object, e As EventArgs) Handles ChkRecords.CheckedChanged
-        If Not ChkRecords.Checked AndAlso Not IsNotTheSameRecord(Data) Then
-            MessageBox.Show(Me, "Some of the local records have the same ""StudentName""! But whenever a record is inserted into the local records, it is still avoided all these records match the same ""StudentName"".", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
+        If Not ChkRecords.Checked AndAlso Not HaveUniqueNames(Data) Then
+            MessageBox.Show(Me, "Some of the local records have the same ""StudentName""! Whenever a record is inserted into the local records, it is still avoided all these records match the same ""StudentName"".", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
         End If
     End Sub
 
@@ -1322,7 +1355,7 @@ Public Class FrmMain
                 BtnRecordsAdd.Enabled = False
                 BtnRecordsRemove.Enabled = True
                 BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
-                BtnRecordsSquare.Enabled = Not RecordsIsSorted()
+                BtnRecordsSquare.Enabled = Not RecordsSorted()
                 BtnRecordsDown.Enabled = LstRecords.SelectedIndex < LstRecords.Items.Count - 1
                 ChkRecords.Enabled = False
                 TxtName.ReadOnly = True
@@ -1943,12 +1976,13 @@ Friend Module AwaitableObject
 
 #Region "Methods"
 
-        Public Sub OnCompleted(continuation As Action) Implements INotifyCompletion.OnCompleted
+        Public Sub OnCompleted(Continuation As Action) Implements INotifyCompletion.OnCompleted
             Context.Post(
-            Sub(State As Object)
-                CType(State, Action).Invoke()
-            End Sub,
-            continuation)
+                Sub(State As Object)
+                    CType(State, Action).Invoke()
+                End Sub,
+                Continuation
+            )
         End Sub
 
         Public Sub GetResult()

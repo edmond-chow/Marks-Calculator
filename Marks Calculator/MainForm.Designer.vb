@@ -516,9 +516,9 @@ Partial Class FrmMain
         Me.ChkRecords.AutoSize = True
         Me.ChkRecords.Location = New System.Drawing.Point(6, 49)
         Me.ChkRecords.Name = "ChkRecords"
-        Me.ChkRecords.Size = New System.Drawing.Size(148, 15)
+        Me.ChkRecords.Size = New System.Drawing.Size(153, 15)
         Me.ChkRecords.TabIndex = 6
-        Me.ChkRecords.Text = "Allow Duplicated Name"
+        Me.ChkRecords.Text = "Allow Duplicated Names"
         Me.ChkRecords.UseVisualStyleBackColor = True
         '
         'BtnRecordsAdd
