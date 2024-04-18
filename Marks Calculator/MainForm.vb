@@ -9,7 +9,6 @@ Imports System.Runtime.Serialization
 Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
-Imports System.Threading
 Imports System.Data.Common
 Imports System.Buffers
 Imports System.Net.Sockets
@@ -18,6 +17,7 @@ Imports MetroFramework.Forms
 Imports MetroFramework.Drawing
 Imports Newtonsoft.Json
 Imports MySql.Data.MySqlClient
+Imports System.Runtime.CompilerServices
 
 Public Class FrmMain
 
@@ -88,6 +88,11 @@ Public Class FrmMain
     Private ProgressOffset As Integer
 
     ''' <summary>
+    ''' 表示正在繪畫進度條
+    ''' </summary>
+    Private DrawingProgress As Boolean
+
+    ''' <summary>
     ''' 表示目前的表單狀態
     ''' </summary>
     Private State As FormState
@@ -137,6 +142,11 @@ Public Class FrmMain
     ''' </summary>
     Private ReadOnly FrmConnection As FrmConnect
 
+    ''' <summary>
+    ''' FleetingSuspend 先前已註冊的回調函數所構成的列表
+    ''' </summary>
+    Private ContinuationList As Queue(Of Action)
+
 #End Region
 
 #Region "Constructors"
@@ -149,6 +159,7 @@ Public Class FrmMain
         Data = New List(Of Record)()
         Temp = New Record()
         RandomNumberGenerator = New Random()
+        ContinuationList = New Queue(Of Action)()
         FrmConnection = New FrmConnect(
             Function()
                 Return Source
@@ -482,10 +493,10 @@ Public Class FrmMain
     ''' </summary>
     Private Property Progress As Boolean
         Get
-            Return TmrMain.Enabled
+            Return DrawingProgress
         End Get
         Set(Value As Boolean)
-            TmrMain.Enabled = Value
+            DrawingProgress = Value
             If Value Then
                 ProgressOffset = 0
             Else
@@ -683,17 +694,19 @@ Public Class FrmMain
     ''' <summary>
     ''' 在數據列表當中搜尋符合條件的 Record
     ''' </summary>
-    ''' <param name="IndexFunc">指定當搜尋程序結束的時候， LstRecords 會選取哪一個項目</param>
-    Private Sub RecordsSearch(IndexFunc As IndexFunc)
+    ''' <param name="GetSelectedIndex">指定當搜尋程序結束的時候， LstRecords 會選取哪一個項目</param>
+    Private Sub RecordsSearch(GetSelectedIndex As GetSelectedIndex)
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
         TxtRecordsSearch.Tag = New List(Of Integer)()
+        Dim Match As Exception = Nothing
         For i As Integer = 0 To Data.Count - 1
             Dim IsMatched As Boolean = False
             If ChkRecordsSearch.Checked Then
                 Try
                     IsMatched = Regex.IsMatch(Data.Item(i).StudentName, TxtRecordsSearch.Text)
                 Catch Exception As Exception
+                    Match = Exception
                 End Try
             Else
                 IsMatched = Data(i).StudentName.Contains(TxtRecordsSearch.Text)
@@ -703,7 +716,7 @@ Public Class FrmMain
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
-        LstRecords.SelectedIndex = IndexFunc.Invoke()
+        LstRecords.SelectedIndex = GetSelectedIndex.Invoke(Match)
     End Sub
 
     ''' <summary>
@@ -748,7 +761,7 @@ Public Class FrmMain
     ''' <param name="Exception">未處理的異常對象</param>
     Private Async Sub ShowException(Exception As Exception)
         While Tag = IsResizing.Yes
-            Await FleetingBuffer()
+            Await FleetingSuspend()
         End While
         While Exception IsNot Nothing
             MessageBox.Show(Me,
@@ -772,7 +785,7 @@ Public Class FrmMain
     ''' <param name="icon"></param>
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
         While Tag = IsResizing.Yes
-            Await FleetingBuffer()
+            Await FleetingSuspend()
         End While
         Return MessageBox.Show(owner, text, caption, buttons, icon)
     End Function
@@ -780,10 +793,10 @@ Public Class FrmMain
     ''' <summary>
     ''' 中斷一下
     ''' </summary>
-    Private Shared Async Function FleetingBuffer() As Task
-        Await Task.Run(
-            Sub()
-                Thread.Sleep(1)
+    Private Async Function FleetingSuspend() As Task
+        Await New Coroutine(
+            Sub(Task As Action)
+                ContinuationList.Enqueue(Task)
             End Sub
         )
     End Function
@@ -799,7 +812,7 @@ Public Class FrmMain
                 Const WSAECONNRESET As Integer = 10054
                 If CType(Capture, SocketException).ErrorCode = WSAECONNRESET Then
                     While DataControlsLock
-                        Await FleetingBuffer()
+                        Await FleetingSuspend()
                     End While
                     BtnDataSourceConnect.PerformClick()
                 End If
@@ -907,7 +920,7 @@ Public Class FrmMain
                     End If
                 Next
             Next
-            Await FleetingBuffer()
+            Await FleetingSuspend()
         End While
     End Sub
 
@@ -1067,7 +1080,7 @@ Public Class FrmMain
         Await ReadDataFile()
         ShowStatistics()
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return 0
             End Function
         )
@@ -1110,11 +1123,11 @@ Public Class FrmMain
             e.Cancel = True
             If Connection = ConnectState.Connected Then
                 While DataControlsLock
-                    Await FleetingBuffer()
+                    Await FleetingSuspend()
                 End While
                 BtnDataSourceConnect.PerformClick()
                 While Connection <> ConnectState.Disconnected
-                    Await FleetingBuffer()
+                    Await FleetingSuspend()
                 End While
             End If
             Await WriteDataFile()
@@ -1246,7 +1259,7 @@ Public Class FrmMain
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         ShowStatistics()
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
         )
@@ -1270,7 +1283,7 @@ Public Class FrmMain
         Temp.Clear()
         ShowStatistics()
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return 0
             End Function
         )
@@ -1281,7 +1294,7 @@ Public Class FrmMain
         ShowStatistics()
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
             End Function
         )
@@ -1293,7 +1306,7 @@ Public Class FrmMain
         SelectedRecord = Temp
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex - 1
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
         )
@@ -1303,7 +1316,7 @@ Public Class FrmMain
         Data.Sort()
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
         )
@@ -1316,7 +1329,7 @@ Public Class FrmMain
         SelectedRecord = Temp
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex + 1
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
         )
@@ -1397,7 +1410,7 @@ Public Class FrmMain
     Private Sub AnyRecordsSearch_Event(sender As Object, e As EventArgs) Handles TxtRecordsSearch.TextChanged, ChkRecordsSearch.CheckedChanged
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         RecordsSearch(
-            Function() As Integer
+            Function(Exception As Exception) As Integer
                 Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
             End Function
         )
@@ -1413,12 +1426,15 @@ Public Class FrmMain
     End Sub
 
     Private Sub TmrMain_Tick(sender As Object, e As EventArgs) Handles TmrMain.Tick
-        If Tag = IsResizing.No Then
+        If DrawingProgress AndAlso Tag = IsResizing.No Then
             Dim Graphics As Graphics = CreateGraphics() '（透過繪製進度條，保持視窗的標題列位置能夠捕獲相認的訊息）
             DrawProgressTrack(Graphics)
             DrawProgressBar(Graphics)
             Graphics.Dispose()
             ProgressOffset += ProgressBarDeltaX
+        End If
+        If ContinuationList.Count > 0 Then
+            ContinuationList.Dequeue().Invoke()
         End If
     End Sub
 
@@ -1538,7 +1554,12 @@ Public Class FrmMain
 
 #Region "Delegates"
 
-    Private Delegate Function IndexFunc() As Integer
+    ''' <summary>
+    ''' 委託調用決定 LstRecords.SelectedIndex
+    ''' </summary>
+    ''' <param name="Exception">正則表達式匹配的異常對象</param>
+    ''' <returns></returns>
+    Private Delegate Function GetSelectedIndex(Exception As Exception) As Integer
 
 #End Region
 
@@ -1957,5 +1978,71 @@ Public Class FrmMain
         End Structure
 
     End Class
+
+End Class
+
+Friend Class Coroutine
+
+#Region "Fields"
+
+    Private ReadOnly Post As Action(Of Action)
+
+#End Region
+
+#Region "Constructors"
+
+    Public Sub New(Post As Action(Of Action))
+        Me.Post = Post
+    End Sub
+
+#End Region
+
+#Region "Methods"
+
+    Public Function GetAwaiter() As CoroutineAwaiter
+        Return New CoroutineAwaiter(Post)
+    End Function
+
+#End Region
+
+End Class
+
+Friend Class CoroutineAwaiter
+    Implements INotifyCompletion
+
+#Region "Methods"
+
+    Private ReadOnly Post As Action(Of Action)
+
+#End Region
+
+#Region "Constructors"
+
+    Public Sub New(Post As Action(Of Action))
+        Me.Post = Post
+    End Sub
+
+#End Region
+
+#Region "Properties"
+
+    Public ReadOnly Property IsCompleted As Boolean
+        Get
+            Return False
+        End Get
+    End Property
+
+#End Region
+
+#Region "Methods"
+
+    Public Sub OnCompleted(continuation As Action) Implements INotifyCompletion.OnCompleted
+        Post.Invoke(continuation)
+    End Sub
+
+    Public Sub GetResult()
+    End Sub
+
+#End Region
 
 End Class

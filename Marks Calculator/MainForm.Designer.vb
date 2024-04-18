@@ -668,6 +668,7 @@ Partial Class FrmMain
         '
         'TmrMain
         '
+        Me.TmrMain.Enabled = True
         Me.TmrMain.Interval = 10
         '
         'FrmMain
