@@ -203,13 +203,13 @@ Public Class FrmMain
     Private Property SelectedPrevRecord As Record
         Get
             If LstRecords.SelectedIndex <= 1 Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
             Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 2))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex <= 1 Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
             Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 2)) = Value
         End Set
@@ -221,7 +221,7 @@ Public Class FrmMain
     Private Property SelectedRecord As Record
         Get
             If LstRecords.SelectedIndex = -1 Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
             If LstRecords.SelectedIndex = 0 Then
                 Return Temp
@@ -230,7 +230,7 @@ Public Class FrmMain
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex = -1 Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
             If LstRecords.SelectedIndex = 0 Then
                 Temp = Value
@@ -245,13 +245,13 @@ Public Class FrmMain
     Private Property SelectedNextRecord As Record
         Get
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
             Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
             Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex)) = Value
         End Set
@@ -304,7 +304,7 @@ Public Class FrmMain
     Private Property Connection As ConnectState
         Get
             If TypeOf BtnDataSourceConnect.Tag IsNot ConnectState Then
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
             End If
             Return BtnDataSourceConnect.Tag
         End Get
@@ -335,7 +335,7 @@ Public Class FrmMain
                 TxtDataSourceTable.Enabled = False
                 Progress = False
             Else
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Switch case out of bound!")
             End If
         End Set
     End Property
@@ -567,7 +567,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 表示目前的連線狀態
     ''' </summary>
-    Public Enum ConnectState
+    Private Enum ConnectState
         Connecting = 0
         Connected = 1
         Disconnecting = 2
@@ -699,14 +699,14 @@ Public Class FrmMain
         LstRecords.Items.Clear()
         LstRecords.Items.Add("(Input)")
         TxtRecordsSearch.Tag = New List(Of Integer)()
-        Dim Match As Exception = Nothing
+        Dim Thrown As Exception = Nothing
         For i As Integer = 0 To Data.Count - 1
             Dim IsMatched As Boolean = False
             If ChkRecordsSearch.Checked Then
                 Try
                     IsMatched = Regex.IsMatch(Data.Item(i).StudentName, TxtRecordsSearch.Text)
                 Catch Exception As Exception
-                    Match = Exception
+                    Thrown = Exception
                 End Try
             Else
                 IsMatched = Data(i).StudentName.Contains(TxtRecordsSearch.Text)
@@ -716,7 +716,7 @@ Public Class FrmMain
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
-        LstRecords.SelectedIndex = GetSelectedIndex.Invoke(Match)
+        LstRecords.SelectedIndex = GetSelectedIndex.Invoke(Thrown)
     End Sub
 
     ''' <summary>
@@ -793,8 +793,8 @@ Public Class FrmMain
     ''' <summary>
     ''' 中斷一下
     ''' </summary>
-    Private Async Function FleetingSuspend() As Task
-        Await New Coroutine(
+    Private Function FleetingSuspend() As Coroutine
+        Return New Coroutine(
             Sub(Task As Action)
                 ContinuationList.Enqueue(Task)
             End Sub
@@ -1111,7 +1111,7 @@ Public Class FrmMain
                 End If
             Next
             If Native.GetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE) <> ExStyle Then '（驗證 PanMain.CreateParams.ExStyle 為初始狀態）
-                Throw New BranchesShouldNotBeInstantiatedException()
+                Throw New BranchesShouldNotBeInstantiatedException("Status has been changed!")
             End If
             Native.SetWindowLong(PanMain.Handle, Native.GWL_EXSTYLE, ExStyle Or Native.WS_EX_COMPOSITED) '（把控制項 PanMain 動態地設置其視窗風格，實現雙緩衝允許在不閃爍的情況下繪製窗口及其後代）
         End If
@@ -1140,7 +1140,7 @@ Public Class FrmMain
 
     Private Sub TxtInput_Enter(sender As Object, e As EventArgs) Handles TxtInputTest.Enter, TxtInputQuizzes.Enter, TxtInputProject.Enter, TxtInputExam.Enter
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         If LstRecords.Tag = IsAdding.Yes Then
             CType(sender, MetroTextBox).Tag = IsTyping.Yes
@@ -1149,7 +1149,7 @@ Public Class FrmMain
 
     Private Sub TxtInput_TextChanged(sender As Object, e As EventArgs) Handles TxtInputTest.TextChanged, TxtInputQuizzes.TextChanged, TxtInputProject.TextChanged, TxtInputExam.TextChanged
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         If LstRecords.Tag = IsAdding.Yes AndAlso CType(sender, MetroTextBox).Tag = IsTyping.Yes Then
             Dim Number As Double = 0
@@ -1159,7 +1159,7 @@ Public Class FrmMain
 
     Private Sub TxtInput_Leave(sender As Object, e As EventArgs) Handles TxtInputTest.Leave, TxtInputQuizzes.Leave, TxtInputProject.Leave, TxtInputExam.Leave
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         If LstRecords.Tag = IsAdding.Yes Then
             Dim Number As Double = 0
@@ -1178,7 +1178,7 @@ Public Class FrmMain
 
     Private Sub TxtNameWithInput_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtName.KeyDown, TxtInputTest.KeyDown, TxtInputQuizzes.KeyDown, TxtInputProject.KeyDown, TxtInputExam.KeyDown
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         If LstRecords.Tag = IsAdding.Yes AndAlso e.KeyCode = Keys.Enter Then '（實現批量資料輸入的快速 Enter 按鍵）
             If Not CType(sender, MetroTextBox).Equals(TxtInputExam) Then
@@ -1199,7 +1199,7 @@ Public Class FrmMain
 
     Private Sub TxtSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtDataSourceDatabase.KeyDown, TxtDataSourceTable.KeyDown
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         If e.KeyCode = Keys.Enter Then '（實現輸入資料的快速跳轉 Enter 按鍵）
             If Not CType(sender, MetroTextBox).Equals(TxtDataSourceTable) Then
@@ -1337,21 +1337,21 @@ Public Class FrmMain
 
     Private Sub Btn_Enter(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Enter, BtnDataSourceUpload.Enter, BtnDataSourceDownload.Enter, BtnRecordsAdd.Enter, BtnRecordsRemove.Enter, BtnRecordsUp.Enter, BtnRecordsSquare.Enter, BtnRecordsDown.Enter
         If sender Is Nothing OrElse TypeOf sender IsNot MetroButton Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         CType(sender, MetroButton).Highlight = True
     End Sub
 
     Private Sub Btn_Leave(sender As Object, e As EventArgs) Handles BtnDataSourceConnect.Leave, BtnDataSourceUpload.Leave, BtnDataSourceDownload.Leave, BtnRecordsAdd.Leave, BtnRecordsRemove.Leave, BtnRecordsUp.Leave, BtnRecordsSquare.Leave, BtnRecordsDown.Leave
         If sender Is Nothing OrElse TypeOf sender IsNot MetroButton Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         CType(sender, MetroButton).Highlight = False
     End Sub
 
     Private Sub ChkRecords_Enter(sender As Object, e As EventArgs) Handles ChkRecords.Enter, ChkRecordsSearch.Enter
         If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         CType(sender, MetroCheckBox).CustomBackground = True
         CType(sender, MetroCheckBox).BackColor = SystemColors.ControlLight
@@ -1359,7 +1359,7 @@ Public Class FrmMain
 
     Private Sub ChkRecords_Leave(sender As Object, e As EventArgs) Handles ChkRecords.Leave, ChkRecordsSearch.Leave
         If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         CType(sender, MetroCheckBox).CustomBackground = False
     End Sub
@@ -1418,7 +1418,7 @@ Public Class FrmMain
 
     Private Sub ChkEnterKeys_Event(sender As Object, e As KeyEventArgs) Handles ChkRecords.KeyDown, ChkRecordsSearch.KeyDown
         If sender Is Nothing OrElse TypeOf sender IsNot MetroCheckBox Then
-            Throw New BranchesShouldNotBeInstantiatedException()
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
         If e.KeyCode = Keys.Enter Then '（實現透過鍵盤 Enter 按鍵改變核對方塊的狀態）
             CType(sender, MetroCheckBox).Checked = Not CType(sender, MetroCheckBox).Checked
@@ -1557,9 +1557,9 @@ Public Class FrmMain
     ''' <summary>
     ''' 委託調用決定 LstRecords.SelectedIndex
     ''' </summary>
-    ''' <param name="Exception">正則表達式匹配的異常對象</param>
+    ''' <param name="Thrown">正則表達式匹配的異常對象</param>
     ''' <returns></returns>
-    Private Delegate Function GetSelectedIndex(Exception As Exception) As Integer
+    Private Delegate Function GetSelectedIndex(Thrown As Exception) As Integer
 
 #End Region
 
@@ -1592,11 +1592,11 @@ Public Class FrmMain
 
 #Region "Constants"
 
-        Friend Const TestScale As Double = 0.5
-        Friend Const QuizzesScale As Double = 0.2
-        Friend Const ProjectScale As Double = 0.3
-        Friend Const CAScale As Double = 0.4
-        Friend Const ExamScale As Double = 0.6
+        Public Const TestScale As Double = 0.5
+        Public Const QuizzesScale As Double = 0.2
+        Public Const ProjectScale As Double = 0.3
+        Public Const CAScale As Double = 0.4
+        Public Const ExamScale As Double = 0.6
         Private Const Invalid As String = "[Invaild]"
 
 #End Region
@@ -1646,7 +1646,7 @@ Public Class FrmMain
 
 #Region "Properties"
 
-        Friend Shared ReadOnly Property Scale(Number As Double) As String
+        Public Shared ReadOnly Property Scale(Number As Double) As String
             Get
                 Return (Number * 100).ToString() + "%"
             End Get
@@ -1791,15 +1791,15 @@ Public Class FrmMain
 
 #Region "Methods"
 
-        Private Shared Function Enumerate(Separator As String, ParamArray Appends() As String) As String
-            If Appends Is Nothing OrElse Appends.Length = 0 Then
+        Private Shared Function Enumerate(Separator As String, ParamArray Params() As String) As String
+            If Params Is Nothing OrElse Params.Length = 0 Then
                 Return String.Empty
             End If
-            Dim [Return] As String = Appends(0)
-            For Each Append As String In Appends.Skip(1)
-                [Return] += Separator + Append
+            Dim Result As String = Params(0)
+            For Each Param As String In Params.Skip(1)
+                Result += Separator + Param
             Next
-            Return [Return]
+            Return Result
         End Function
 
         Public Sub Clear()
@@ -1867,33 +1867,6 @@ Public Class FrmMain
         Public Shared Widening Operator CType(Value As (Name As String, Test As Double, Quizzes As Double, Project As Double, Exam As Double)) As Record
             Return New Record(Value.Name, Value.Test, Value.Quizzes, Value.Project, Value.Exam)
         End Operator
-
-#End Region
-
-    End Class
-
-    <Serializable>
-    Private Class BranchesShouldNotBeInstantiatedException
-        Inherits NotImplementedException
-
-#Region "Constructors"
-
-        Public Sub New()
-            MyBase.New()
-        End Sub
-
-        Public Sub New(message As String)
-            MyBase.New(message)
-        End Sub
-
-        Public Sub New(message As String, inner As Exception)
-            MyBase.New(message, inner)
-        End Sub
-
-        <SecuritySafeCritical>
-        Protected Sub New(info As SerializationInfo, context As StreamingContext)
-            MyBase.New(info, context)
-        End Sub
 
 #End Region
 
@@ -1981,6 +1954,33 @@ Public Class FrmMain
 
 End Class
 
+<Serializable>
+Friend Class BranchesShouldNotBeInstantiatedException
+    Inherits NotImplementedException
+
+#Region "Constructors"
+
+    Public Sub New()
+        MyBase.New()
+    End Sub
+
+    Public Sub New(message As String)
+        MyBase.New(message)
+    End Sub
+
+    Public Sub New(message As String, inner As Exception)
+        MyBase.New(message, inner)
+    End Sub
+
+    <SecuritySafeCritical>
+    Protected Sub New(info As SerializationInfo, context As StreamingContext)
+        MyBase.New(info, context)
+    End Sub
+
+#End Region
+
+End Class
+
 Friend Class Coroutine
 
 #Region "Fields"
@@ -2040,8 +2040,9 @@ Friend Class CoroutineAwaiter
         Post.Invoke(continuation)
     End Sub
 
-    Public Sub GetResult()
-    End Sub
+    Public Function GetResult() As Action(Of Action)
+        Return Post
+    End Function
 
 #End Region
 
