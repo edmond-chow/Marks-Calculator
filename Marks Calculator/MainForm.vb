@@ -264,18 +264,11 @@ Public Class FrmMain
         Get
             Return GetType(FrmMain).GetRuntimeFields().Where(
                 Function(Field As FieldInfo) As Boolean
-                    Return Field.FieldType = GetType(MetroButton) OrElse
-                        Field.FieldType = GetType(MetroTextBox) OrElse
-                        Field.FieldType = GetType(MetroCheckBox) OrElse
-                        Field.FieldType = GetType(ListBox)
+                    Return Field.FieldType.IsSubclassOf(GetType(Control))
                 End Function
             ).Select(
                 Function(Field As FieldInfo) As (Field As FieldInfo, Value As Object)
-                    Return (Field, Field.GetValue(Me))
-                End Function
-            ).Select(
-                Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
-                    Return (Tuple.Field, Tuple.Value.GetType().GetProperty("Enabled").GetValue(Tuple.Value))
+                    Return (Field, Field.GetValue(Me).GetType().GetProperty("Enabled").GetValue(Field.GetValue(Me)))
                 End Function
             )
         End Get
