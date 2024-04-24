@@ -147,6 +147,11 @@ Public Class FrmMain
     ''' </summary>
     Private ContinuationList As Queue(Of Action)
 
+    ''' <summary>
+    ''' 用來暫存上傳與下載的錯誤代碼
+    ''' </summary>
+    Private ErrorCodes As Dictionary(Of ErrorKeys, Integer)
+
 #End Region
 
 #Region "Constructors"
@@ -387,28 +392,35 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 從資料庫上傳數據的 Sql 指令
+    ''' 從資料庫上傳數據的 Sql 指令，其中會產生隨機的錯誤代碼
     ''' </summary>
     Private ReadOnly Property UploadCmd As String
         Get
+            GenerateErrorCodes()
+            Dim OpFT As String = ErrorCodes(ErrorKeys.NonExistFieldWithType).ToString()
+            Dim OpST As String = ErrorCodes(ErrorKeys.InvalidSourceAndTable).ToString()
+            Dim NoOp As String = ErrorCodes(ErrorKeys.NoOperationState).ToString()
             Dim Db As String = TxtDataSourceDatabase.Text
             Dim Tb As String = TxtDataSourceTable.Text
             Dim Nl As String = Environment.NewLine
+            If Data.Count = 0 Then
+                Return "SELECT " + NoOp + " AS ERROR_CODE; " + Nl
+            End If
             Dim Result As New StringBuilder()
             Result.Append("CREATE DATABASE IF NOT EXISTS `").Append(Db).Append("`; ").Append(Nl)
             Result.Append("CREATE TABLE IF NOT EXISTS `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
             Result.Append("IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND NOT DATA_TYPE = 'INT' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND NOT DATA_TYPE = 'TEXT' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 1 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_KEY = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
             Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
             Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
@@ -444,35 +456,41 @@ Public Class FrmMain
             Next
             Result.Append("    END IF; ").Append(Nl)
             Result.Append("ELSE ").Append(Nl)
-            Result.Append("    SELECT 4 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
             Return Result.ToString()
         End Get
     End Property
 
     ''' <summary>
-    ''' 從資料庫下載數據的 Sql 指令
+    ''' 從資料庫下載數據的 Sql 指令，其中會產生隨機的錯誤代碼
     ''' </summary>
     Private ReadOnly Property DownloadCmd As String
         Get
+            GenerateErrorCodes()
+            Dim OpFT As String = ErrorCodes(ErrorKeys.NonExistFieldWithType).ToString()
+            Dim OpST As String = ErrorCodes(ErrorKeys.InvalidSourceAndTable).ToString()
+            Dim NoOp As String = ErrorCodes(ErrorKeys.NoOperationState).ToString()
             Dim Db As String = TxtDataSourceDatabase.Text
             Dim Tb As String = TxtDataSourceTable.Text
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder()
             Result.Append("IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND TABLE_TYPE = 'BASE TABLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 2 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND DATA_TYPE = 'INT' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND DATA_TYPE = 'TEXT' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT 3 AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL ) THEN ").Append(Nl)
+            Result.Append("    SELECT ").Append(NoOp).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSE ").Append(Nl)
             Result.Append("    SELECT DISTINCT * FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
@@ -564,6 +582,15 @@ Public Class FrmMain
         Connected = 1
         Disconnecting = 2
         Disconnected = 3
+    End Enum
+
+    ''' <summary>
+    ''' 表示上傳與下載的錯誤鍵值
+    ''' </summary>
+    Private Enum ErrorKeys
+        NonExistFieldWithType = 1
+        InvalidSourceAndTable = 2
+        NoOperationState = 3
     End Enum
 
 #End Region
@@ -908,6 +935,22 @@ Public Class FrmMain
     End Sub
 
     ''' <summary>
+    ''' 產生隨機的錯誤代碼
+    ''' </summary>
+    Private Sub GenerateErrorCodes()
+        ErrorCodes = New Dictionary(Of ErrorKeys, Integer)()
+        Dim Temp As New HashSet(Of Integer)
+        While Temp.Count < GetType(ErrorKeys).GetEnumValues().Length
+            Temp.Add(RandomNumberGenerator.Next(RandomNumberMinimum, RandomNumberMaximum))
+        End While
+        Dim i As Integer = 0
+        For Each Key As ErrorKeys In GetType(ErrorKeys).GetEnumValues()
+            ErrorCodes.Add(Key, Temp(i))
+            i += 1
+        Next
+    End Sub
+
+    ''' <summary>
     ''' 上傳 LstRecords 中的紀錄到 MySql 資料庫
     ''' </summary>
     Private Async Function Upload() As Task
@@ -915,10 +958,12 @@ Public Class FrmMain
             DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync()
             If Await DataReader.ReadAsync() AndAlso DataReader.VisibleFieldCount = 1 Then
                 Select Case DataReader("ERROR_CODE")
-                    Case 1
-                        Await ShowMessage(Me, "Some of the fields and its data type are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
-                    Case 4
+                    Case ErrorCodes(ErrorKeys.InvalidSourceAndTable)
                         Await ShowMessage(Me, "The primary key should be specified as ""ID"" whenever exists.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Case ErrorCodes(ErrorKeys.NonExistFieldWithType)
+                        Await ShowMessage(Me, "Some of the fields and data type thereof are not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Case ErrorCodes(ErrorKeys.NoOperationState)
+                        Await ShowMessage(Me, "There are nothing in local records!", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
                 End Select
                 DataReader.Close()
                 Return
@@ -941,10 +986,12 @@ Public Class FrmMain
             DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync()
             If Await DataReader.ReadAsync() AndAlso DataReader.VisibleFieldCount = 1 Then
                 Select Case DataReader("ERROR_CODE")
-                    Case 2
-                        Await ShowMessage(Me, "The data source or the table are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
-                    Case 3
-                        Await ShowMessage(Me, "Some of the fields may not exist and its data type may not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Case ErrorCodes(ErrorKeys.InvalidSourceAndTable)
+                        Await ShowMessage(Me, "The data source or table thereof are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Case ErrorCodes(ErrorKeys.NonExistFieldWithType)
+                        Await ShowMessage(Me, "Some of the fields may not exist and data type thereof may not matching!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Case ErrorCodes(ErrorKeys.NoOperationState)
+                        Await ShowMessage(Me, "There are nothing in source records!", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
                 End Select
                 DataReader.Close()
                 Return
