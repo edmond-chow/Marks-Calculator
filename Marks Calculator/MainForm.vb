@@ -387,87 +387,89 @@ Public Class FrmMain
     ''' </summary>
     Private ReadOnly Property ConnectionCmd As String
         Get
-            Return "DATASOURCE = " + DataSourceInfo.Host + "; USERNAME = " + DataSourceInfo.Username + "; PASSWORD = " + DataSourceInfo.Password + "; "
+            Return "DATASOURCE = " + DataSourceInfo.Host + "; USERNAME = " + DataSourceInfo.Username + "; PASSWORD = " + DataSourceInfo.Password + "; ALLOW USER VARIABLES = True; "
         End Get
     End Property
 
     ''' <summary>
-    ''' 從資料庫上傳數據的 Sql 指令，其中會產生隨機的錯誤代碼
+    ''' 從資料庫上傳數據的 Sql 指令
     ''' </summary>
     Private ReadOnly Property UploadCmd As String
         Get
-            GenerateErrorCodes()
             Dim OpFT As String = ErrorCodes(ErrorKeys.NonExistFieldWithType).ToString()
             Dim OpST As String = ErrorCodes(ErrorKeys.InvalidSourceAndTable).ToString()
             Dim NoOp As String = ErrorCodes(ErrorKeys.NoOperationState).ToString()
             Dim Db As String = TxtDataSourceDatabase.Text
             Dim Tb As String = TxtDataSourceTable.Text
             Dim Nl As String = Environment.NewLine
-            If Data.Count = 0 Then
-                Return "SELECT " + NoOp + " AS ERROR_CODE; " + Nl
-            End If
             Dim Result As New StringBuilder()
-            Result.Append("CREATE DATABASE IF NOT EXISTS `").Append(Db).Append("`; ").Append(Nl)
-            Result.Append("CREATE TABLE IF NOT EXISTS `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
-            Result.Append("IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND NOT DATA_TYPE = 'INT' ) THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND NOT DATA_TYPE = 'TEXT' ) THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_KEY = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
-            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
-            Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' ) THEN ").Append(Nl)
-            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `StudentName` TEXT NOT NULL; ").Append(Nl)
-            Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' ) THEN ").Append(Nl)
-            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Test` DOUBLE NOT NULL; ").Append(Nl)
-            Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' ) THEN ").Append(Nl)
-            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Quizzes` DOUBLE NOT NULL; ").Append(Nl)
-            Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' ) THEN ").Append(Nl)
-            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Project` DOUBLE NOT NULL; ").Append(Nl)
-            Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' ) THEN ").Append(Nl)
-            Result.Append("        ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Exam` DOUBLE NOT NULL; ").Append(Nl)
-            Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND COLUMN_KEY = 'PRI' ) THEN ").Append(Nl)
-            For Each Record In Data
-                Result.Append("        IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' ) THEN ").Append(Nl)
-                Result.Append("            INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
-                Result.Append("        ELSE ").Append(Nl)
-                Result.Append("            UPDATE `").Append(Db).Append("`.`").Append(Tb).Append("` SET `StudentName` = '").Append(Record.StudentName).Append("', `Test` = '").Append(Record.TestMarks.ToString()).Append("', `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("', `Project` = '").Append(Record.ProjectMarks.ToString()).Append("', `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' WHERE `ID` = '").Append(Record.ID.ToString()).Append("'; ").Append(Nl)
-                Result.Append("        END IF; ").Append(Nl)
-            Next
-            Result.Append("    ELSE ").Append(Nl)
-            For Each Record In Data
-                Result.Append("        IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' AND `StudentName` = '").Append(Record.StudentName).Append("' AND `Test` = '").Append(Record.TestMarks.ToString()).Append("' AND `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("' AND `Project` = '").Append(Record.ProjectMarks.ToString()).Append("' AND `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' ) THEN ").Append(Nl)
-                Result.Append("            INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
-                Result.Append("        END IF; ").Append(Nl)
-            Next
-            Result.Append("    END IF; ").Append(Nl)
+            Result.Append("SET @Count = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
+            Result.Append("IF @Count = 0 THEN ").Append(Nl)
+            Result.Append("    SELECT ").Append(NoOp).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSE ").Append(Nl)
-            Result.Append("    SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    CREATE DATABASE IF NOT EXISTS `").Append(Db).Append("`; ").Append(Nl)
+            Result.Append("    CREATE TABLE IF NOT EXISTS `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
+            Result.Append("    IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND NOT DATA_TYPE = 'INT' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND NOT DATA_TYPE = 'TEXT' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_KEY = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `StudentName` TEXT NOT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Test` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Quizzes` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Project` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Exam` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("        IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND COLUMN_KEY = 'PRI' ) THEN ").Append(Nl)
+            For Each Record In Data
+                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' ) THEN ").Append(Nl)
+                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+                Result.Append("            ELSE ").Append(Nl)
+                Result.Append("                UPDATE `").Append(Db).Append("`.`").Append(Tb).Append("` SET `StudentName` = '").Append(Record.StudentName).Append("', `Test` = '").Append(Record.TestMarks.ToString()).Append("', `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("', `Project` = '").Append(Record.ProjectMarks.ToString()).Append("', `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' WHERE `ID` = '").Append(Record.ID.ToString()).Append("'; ").Append(Nl)
+                Result.Append("            END IF; ").Append(Nl)
+            Next
+            Result.Append("            SELECT NULL; ").Append(Nl)
+            Result.Append("        ELSE ").Append(Nl)
+            For Each Record In Data
+                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' AND `StudentName` = '").Append(Record.StudentName).Append("' AND `Test` = '").Append(Record.TestMarks.ToString()).Append("' AND `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("' AND `Project` = '").Append(Record.ProjectMarks.ToString()).Append("' AND `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' ) THEN ").Append(Nl)
+                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+                Result.Append("            END IF; ").Append(Nl)
+            Next
+            Result.Append("            SELECT NULL; ").Append(Nl)
+            Result.Append("        END IF; ").Append(Nl)
+            Result.Append("    ELSE ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    END IF; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
             Return Result.ToString()
         End Get
     End Property
 
     ''' <summary>
-    ''' 從資料庫下載數據的 Sql 指令，其中會產生隨機的錯誤代碼
+    ''' 從資料庫下載數據的 Sql 指令
     ''' </summary>
     Private ReadOnly Property DownloadCmd As String
         Get
-            GenerateErrorCodes()
             Dim OpFT As String = ErrorCodes(ErrorKeys.NonExistFieldWithType).ToString()
             Dim OpST As String = ErrorCodes(ErrorKeys.InvalidSourceAndTable).ToString()
             Dim NoOp As String = ErrorCodes(ErrorKeys.NoOperationState).ToString()
@@ -954,9 +956,13 @@ Public Class FrmMain
     ''' 上傳 LstRecords 中的紀錄到 MySql 資料庫
     ''' </summary>
     Private Async Function Upload() As Task
+        GenerateErrorCodes()
         Try
             DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync()
-            If Await DataReader.ReadAsync() AndAlso DataReader.VisibleFieldCount = 1 Then
+            If Not Await DataReader.ReadAsync() Then
+                DataReader.Close()
+                Return
+            ElseIf DataReader.VisibleFieldCount = 1 AndAlso DataReader.GetName(0) = "ERROR_CODE" AndAlso DataReader.GetDataTypeName(0) = "INT" Then
                 Select Case DataReader("ERROR_CODE")
                     Case ErrorCodes(ErrorKeys.InvalidSourceAndTable)
                         Await ShowMessage(Me, "The primary key should be specified as ""ID"" whenever exists.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -982,9 +988,13 @@ Public Class FrmMain
     ''' 下載 LstRecords 中的紀錄到 MySql 資料庫
     ''' </summary>
     Private Async Function Download() As Task
+        GenerateErrorCodes()
         Try
             DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync()
-            If Await DataReader.ReadAsync() AndAlso DataReader.VisibleFieldCount = 1 Then
+            If Not Await DataReader.ReadAsync() Then
+                DataReader.Close()
+                Return
+            ElseIf DataReader.VisibleFieldCount = 1 AndAlso DataReader.GetName(0) = "ERROR_CODE" AndAlso DataReader.GetDataTypeName(0) = "INT" Then
                 Select Case DataReader("ERROR_CODE")
                     Case ErrorCodes(ErrorKeys.InvalidSourceAndTable)
                         Await ShowMessage(Me, "The data source or table thereof are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
