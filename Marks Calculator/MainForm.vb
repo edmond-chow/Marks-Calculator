@@ -68,12 +68,12 @@ Public Class FrmMain
 #Region "Fields"
 
     ''' <summary>
-    ''' 用來存儲多筆數據的執行個體
+    ''' 用來存儲多筆已經輸入的數據
     ''' </summary>
     Private Data As List(Of Record)
 
     ''' <summary>
-    ''' 用來暫存一筆數據的執行個體
+    ''' 用來暫存一筆正在輸入的數據
     ''' </summary>
     Private Temp As Record
 
@@ -161,7 +161,7 @@ Public Class FrmMain
         RandomNumberGenerator = New Random()
         ContinuationList = New Queue(Of Action)()
         FrmConnection = New FrmConnect(
-            Function()
+            Function() As (Host As String, Username As String, Password As String)
                 Return Source
             End Function,
             Sub(Tuple As (Host As String, Username As String, Password As String))
@@ -175,25 +175,24 @@ Public Class FrmMain
 #Region "Properties"
 
     ''' <summary>
-    ''' 表示數據輸入欄位的 Record
+    ''' 表示數據輸入欄位的 Record，其中會生成隨機的 ID
     ''' </summary>
     Private ReadOnly Property InputedRecord As Record
         Get
-            Dim MyRecord As Record = (TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
-            Dim RandomNumber As Integer = 0
+            Dim Result As Record = (TxtName.Text, Double.Parse(TxtInputTest.Text), Double.Parse(TxtInputQuizzes.Text), Double.Parse(TxtInputProject.Text), Double.Parse(TxtInputExam.Text))
             While True
-                RandomNumber = RandomNumberGenerator.Next(RandomNumberMinimum, RandomNumberMaximum)
+                Dim RandomNumber As Integer = RandomNumberGenerator.Next(RandomNumberMinimum, RandomNumberMaximum)
                 Dim Count As Long = Data.LongCount(
                     Function(Record As Record) As Boolean
                         Return Record.ID = RandomNumber
                     End Function
                 )
                 If Count = 0 Then
+                    Result.ID = RandomNumber
                     Exit While
                 End If
             End While
-            MyRecord.ID = RandomNumber
-            Return MyRecord
+            Return Result
         End Get
     End Property
 
@@ -595,12 +594,12 @@ Public Class FrmMain
     ''' <summary>
     ''' 取得用戶輸入的資料
     ''' </summary>
-    Private Sub GetInputs()
-        TxtName.Text = SelectedRecord.StudentName
-        TxtInputTest.Text = SelectedRecord.TestMarks.ToString()
-        TxtInputQuizzes.Text = SelectedRecord.QuizzesMarks.ToString()
-        TxtInputProject.Text = SelectedRecord.ProjectMarks.ToString()
-        TxtInputExam.Text = SelectedRecord.ExamMarks.ToString()
+    Private Sub FulfilledInputs(Result As Record)
+        TxtName.Text = Result.StudentName
+        TxtInputTest.Text = Result.TestMarks.ToString()
+        TxtInputQuizzes.Text = Result.QuizzesMarks.ToString()
+        TxtInputProject.Text = Result.ProjectMarks.ToString()
+        TxtInputExam.Text = Result.ExamMarks.ToString()
     End Sub
 
     ''' <summary>
@@ -608,18 +607,10 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Result">表示分數的記錄</param>
     Private Sub ShowResult(Result As Record)
-        If Result.IsReal Then
-            TxtResultCA.Text = Result.CAMarks.ToString()
-            TxtResultModule.Text = Result.ModuleMarks.ToString()
-            TxtReusltGrade.Text = Result.ModuleGrade.ToString()
-            TxtReusltRemarks.Text = Result.Remarks.ToString()
-        Else
-            Const ErrorInput As String = "[Error Input]"
-            TxtResultCA.Text = ErrorInput
-            TxtResultModule.Text = ErrorInput
-            TxtReusltGrade.Text = ErrorInput
-            TxtReusltRemarks.Text = ErrorInput
-        End If
+        TxtResultCA.Text = Result.CAMarks.ToString()
+        TxtResultModule.Text = Result.ModuleMarks.ToString()
+        TxtReusltGrade.Text = Result.ModuleGrade.ToString()
+        TxtReusltRemarks.Text = Result.Remarks.ToString()
     End Sub
 
     ''' <summary>
@@ -649,39 +640,38 @@ Public Class FrmMain
         ).ToString()
         Dim N As Double = Data.LongCount()
         If N = 0 Then
-            Const NaN As String = "[NaN]"
-            TxtStatisticsAv.Text = NaN
-            TxtStatisticsSd.Text = NaN
-            TxtStatisticsMd.Text = NaN
-            Return
-        End If
-        Dim Av As Double = Data.Sum(
-            Function(Record As Record) As Double
-                Return Record.ModuleMarks
-            End Function
-        ) / N
-        TxtStatisticsAv.Text = Av.ToString()
-        Dim Sd As Double = Math.Sqrt(
-            Data.Sum(
+            TxtStatisticsAv.Text = "[NaN]"
+            TxtStatisticsSd.Text = "[NaN]"
+            TxtStatisticsMd.Text = "[NaN]"
+        Else
+            Dim Av As Double = Data.Sum(
                 Function(Record As Record) As Double
-                    Return (Record.ModuleMarks - Av) ^ 2
+                    Return Record.ModuleMarks
                 End Function
             ) / N
-        )
-        TxtStatisticsSd.Text = Sd.ToString()
-        Dim Sorted As Double() = Data.Select(
-            Function(Record As Record) As Double
-                Return Record.ModuleMarks
-            End Function
-        ).ToArray()
-        Array.Sort(Sorted)
-        Dim Md As Double =
-        If(
-            Sorted.Length Mod 2 = 0,
-            (Sorted(Sorted.Length / 2) + Sorted(Sorted.Length / 2 - 1)) / 2,
-            Sorted((Sorted.Length - 1) / 2)
-        )
-        TxtStatisticsMd.Text = Md.ToString()
+            TxtStatisticsAv.Text = Av.ToString()
+            Dim Sd As Double = Math.Sqrt(
+                Data.Sum(
+                    Function(Record As Record) As Double
+                        Return (Record.ModuleMarks - Av) ^ 2
+                    End Function
+                ) / N
+            )
+            TxtStatisticsSd.Text = Sd.ToString()
+            Dim Sorted As Double() = Data.Select(
+                Function(Record As Record) As Double
+                    Return Record.ModuleMarks
+                End Function
+            ).ToArray()
+            Array.Sort(Sorted)
+            Dim Md As Double =
+            If(
+                Sorted.Length Mod 2 = 0,
+                (Sorted(Sorted.Length / 2) + Sorted(Sorted.Length / 2 - 1)) / 2,
+                Sorted((Sorted.Length - 1) / 2)
+            )
+            TxtStatisticsMd.Text = Md.ToString()
+        End If
     End Sub
 
     ''' <summary>
@@ -1146,7 +1136,7 @@ Public Class FrmMain
         End If
         If LstRecords.Tag = IsAdding.Yes AndAlso CType(sender, MetroTextBox).Tag = IsTyping.Yes Then
             Dim Number As Double = 0
-            ShowResult(If(Double.TryParse(CType(sender, MetroTextBox).Text, Number), InputedRecord, False))
+            ShowResult(If(Double.TryParse(CType(sender, MetroTextBox).Text, Number), InputedRecord, Record.Null))
         End If
     End Sub
 
@@ -1165,7 +1155,7 @@ Public Class FrmMain
             CType(sender, MetroTextBox).Text = Number.ToString()
             CType(sender, MetroTextBox).Tag = IsTyping.No
             Temp = InputedRecord
-            ShowResult(InputedRecord)
+            ShowResult(Temp)
         End If
     End Sub
 
@@ -1260,20 +1250,20 @@ Public Class FrmMain
     End Sub
 
     Private Sub BtnRecordsAdd_Click(sender As Object, e As EventArgs) Handles BtnRecordsAdd.Click
-        If TxtName.Text = String.Empty Then
+        If Temp.StudentName = String.Empty Then
             MessageBox.Show(Me, "The record to be inserted into the local records should be a record that has a non-empty ""StudentName"".", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
             Return
         End If
         If Not ChkRecords.Checked Then
             For Each Record As Record In Data
-                If Record.StudentName = InputedRecord.StudentName Then
+                If Record.StudentName = Temp.StudentName Then
                     MessageBox.Show(Me, "The record to be inserted into the local records should not match the same ""StudentName"". If you would like to suppress the restriction, you have to tick out the ""Allow Duplicated Name"" checkbox.", Text, MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
                     Return
                 End If
             Next
         End If
-        Data.Add(InputedRecord)
-        Temp.Clear()
+        Data.Add(Temp)
+        Temp = New Record()
         ShowStatistics()
         RecordsSearch(
             Function(Exception As Exception) As Integer
@@ -1396,8 +1386,8 @@ Public Class FrmMain
                 LstRecords.Tag = IsAdding.No
             End If
         End If
-        GetInputs()
-        ShowResult(InputedRecord)
+        FulfilledInputs(SelectedRecord)
+        ShowResult(SelectedRecord)
     End Sub
 
     Private Sub AnyRecordsSearch_Event(sender As Object, e As EventArgs) Handles TxtRecordsSearch.TextChanged, ChkRecordsSearch.CheckedChanged
@@ -1602,6 +1592,7 @@ Public Class FrmMain
         Private Project As Double
         Private Exam As Double
         Private Code As Integer
+        Public Shared ReadOnly Null As New Record(Invalid, Double.NaN, Double.NaN, Double.NaN, Double.NaN)
 
 #End Region
 
@@ -1723,7 +1714,7 @@ Public Class FrmMain
         <JsonProperty>
         Public Property StudentName As String Implements IRecord.StudentName
             Get
-                Return If(Name <> String.Empty, Name, String.Empty)
+                Return Name
             End Get
             Set(Value As String)
                 Name = Value
