@@ -1786,15 +1786,6 @@ Public Class FrmMain
             Return Result
         End Function
 
-        Public Sub Clear()
-            Name = String.Empty
-            Test = 0
-            Quizzes = 0
-            Project = 0
-            Exam = 0
-            Code = 0
-        End Sub
-
         Public Overrides Function Equals(Other As Object) As Boolean Implements IEquatable(Of Object).Equals
             Return TypeOf Other Is Record AndAlso Me = CType(Other, Record)
         End Function
