@@ -404,9 +404,7 @@ Public Class FrmMain
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder()
             Result.Append("SET @Count = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
-            Result.Append("IF @Count = 0 THEN ").Append(Nl)
-            Result.Append("    SELECT ").Append(NoOp).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSE ").Append(Nl)
+            Result.Append("IF @Count > 0 THEN ").Append(Nl)
             Result.Append("    CREATE DATABASE IF NOT EXISTS `").Append(Db).Append("`; ").Append(Nl)
             Result.Append("    CREATE TABLE IF NOT EXISTS `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
             Result.Append("    IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND NOT DATA_TYPE = 'INT' ) THEN ").Append(Nl)
@@ -421,7 +419,9 @@ Public Class FrmMain
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND NOT DATA_TYPE = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_KEY = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_KEY = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("        SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
+            Result.Append("    ELSE ").Append(Nl)
             Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
             Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
@@ -457,9 +457,9 @@ Public Class FrmMain
             Next
             Result.Append("            SELECT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("    ELSE ").Append(Nl)
-            Result.Append("        SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("    END IF; ").Append(Nl)
+            Result.Append("ELSE ").Append(Nl)
+            Result.Append("    SELECT ").Append(NoOp).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
             Return Result.ToString()
         End Get
@@ -949,10 +949,10 @@ Public Class FrmMain
         While Temp.Count < GetType(ErrorKeys).GetEnumValues().Length
             Temp.Add(RandomNumberGenerator.Next(RandomNumberMinimum, RandomNumberMaximum))
         End While
-        Dim i As Integer = 0
+        Dim Index As Integer = 0
         For Each Key As ErrorKeys In GetType(ErrorKeys).GetEnumValues()
-            ErrorCodes.Add(Key, Temp(i))
-            i += 1
+            ErrorCodes.Add(Key, Temp(Index))
+            Index += 1
         Next
     End Sub
 
