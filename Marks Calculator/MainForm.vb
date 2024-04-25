@@ -839,36 +839,34 @@ Public Class FrmMain
     Private Async Function ReadDataFile() As Task
         SuspendControls()
         Try
-            Dim Distinct As New HashSet(Of Record)
             DataFile = File.Open(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read)
-            If DataFile.Length > 0 Then
+            If DataFile.Length > 0 AndAlso DataFile.CanRead Then
                 Dim JsonBuffer(DataFile.Length - 1) As Byte
                 Await DataFile.ReadAsync(JsonBuffer, 0, DataFile.Length)
-                Distinct = JsonConvert.DeserializeObject(Of HashSet(Of Record))(Encoding.UTF8.GetString(JsonBuffer))
-            End If
-            Data.AddRange(Distinct)
-            If Not HaveUniqueIDs(Data) Then
-                Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Dim Reserved As New HashSet(Of Integer)
-                Dim Duplicated As New HashSet(Of Integer)
-                For Each Record As Record In Data
-                    If Reserved.Contains(Record.ID) Then
-                        Duplicated.Add(Record.ID)
-                    End If
-                    Reserved.Add(Record.ID)
-                Next
-                For Each ID As Integer In Duplicated
-                    Reserved.Remove(ID)
-                Next
-                Data = Data.Where(
-                    Function(Record As Record) As Boolean
-                        Return Reserved.Contains(Record.ID)
-                    End Function
-                ).ToList()
+                Data.AddRange(JsonConvert.DeserializeObject(Of HashSet(Of Record))(Encoding.UTF8.GetString(JsonBuffer)))
+                If Not HaveUniqueIDs(Data) Then
+                    Dim Result As DialogResult = Await ShowMessage(Me, "Some of the records from local storage have the same ""ID"". Such cannot be inserted!", Text, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    Dim Reserved As New HashSet(Of Integer)
+                    Dim Duplicated As New HashSet(Of Integer)
+                    For Each Record As Record In Data
+                        If Reserved.Contains(Record.ID) Then
+                            Duplicated.Add(Record.ID)
+                        End If
+                        Reserved.Add(Record.ID)
+                    Next
+                    For Each ID As Integer In Duplicated
+                        Reserved.Remove(ID)
+                    Next
+                    Data = Data.Where(
+                        Function(Record As Record) As Boolean
+                            Return Reserved.Contains(Record.ID)
+                        End Function
+                    ).ToList()
+                End If
             End If
         Catch Exception As Exception
             ShowException(Exception)
-            DataFile = Nothing
+            DataFile?.Close()
         End Try
         ResumeControls()
     End Function
@@ -879,11 +877,14 @@ Public Class FrmMain
     Private Async Function WriteDataFile() As Task
         SuspendControls()
         Try
-            If DataFile IsNot Nothing Then
+            If DataFile IsNot Nothing AndAlso DataFile.CanWrite Then
                 Dim JsonBuffer As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
                 DataFile.SetLength(0)
                 Await DataFile.WriteAsync(JsonBuffer, 0, JsonBuffer.Length)
                 DataFile.Close()
+                If Data.Count = 0 Then
+                    File.Delete(FileName)
+                End If
             End If
         Catch Exception As Exception
             ShowException(Exception)
