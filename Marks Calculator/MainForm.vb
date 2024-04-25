@@ -840,7 +840,7 @@ Public Class FrmMain
         SuspendControls()
         Try
             DataFile = File.Open(FileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read)
-            If DataFile.Length > 0 AndAlso DataFile.CanRead Then
+            If DataFile.Length > 0 Then
                 Dim JsonBuffer(DataFile.Length - 1) As Byte
                 Await DataFile.ReadAsync(JsonBuffer, 0, DataFile.Length)
                 Data.AddRange(JsonConvert.DeserializeObject(Of HashSet(Of Record))(Encoding.UTF8.GetString(JsonBuffer)))
@@ -866,7 +866,10 @@ Public Class FrmMain
             End If
         Catch Exception As Exception
             ShowException(Exception)
-            DataFile?.Close()
+            If DataFile IsNot Nothing Then
+                DataFile.Close()
+                DataFile = Nothing
+            End If
         End Try
         ResumeControls()
     End Function
@@ -877,7 +880,7 @@ Public Class FrmMain
     Private Async Function WriteDataFile() As Task
         SuspendControls()
         Try
-            If DataFile IsNot Nothing AndAlso DataFile.CanWrite Then
+            If DataFile IsNot Nothing Then
                 Dim JsonBuffer As Byte() = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(Data, Formatting.Indented))
                 DataFile.SetLength(0)
                 Await DataFile.WriteAsync(JsonBuffer, 0, JsonBuffer.Length)
