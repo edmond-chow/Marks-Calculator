@@ -202,25 +202,25 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的上一個 Record
+    ''' 表示 LstRecords 已選取項目的上一個 Record，透過 TxtRecordsSearch.Tag 定位 Data 中滿足搜尋結果的元素
     ''' </summary>
     Private Property SelectedPrevRecord As Record
         Get
             If LstRecords.SelectedIndex <= 1 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 2))
+            Return Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 2))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex <= 1 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 2)) = Value
+            Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 2)) = Value
         End Set
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的 Record
+    ''' 表示 LstRecords 已選取項目的 Record，透過 TxtRecordsSearch.Tag 定位 Data 中滿足搜尋結果的元素（當 LstRecords 選取首筆項目時會回傳 Temp）
     ''' </summary>
     Private Property SelectedRecord As Record
         Get
@@ -230,7 +230,7 @@ Public Class FrmMain
             If LstRecords.SelectedIndex = 0 Then
                 Return Temp
             End If
-            Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 1))
+            Return Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 1))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex = -1 Then
@@ -239,25 +239,25 @@ Public Class FrmMain
             If LstRecords.SelectedIndex = 0 Then
                 Temp = Value
             End If
-            Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex - 1)) = Value
+            Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 1)) = Value
         End Set
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的下一個 Record
+    ''' 表示 LstRecords 已選取項目的下一個 Record，透過 TxtRecordsSearch.Tag 定位 Data 中滿足搜尋結果的元素
     ''' </summary>
     Private Property SelectedNextRecord As Record
         Get
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Return Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex))
+            Return Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Data.Item(CType(TxtRecordsSearch.Tag, List(Of Integer)).Item(LstRecords.SelectedIndex)) = Value
+            Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex)) = Value
         End Set
     End Property
 
@@ -716,7 +716,7 @@ Public Class FrmMain
             Dim IsMatched As Boolean = False
             If ChkRecordsSearch.Checked Then
                 Try
-                    IsMatched = Regex.IsMatch(Data.Item(i).StudentName, TxtRecordsSearch.Text)
+                    IsMatched = Regex.IsMatch(Data(i).StudentName, TxtRecordsSearch.Text)
                 Catch Exception As Exception
                     Thrown = Exception
                 End Try
@@ -724,7 +724,7 @@ Public Class FrmMain
                 IsMatched = Data(i).StudentName.Contains(TxtRecordsSearch.Text)
             End If
             If IsMatched Then
-                LstRecords.Items.Add(Data.Item(i).StudentName)
+                LstRecords.Items.Add(Data(i).StudentName)
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
@@ -960,7 +960,6 @@ Public Class FrmMain
     ''' 上傳 LstRecords 中的紀錄到 MySql 資料庫
     ''' </summary>
     Private Async Function Upload() As Task
-        GenerateErrorCodes()
         Try
             DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync()
             If Not Await DataReader.ReadAsync() Then
@@ -992,7 +991,6 @@ Public Class FrmMain
     ''' 下載 LstRecords 中的紀錄到 MySql 資料庫
     ''' </summary>
     Private Async Function Download() As Task
-        GenerateErrorCodes()
         Try
             DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync()
             If Not Await DataReader.ReadAsync() Then
@@ -1286,6 +1284,7 @@ Public Class FrmMain
     Private Async Sub BtnDataSourceUpload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceUpload.Click
         ConnectLock = True
         Try
+            GenerateErrorCodes()
             Await Upload()
         Catch Exception As Exception
             SocketState(Exception)
@@ -1296,6 +1295,7 @@ Public Class FrmMain
     Private Async Sub BtnDataSourceDownload_Click(sender As Object, e As EventArgs) Handles BtnDataSourceDownload.Click
         ConnectLock = True
         Try
+            GenerateErrorCodes()
             Await Download()
         Catch Exception As Exception
             SocketState(Exception)
