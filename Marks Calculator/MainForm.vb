@@ -650,60 +650,56 @@ Public Class FrmMain
     ''' 顯示統計數據
     ''' </summary>
     Private Sub ShowStatistics()
-        TxtStatisticsNo.Text = Data.Count.ToString()
-        TxtStatisticsA.Text = Data.LongCount(
+        Dim Records As IEnumerable(Of Record) = Data.Where(
             Function(Record As Record) As Boolean
-                Return Record.ModuleGrade = "A"
+                Return Record.IsReal
             End Function
-        ).ToString()
-        TxtStatisticsB.Text = Data.LongCount(
-            Function(Record As Record) As Boolean
-                Return Record.ModuleGrade = "B"
-            End Function
-        ).ToString()
-        TxtStatisticsC.Text = Data.LongCount(
-            Function(Record As Record) As Boolean
-                Return Record.ModuleGrade = "C"
-            End Function
-        ).ToString()
-        TxtStatisticsF.Text = Data.LongCount(
-            Function(Record As Record) As Boolean
-                Return Record.ModuleGrade = "F"
-            End Function
-        ).ToString()
-        Dim N As Double = Data.LongCount()
-        If N = 0 Then
+        )
+        Dim Counter As (T As Integer, A As Integer, B As Integer, C As Integer, F As Integer)
+        Dim Sum As Double = 0
+        Dim Sorted As New List(Of Double)
+        For Each Record In Records
+            Select Case Record.ModuleGrade
+                Case "A"
+                    Counter.A += 1
+                Case "B"
+                    Counter.B += 1
+                Case "C"
+                    Counter.C += 1
+                Case "F"
+                    Counter.F += 1
+            End Select
+            Counter.T += 1
+            Sum += Record.ModuleMarks
+            Sorted.Add(Record.ModuleMarks)
+        Next
+        TxtStatisticsNo.Text = Counter.T.ToString()
+        TxtStatisticsA.Text = Counter.A.ToString()
+        TxtStatisticsB.Text = Counter.B.ToString()
+        TxtStatisticsC.Text = Counter.C.ToString()
+        TxtStatisticsF.Text = Counter.F.ToString()
+        If Counter.T > 0 Then
+            Sorted.Sort()
+            Dim Av As Double = Sum / Counter.T
+            TxtStatisticsAv.Text = Av.ToString()
+            Dim Sd As Double = 0
+            For Each Da As Double In Sorted
+                Dim Di As Double = Da - Av
+                Sd += Di * Di
+            Next
+            Sd = Math.Sqrt(Sd / Counter.T)
+            TxtStatisticsSd.Text = Sd.ToString()
+            Dim Ha As Integer = Counter.T >> 1
+            Dim Md As Double = Sorted(Ha)
+            If Counter.T = Ha << 1 Then
+                Md += Sorted(Ha - 1)
+                Md /= 2
+            End If
+            TxtStatisticsMd.Text = Md.ToString()
+        Else
             TxtStatisticsAv.Text = "[NaN]"
             TxtStatisticsSd.Text = "[NaN]"
             TxtStatisticsMd.Text = "[NaN]"
-        Else
-            Dim Av As Double = Data.Sum(
-                Function(Record As Record) As Double
-                    Return Record.ModuleMarks
-                End Function
-            ) / N
-            TxtStatisticsAv.Text = Av.ToString()
-            Dim Sd As Double = Math.Sqrt(
-                Data.Sum(
-                    Function(Record As Record) As Double
-                        Return (Record.ModuleMarks - Av) ^ 2
-                    End Function
-                ) / N
-            )
-            TxtStatisticsSd.Text = Sd.ToString()
-            Dim Sorted As Double() = Data.Select(
-                Function(Record As Record) As Double
-                    Return Record.ModuleMarks
-                End Function
-            ).ToArray()
-            Array.Sort(Sorted)
-            Dim Md As Double =
-            If(
-                Sorted.Length Mod 2 = 0,
-                (Sorted(Sorted.Length / 2) + Sorted(Sorted.Length / 2 - 1)) / 2,
-                Sorted((Sorted.Length - 1) / 2)
-            )
-            TxtStatisticsMd.Text = Md.ToString()
         End If
     End Sub
 
