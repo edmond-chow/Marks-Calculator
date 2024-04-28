@@ -961,11 +961,45 @@ Public Class FrmMain
     End Sub
 
     ''' <summary>
+    ''' 把 Sql 指令片段轉換成能夠被調用的臨時儲存進程
+    ''' </summary>
+    ''' <param name="Cmd">Sql 指令片段</param>
+    Private Shared Function MakeSubroutine(Cmd As String) As (BeginCmd As String, EndCmd As String)
+        Dim Co As String = Guid.NewGuid().ToString()
+        Dim Nl As String = Environment.NewLine
+        Dim BeginBuilder As New StringBuilder()
+        BeginBuilder.Append("CREATE DATABASE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`; ").Append(Nl)
+        BeginBuilder.Append("DELIMITER $ ").Append(Nl)
+        BeginBuilder.Append("CREATE PROCEDURE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` () BEGIN ").Append(Nl)
+        BeginBuilder.Append(Cmd)
+        BeginBuilder.Append("END$ ").Append(Nl)
+        BeginBuilder.Append("DELIMITER ; ").Append(Nl)
+        Dim EndBuilder As New StringBuilder()
+        EndBuilder.Append("CALL `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` (); ").Append(Nl)
+        EndBuilder.Append("DROP DATABASE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`; ").Append(Nl)
+        Return (BeginBuilder.ToString(), EndBuilder.ToString())
+    End Function
+
+    ''' <summary>
+    ''' Sql 指令片段的執行器
+    ''' </summary>
+    ''' <param name="Cmd">Sql 指令片段</param>
+    Private Async Function ExecuteQuery(Cmd As String) As Task
+        If DataSourceConnection.ServerVersion.Contains("MariaDB") Then
+            DataReader = Await New MySqlCommand(Cmd, DataSourceConnection).ExecuteReaderAsync()
+        Else
+            Dim Subroutine As (BeginCmd As String, EndCmd As String) = MakeSubroutine(Cmd)
+            Await New MySqlScript(DataSourceConnection, Subroutine.BeginCmd).ExecuteAsync()
+            DataReader = Await New MySqlCommand(Subroutine.EndCmd, DataSourceConnection).ExecuteReaderAsync()
+        End If
+    End Function
+
+    ''' <summary>
     ''' 上傳 LstRecords 中的紀錄到 MySql 資料庫
     ''' </summary>
     Private Async Function Upload() As Task
         Try
-            DataReader = Await New MySqlCommand(UploadCmd, DataSourceConnection).ExecuteReaderAsync()
+            Await ExecuteQuery(UploadCmd)
             If Not Await DataReader.ReadAsync() Then
                 DataReader.Close()
                 Return
@@ -996,7 +1030,7 @@ Public Class FrmMain
     ''' </summary>
     Private Async Function Download() As Task
         Try
-            DataReader = Await New MySqlCommand(DownloadCmd, DataSourceConnection).ExecuteReaderAsync()
+            Await ExecuteQuery(DownloadCmd)
             If Not Await DataReader.ReadAsync() Then
                 DataReader.Close()
                 Return
