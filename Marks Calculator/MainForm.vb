@@ -709,7 +709,7 @@ Public Class FrmMain
     ''' <param name="GetSelectedIndex">指定當搜尋程序結束的時候， LstRecords 會選取哪一個項目</param>
     Private Sub RecordsSearch(GetSelectedIndex As GetSelectedIndex)
         LstRecords.Items.Clear()
-        LstRecords.Items.Add("(Input)")
+        LstRecords.Items.Add(" -> [Input]")
         TxtRecordsSearch.Tag = New List(Of Integer)()
         Dim Thrown As Exception = Nothing
         For i As Integer = 0 To Data.Count - 1
@@ -724,7 +724,7 @@ Public Class FrmMain
                 IsMatched = Data(i).StudentName.Contains(TxtRecordsSearch.Text)
             End If
             If IsMatched Then
-                LstRecords.Items.Add(Data(i).StudentName)
+                LstRecords.Items.Add(Data(i).StudentName + If(Not Data(i).IsReal, " (Not in the criteria)", String.Empty))
                 CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
             End If
         Next
@@ -1352,7 +1352,7 @@ Public Class FrmMain
         If Not ChkRecords.Checked Then
             For Each Record As Record In Data
                 If Record.StudentName = Temp.StudentName Then
-                    MessageBox.Show(Me, "The record to be inserted into the local records should not match the same ""StudentName"". If you would like to suppress the restriction, you have to tick out the ""Allow Duplicated Name"" checkbox.", Text, MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+                    MessageBox.Show(Me, "The record to be inserted into the local records should not match the same ""StudentName"". If you would like to suppress the restriction, you have to tick out the ""Allow Duplicated Names"" checkbox.", Text, MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
                     Return
                 End If
             Next
