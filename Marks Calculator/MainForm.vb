@@ -10,7 +10,6 @@ Imports System.Security
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Data.Common
-Imports System.Buffers
 Imports System.Net.Sockets
 Imports MetroFramework.Controls
 Imports MetroFramework.Forms
@@ -62,6 +61,11 @@ Public Class FrmMain
     ''' 表示隨機數的最小值
     ''' </summary>
     Private Const RandomNumberMinimum As Integer = 100000000
+
+    ''' <summary>
+    ''' 表示不是數字的值
+    ''' </summary>
+    Private Const NaN As String = "[NaN]"
 
 #End Region
 
@@ -178,6 +182,19 @@ Public Class FrmMain
 #End Region
 
 #Region "Properties"
+
+    ''' <summary>
+    ''' 表示滿足標準範圍的數據
+    ''' </summary>
+    Private ReadOnly Property RealData As IEnumerable(Of Record)
+        Get
+            Return Data.Where(
+                Function(Record As Record) As Boolean
+                    Return Record.IsReal
+                End Function
+            )
+        End Get
+    End Property
 
     ''' <summary>
     ''' 表示數據輸入欄位的 Record，其中會生成隨機的 ID
@@ -640,25 +657,25 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Result">表示分數的記錄</param>
     Private Sub ShowResult(Result As Record)
-        TxtResultCA.Text = Result.CAMarks.ToString()
-        TxtResultModule.Text = Result.ModuleMarks.ToString()
-        TxtReusltGrade.Text = Result.ModuleGrade.ToString()
-        TxtReusltRemarks.Text = Result.Remarks.ToString()
+        If Result.IsReal Then
+            TxtResultCA.Text = Result.CAMarks.ToString()
+            TxtResultModule.Text = Result.ModuleMarks.ToString()
+        Else
+            TxtResultCA.Text = NaN
+            TxtResultModule.Text = NaN
+        End If
+        TxtReusltGrade.Text = Result.ModuleGrade
+        TxtReusltRemarks.Text = Result.Remarks
     End Sub
 
     ''' <summary>
     ''' 顯示統計數據
     ''' </summary>
     Private Sub ShowStatistics()
-        Dim Records As IEnumerable(Of Record) = Data.Where(
-            Function(Record As Record) As Boolean
-                Return Record.IsReal
-            End Function
-        )
-        Dim Counter As (T As Integer, A As Integer, B As Integer, C As Integer, F As Integer)
-        Dim Sum As Double = 0
-        Dim Sorted As New List(Of Double)
-        For Each Record In Records
+        Dim Counter As (A As Integer, B As Integer, C As Integer, F As Integer)
+        Dim Scores As New List(Of Double)
+        Dim Su As Double = 0
+        For Each Record In RealData
             Select Case Record.ModuleGrade
                 Case "A"
                     Counter.A += 1
@@ -669,37 +686,36 @@ Public Class FrmMain
                 Case "F"
                     Counter.F += 1
             End Select
-            Counter.T += 1
-            Sum += Record.ModuleMarks
-            Sorted.Add(Record.ModuleMarks)
+            Scores.Add(Record.ModuleMarks)
+            Su += Record.ModuleMarks
         Next
-        TxtStatisticsNo.Text = Counter.T.ToString()
+        TxtStatisticsNo.Text = Scores.Count.ToString()
         TxtStatisticsA.Text = Counter.A.ToString()
         TxtStatisticsB.Text = Counter.B.ToString()
         TxtStatisticsC.Text = Counter.C.ToString()
         TxtStatisticsF.Text = Counter.F.ToString()
-        If Counter.T > 0 Then
-            Sorted.Sort()
-            Dim Av As Double = Sum / Counter.T
+        If Scores.Count > 0 Then
+            Scores.Sort()
+            Dim Av As Double = Su / Scores.Count
             TxtStatisticsAv.Text = Av.ToString()
             Dim Sd As Double = 0
-            For Each Da As Double In Sorted
+            For Each Da As Double In Scores
                 Dim Di As Double = Da - Av
                 Sd += Di * Di
             Next
-            Sd = Math.Sqrt(Sd / Counter.T)
+            Sd = Math.Sqrt(Sd / Scores.Count)
             TxtStatisticsSd.Text = Sd.ToString()
-            Dim Ha As Integer = Counter.T >> 1
-            Dim Md As Double = Sorted(Ha)
-            If Counter.T = Ha << 1 Then
-                Md += Sorted(Ha - 1)
+            Dim Ha As Integer = Scores.Count >> 1
+            Dim Md As Double = Scores(Ha)
+            If Scores.Count = Ha << 1 Then
+                Md += Scores(Ha - 1)
                 Md /= 2
             End If
             TxtStatisticsMd.Text = Md.ToString()
         Else
-            TxtStatisticsAv.Text = "[NaN]"
-            TxtStatisticsSd.Text = "[NaN]"
-            TxtStatisticsMd.Text = "[NaN]"
+            TxtStatisticsAv.Text = NaN
+            TxtStatisticsSd.Text = NaN
+            TxtStatisticsMd.Text = NaN
         End If
     End Sub
 
@@ -1675,7 +1691,7 @@ Public Class FrmMain
         Public Const ProjectScale As Double = 0.3
         Public Const CAScale As Double = 0.4
         Public Const ExamScale As Double = 0.6
-        Private Const Invalid As String = "[Invaild]"
+        Private Const Invalid As String = "[Invalid]"
 
 #End Region
 
@@ -1794,7 +1810,7 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property Remarks As String
             Get
-                If ModuleGrade = Invalid Then
+                If Not IsReal Then
                     Return Invalid
                 ElseIf ModuleGrade <> "F" Then
                     Return "Pass"
