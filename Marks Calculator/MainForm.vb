@@ -63,6 +63,11 @@ Public Class FrmMain
     Private Const RandomNumberMinimum As Integer = 100000000
 
     ''' <summary>
+    ''' 表示 StringBuilder 初始容量的值
+    ''' </summary>
+    Private Const InitialStringCapacity As Integer = 65536
+
+    ''' <summary>
     ''' 表示不是數字的值
     ''' </summary>
     Private Const NaN As String = "[NaN]"
@@ -152,6 +157,11 @@ Public Class FrmMain
     Private ContinuationList As Queue(Of Action)
 
     ''' <summary>
+    ''' 用來暫存搜尋索引的列表
+    ''' </summary>
+    Private SearchIndexList As List(Of Integer)
+
+    ''' <summary>
     ''' 用來暫存上傳與下載的錯誤代碼
     ''' </summary>
     Private ErrorCodes As Dictionary(Of ErrorKeys, Integer)
@@ -219,25 +229,25 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的上一個 Record，透過 TxtRecordsSearch.Tag 定位 Data 中滿足搜尋結果的元素
+    ''' 表示 LstRecords 已選取項目的上一個 Record，透過 SearchIndexList 定位 Data 中滿足搜尋結果的元素
     ''' </summary>
     Private Property SelectedPrevRecord As Record
         Get
             If LstRecords.SelectedIndex <= 1 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Return Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 2))
+            Return Data(SearchIndexList(LstRecords.SelectedIndex - 2))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex <= 1 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 2)) = Value
+            Data(SearchIndexList(LstRecords.SelectedIndex - 2)) = Value
         End Set
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的 Record，透過 TxtRecordsSearch.Tag 定位 Data 中滿足搜尋結果的元素（當 LstRecords 選取首筆項目時會回傳 Temp）
+    ''' 表示 LstRecords 已選取項目的 Record，透過 SearchIndexList 定位 Data 中滿足搜尋結果的元素（當 LstRecords 選取首筆項目時會回傳 Temp）
     ''' </summary>
     Private Property SelectedRecord As Record
         Get
@@ -247,7 +257,7 @@ Public Class FrmMain
             If LstRecords.SelectedIndex = 0 Then
                 Return Temp
             End If
-            Return Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 1))
+            Return Data(SearchIndexList(LstRecords.SelectedIndex - 1))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex = -1 Then
@@ -256,25 +266,25 @@ Public Class FrmMain
             If LstRecords.SelectedIndex = 0 Then
                 Temp = Value
             End If
-            Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex - 1)) = Value
+            Data(SearchIndexList(LstRecords.SelectedIndex - 1)) = Value
         End Set
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的下一個 Record，透過 TxtRecordsSearch.Tag 定位 Data 中滿足搜尋結果的元素
+    ''' 表示 LstRecords 已選取項目的下一個 Record，透過 SearchIndexList 定位 Data 中滿足搜尋結果的元素
     ''' </summary>
     Private Property SelectedNextRecord As Record
         Get
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Return Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex))
+            Return Data(SearchIndexList(LstRecords.SelectedIndex))
         End Get
         Set(Value As Record)
             If LstRecords.SelectedIndex >= LstRecords.Items.Count - 1 OrElse LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
             End If
-            Data(CType(TxtRecordsSearch.Tag, List(Of Integer))(LstRecords.SelectedIndex)) = Value
+            Data(SearchIndexList(LstRecords.SelectedIndex)) = Value
         End Set
     End Property
 
@@ -419,7 +429,7 @@ Public Class FrmMain
             Dim Db As String = TxtDataSourceDatabase.Text
             Dim Tb As String = TxtDataSourceTable.Text
             Dim Nl As String = Environment.NewLine
-            Dim Result As New StringBuilder()
+            Dim Result As New StringBuilder(InitialStringCapacity)
             Result.Append("SET @Count = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
             Result.Append("IF @Count > 0 THEN ").Append(Nl)
             Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '").Append(Db).Append("' ) THEN ").Append(Nl)
@@ -497,7 +507,7 @@ Public Class FrmMain
             Dim Db As String = TxtDataSourceDatabase.Text
             Dim Tb As String = TxtDataSourceTable.Text
             Dim Nl As String = Environment.NewLine
-            Dim Result As New StringBuilder()
+            Dim Result As New StringBuilder(InitialStringCapacity)
             Result.Append("IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND TABLE_TYPE = 'BASE TABLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (DATA_TYPE) = 'INT' ) THEN ").Append(Nl)
@@ -726,7 +736,7 @@ Public Class FrmMain
     Private Sub RecordsSearch(GetSelectedIndex As GetSelectedIndex)
         LstRecords.Items.Clear()
         LstRecords.Items.Add(" -> [Input]")
-        TxtRecordsSearch.Tag = New List(Of Integer)()
+        SearchIndexList = New List(Of Integer)()
         Dim Thrown As Exception = Nothing
         For i As Integer = 0 To Data.Count - 1
             Dim IsMatched As Boolean = False
@@ -741,7 +751,7 @@ Public Class FrmMain
             End If
             If IsMatched Then
                 LstRecords.Items.Add(Data(i).StudentName + If(Not Data(i).IsReal, " (Not in the criteria)", String.Empty))
-                CType(TxtRecordsSearch.Tag, List(Of Integer)).Add(i)
+                SearchIndexList.Add(i)
             End If
         Next
         LstRecords.SelectedIndex = GetSelectedIndex.Invoke(Thrown)
@@ -979,14 +989,14 @@ Public Class FrmMain
     Private Shared Function MakeSubroutine(Cmd As String) As (BeginCmd As String, EndCmd As String)
         Dim Co As String = Guid.NewGuid().ToString()
         Dim Nl As String = Environment.NewLine
-        Dim BeginBuilder As New StringBuilder()
+        Dim BeginBuilder As New StringBuilder(InitialStringCapacity)
         BeginBuilder.Append("CREATE DATABASE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`; ").Append(Nl)
         BeginBuilder.Append("DELIMITER $ ").Append(Nl)
         BeginBuilder.Append("CREATE PROCEDURE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` () BEGIN ").Append(Nl)
         BeginBuilder.Append(Cmd)
         BeginBuilder.Append("END$ ").Append(Nl)
         BeginBuilder.Append("DELIMITER ; ").Append(Nl)
-        Dim EndBuilder As New StringBuilder()
+        Dim EndBuilder As New StringBuilder(InitialStringCapacity)
         EndBuilder.Append("CALL `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` (); ").Append(Nl)
         EndBuilder.Append("DROP DATABASE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`; ").Append(Nl)
         Return (BeginBuilder.ToString(), EndBuilder.ToString())
