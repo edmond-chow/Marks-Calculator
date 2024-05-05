@@ -16,7 +16,6 @@ Imports MetroFramework.Forms
 Imports MetroFramework.Drawing
 Imports Newtonsoft.Json
 Imports MySql.Data.MySqlClient
-Imports System.Runtime.CompilerServices
 
 Public Class FrmMain
 
@@ -66,6 +65,11 @@ Public Class FrmMain
     ''' 表示 StringBuilder 初始容量的值
     ''' </summary>
     Private Const InitialStringCapacity As Integer = 65536
+
+    ''' <summary>
+    ''' 表示中斷一下 SuspendNow 的延遲時間
+    ''' </summary>
+    Private Const DelayDuration As Integer = 50
 
     ''' <summary>
     ''' 表示不是數字的值
@@ -152,11 +156,6 @@ Public Class FrmMain
     Private ReadOnly FrmConnection As FrmConnect
 
     ''' <summary>
-    ''' FleetingSuspend 先前已註冊的回調函數所構成的列表
-    ''' </summary>
-    Private ContinuationList As Queue(Of Action)
-
-    ''' <summary>
     ''' 用來暫存搜尋索引的列表
     ''' </summary>
     Private SearchIndexList As List(Of Integer)
@@ -178,7 +177,6 @@ Public Class FrmMain
         Data = New List(Of Record)()
         Temp = New Record()
         RandomNumberGenerator = New Random()
-        ContinuationList = New Queue(Of Action)()
         FrmConnection = New FrmConnect(
             Function() As (Host As String, Username As String, Password As String)
                 Return Source
@@ -799,7 +797,7 @@ Public Class FrmMain
     ''' <param name="Exception">未處理的異常對象</param>
     Private Async Sub ShowException(Exception As Exception)
         While Tag = IsResizing.Yes
-            Await FleetingSuspend()
+            Await SuspendNow()
         End While
         While Exception IsNot Nothing
             MessageBox.Show(Me,
@@ -823,7 +821,7 @@ Public Class FrmMain
     ''' <param name="icon"></param>
     Private Async Function ShowMessage(owner As IWin32Window, text As String, caption As String, buttons As MessageBoxButtons, icon As MessageBoxIcon) As Task(Of DialogResult)
         While Tag = IsResizing.Yes
-            Await FleetingSuspend()
+            Await SuspendNow()
         End While
         Return MessageBox.Show(owner, text, caption, buttons, icon)
     End Function
@@ -831,12 +829,8 @@ Public Class FrmMain
     ''' <summary>
     ''' 中斷一下
     ''' </summary>
-    Private Function FleetingSuspend() As Coroutine
-        Return New Coroutine(
-            Sub(Task As Action)
-                ContinuationList.Enqueue(Task)
-            End Sub
-        )
+    Private Function SuspendNow() As Task
+        Return Task.Delay(DelayDuration)
     End Function
 
     ''' <summary>
@@ -845,17 +839,17 @@ Public Class FrmMain
     ''' <param name="Capture"></param>
     Private Async Sub SocketState(Capture As Exception)
         While Capture IsNot Nothing
-            Capture = Capture.InnerException
             If TypeOf Capture Is SocketException Then
                 Const WSAECONNRESET As Integer = 10054
                 If CType(Capture, SocketException).ErrorCode = WSAECONNRESET Then
                     While DataControlsLock
-                        Await FleetingSuspend()
+                        Await SuspendNow()
                     End While
                     BtnDataSourceConnect.PerformClick()
                 End If
                 Exit While
             End If
+            Capture = Capture.InnerException
         End While
     End Sub
 
@@ -962,7 +956,7 @@ Public Class FrmMain
                     End If
                 Next
             Next
-            Await FleetingSuspend()
+            Await SuspendNow()
         End While
     End Sub
 
@@ -1225,11 +1219,11 @@ Public Class FrmMain
             e.Cancel = True
             If Connection = ConnectState.Connected Then
                 While DataControlsLock
-                    Await FleetingSuspend()
+                    Await SuspendNow()
                 End While
                 BtnDataSourceConnect.PerformClick()
                 While Connection <> ConnectState.Disconnected
-                    Await FleetingSuspend()
+                    Await SuspendNow()
                 End While
             End If
             Await WriteDataFile()
@@ -1536,9 +1530,6 @@ Public Class FrmMain
             DrawProgressBar(Graphics)
             Graphics.Dispose()
             ProgressOffset += ProgressBarDeltaX
-        End If
-        If ContinuationList.Count > 0 Then
-            ContinuationList.Dequeue().Invoke()
         End If
     End Sub
 
@@ -2072,73 +2063,6 @@ Friend Class BranchesShouldNotBeInstantiatedException
     Protected Sub New(info As SerializationInfo, context As StreamingContext)
         MyBase.New(info, context)
     End Sub
-
-#End Region
-
-End Class
-
-Friend Class Coroutine
-
-#Region "Fields"
-
-    Private ReadOnly Post As Action(Of Action)
-
-#End Region
-
-#Region "Constructors"
-
-    Public Sub New(Post As Action(Of Action))
-        Me.Post = Post
-    End Sub
-
-#End Region
-
-#Region "Methods"
-
-    Public Function GetAwaiter() As CoroutineAwaiter
-        Return New CoroutineAwaiter(Post)
-    End Function
-
-#End Region
-
-End Class
-
-Friend Class CoroutineAwaiter
-    Implements INotifyCompletion
-
-#Region "Methods"
-
-    Private ReadOnly Post As Action(Of Action)
-
-#End Region
-
-#Region "Constructors"
-
-    Public Sub New(Post As Action(Of Action))
-        Me.Post = Post
-    End Sub
-
-#End Region
-
-#Region "Properties"
-
-    Public ReadOnly Property IsCompleted As Boolean
-        Get
-            Return False
-        End Get
-    End Property
-
-#End Region
-
-#Region "Methods"
-
-    Public Sub OnCompleted(continuation As Action) Implements INotifyCompletion.OnCompleted
-        Post.Invoke(continuation)
-    End Sub
-
-    Public Function GetResult() As Action(Of Action)
-        Return Post
-    End Function
 
 #End Region
 
