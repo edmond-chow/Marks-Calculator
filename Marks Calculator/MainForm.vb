@@ -245,24 +245,18 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 表示 LstRecords 已選取項目的 Record，透過 SearchIndexList 定位 Data 中滿足搜尋結果的元素（當 LstRecords 選取首筆項目時會回傳 Temp）
+    ''' 表示 LstRecords 已選取項目的 Record，透過 SearchIndexList 定位 Data 中滿足搜尋結果的元素
     ''' </summary>
     Private Property SelectedRecord As Record
         Get
-            If LstRecords.SelectedIndex = -1 Then
+            If LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
-            End If
-            If LstRecords.SelectedIndex = 0 Then
-                Return Temp
             End If
             Return Data(SearchIndexList(LstRecords.SelectedIndex - 1))
         End Get
         Set(Value As Record)
-            If LstRecords.SelectedIndex = -1 Then
+            If LstRecords.SelectedIndex <= 0 Then
                 Throw New BranchesShouldNotBeInstantiatedException("Index out of range!")
-            End If
-            If LstRecords.SelectedIndex = 0 Then
-                Temp = Value
             End If
             Data(SearchIndexList(LstRecords.SelectedIndex - 1)) = Value
         End Set
@@ -412,7 +406,10 @@ Public Class FrmMain
     ''' </summary>
     Private ReadOnly Property ConnectionCmd As String
         Get
-            Return "DATASOURCE = " + DataSourceInfo.Host + "; USERNAME = " + DataSourceInfo.Username + "; PASSWORD = " + DataSourceInfo.Password + "; ALLOW USER VARIABLES = True; "
+            Dim Host As String = DataSourceInfo.Host.Replace("'", "\'")
+            Dim Username As String = DataSourceInfo.Username.Replace("'", "\'")
+            Dim Password As String = DataSourceInfo.Password.Replace("'", "\'")
+            Return "DATASOURCE = '" + Host + "'; USERNAME = '" + Username + "'; PASSWORD = '" + Password + "'; ALLOW USER VARIABLES = TRUE; "
         End Get
     End Property
 
@@ -428,8 +425,8 @@ Public Class FrmMain
             Dim Tb As String = TxtDataSourceTable.Text
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder(InitialStringCapacity)
-            Result.Append("SET @Count = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
-            Result.Append("IF @Count > 0 THEN ").Append(Nl)
+            Result.Append("SET @DATA_COUNT = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
+            Result.Append("IF @DATA_COUNT > 0 THEN ").Append(Nl)
             Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '").Append(Db).Append("' ) THEN ").Append(Nl)
             Result.Append("        CREATE DATABASE `").Append(Db).Append("`; ").Append(Nl)
             Result.Append("    END IF; ").Append(Nl)
@@ -471,17 +468,19 @@ Public Class FrmMain
             Result.Append("        END IF; ").Append(Nl)
             Result.Append("        IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (COLUMN_KEY) = 'PRI' ) THEN ").Append(Nl)
             For Each Record In Data
+                Dim StudentName As String = Record.StudentName.Replace("'", "\'")
                 Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' ) THEN ").Append(Nl)
-                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
                 Result.Append("            ELSE ").Append(Nl)
-                Result.Append("                UPDATE `").Append(Db).Append("`.`").Append(Tb).Append("` SET `StudentName` = '").Append(Record.StudentName).Append("', `Test` = '").Append(Record.TestMarks.ToString()).Append("', `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("', `Project` = '").Append(Record.ProjectMarks.ToString()).Append("', `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' WHERE `ID` = '").Append(Record.ID.ToString()).Append("'; ").Append(Nl)
+                Result.Append("                UPDATE `").Append(Db).Append("`.`").Append(Tb).Append("` SET `StudentName` = '").Append(StudentName).Append("', `Test` = '").Append(Record.TestMarks.ToString()).Append("', `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("', `Project` = '").Append(Record.ProjectMarks.ToString()).Append("', `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' WHERE `ID` = '").Append(Record.ID.ToString()).Append("'; ").Append(Nl)
                 Result.Append("            END IF; ").Append(Nl)
             Next
             Result.Append("            SELECT NULL; ").Append(Nl)
             Result.Append("        ELSE ").Append(Nl)
             For Each Record In Data
-                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' AND `StudentName` = '").Append(Record.StudentName).Append("' AND `Test` = '").Append(Record.TestMarks.ToString()).Append("' AND `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("' AND `Project` = '").Append(Record.ProjectMarks.ToString()).Append("' AND `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' ) THEN ").Append(Nl)
-                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(Record.StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+                Dim StudentName As String = Record.StudentName.Replace("'", "\'")
+                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' AND `StudentName` = '").Append(StudentName).Append("' AND `Test` = '").Append(Record.TestMarks.ToString()).Append("' AND `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("' AND `Project` = '").Append(Record.ProjectMarks.ToString()).Append("' AND `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' ) THEN ").Append(Nl)
+                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
                 Result.Append("            END IF; ").Append(Nl)
             Next
             Result.Append("            SELECT NULL; ").Append(Nl)
@@ -1469,9 +1468,6 @@ Public Class FrmMain
     End Sub
 
     Private Sub LstRecord_SelectedIndexChanged(sender As Object, e As EventArgs) Handles LstRecords.SelectedIndexChanged
-        If LstRecords.SelectedIndex = -1 Then
-            Return
-        End If
         If DataControlsLock = False Then
             If LstRecords.SelectedIndex = 0 Then
                 BtnRecordsAdd.Enabled = True
@@ -1486,7 +1482,9 @@ Public Class FrmMain
                 TxtInputProject.ReadOnly = False
                 TxtInputExam.ReadOnly = False
                 LstRecords.Tag = IsAdding.Yes
-            Else
+                FulfilledInputs(Temp)
+                ShowResult(Temp)
+            ElseIf LstRecords.SelectedIndex > 0 Then
                 BtnRecordsAdd.Enabled = False
                 BtnRecordsRemove.Enabled = True
                 BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
@@ -1499,10 +1497,10 @@ Public Class FrmMain
                 TxtInputProject.ReadOnly = True
                 TxtInputExam.ReadOnly = True
                 LstRecords.Tag = IsAdding.No
+                FulfilledInputs(SelectedRecord)
+                ShowResult(SelectedRecord)
             End If
         End If
-        FulfilledInputs(SelectedRecord)
-        ShowResult(SelectedRecord)
     End Sub
 
     Private Sub AnyRecordsSearch_Event(sender As Object, e As EventArgs) Handles TxtRecordsSearch.TextChanged, ChkRecordsSearch.CheckedChanged
