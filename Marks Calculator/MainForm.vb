@@ -128,7 +128,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 用來存儲資料來源的連接訊息
     ''' </summary>
-    Private DataSourceInfo As (Host As String, Username As String, Password As String)
+    Private DataSourceInfo As (Host As String, Username As String, Password As String, Schema As String, Table As String)
 
     ''' <summary>
     ''' 用來連接資料來源的執行個體
@@ -179,10 +179,10 @@ Public Class FrmMain
         RandomNumberGenerator = New Random()
         FrmConnection = New FrmConnect(
             Function() As (Host As String, Username As String, Password As String)
-                Return Source
+                Return (DataSourceInfo.Host, DataSourceInfo.Username, DataSourceInfo.Password)
             End Function,
             Sub(Tuple As (Host As String, Username As String, Password As String))
-                Source = Tuple
+                DataSourceInfo = (Tuple.Host, Tuple.Username, Tuple.Password, DataSourceInfo.Schema, DataSourceInfo.Table)
             End Sub
         )
     End Sub
@@ -303,18 +303,6 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 用來存儲資料來源的連接訊息
-    ''' </summary>
-    Private Property Source As (Host As String, Username As String, Password As String)
-        Get
-            Return DataSourceInfo
-        End Get
-        Set(Tuple As (Host As String, Username As String, Password As String))
-            DataSourceInfo = Tuple
-        End Set
-    End Property
-
-    ''' <summary>
     ''' 表示連接按鈕具有兩種狀態
     ''' </summary>
     Private Property Connection As ConnectState
@@ -335,7 +323,7 @@ Public Class FrmMain
                 BtnDataSourceConnect.Enabled = True
                 BtnDataSourceUpload.Enabled = True
                 BtnDataSourceDownload.Enabled = True
-                TxtDataSourceDatabase.Enabled = True
+                TxtDataSourceSchema.Enabled = True
                 TxtDataSourceTable.Enabled = True
                 Progress = False
             ElseIf State = ConnectState.Disconnecting Then
@@ -347,7 +335,7 @@ Public Class FrmMain
                 BtnDataSourceConnect.Enabled = True
                 BtnDataSourceUpload.Enabled = False
                 BtnDataSourceDownload.Enabled = False
-                TxtDataSourceDatabase.Enabled = False
+                TxtDataSourceSchema.Enabled = False
                 TxtDataSourceTable.Enabled = False
                 Progress = False
             Else
@@ -365,7 +353,7 @@ Public Class FrmMain
             BtnDataSourceConnect.Enabled = Not State
             BtnDataSourceUpload.Enabled = Not State
             BtnDataSourceDownload.Enabled = Not State
-            TxtDataSourceDatabase.ReadOnly = State
+            TxtDataSourceSchema.ReadOnly = State
             TxtDataSourceTable.ReadOnly = State
             DataControlsLock = State
         End Set
@@ -402,14 +390,14 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 連線至資料庫的 Sql 指令
+    ''' 連線至資料庫的 Sql 指令（逃避無效字元）
     ''' </summary>
     Private ReadOnly Property ConnectionCmd As String
         Get
-            Dim Host As String = DataSourceInfo.Host.Replace("'", "\'")
-            Dim Username As String = DataSourceInfo.Username.Replace("'", "\'")
-            Dim Password As String = DataSourceInfo.Password.Replace("'", "\'")
-            Return "DATASOURCE = '" + Host + "'; USERNAME = '" + Username + "'; PASSWORD = '" + Password + "'; ALLOW USER VARIABLES = TRUE; "
+            If DataSourceInfo.Host.Contains("'") OrElse DataSourceInfo.Username.Contains("'") OrElse DataSourceInfo.Password.Contains("'") Then
+                Throw New BranchesShouldNotBeInstantiatedException("Some of the strings contains unacceptable characters!")
+            End If
+            Return "DATASOURCE = '" + DataSourceInfo.Host + "'; USERNAME = '" + DataSourceInfo.Username + "'; PASSWORD = '" + DataSourceInfo.Password + "'; ALLOW USER VARIABLES = TRUE; "
         End Get
     End Property
 
@@ -418,69 +406,72 @@ Public Class FrmMain
     ''' </summary>
     Private ReadOnly Property UploadCmd As String
         Get
+            If DataSourceInfo.Schema.Contains("`") OrElse DataSourceInfo.Table.Contains("`") Then
+                Throw New BranchesShouldNotBeInstantiatedException("Some of the strings contains unacceptable characters!")
+            End If
             Dim OpFT As String = ErrorCodes(ErrorKeys.NonExistFieldWithType).ToString()
             Dim OpST As String = ErrorCodes(ErrorKeys.InvalidSourceAndTable).ToString()
             Dim NoOp As String = ErrorCodes(ErrorKeys.NoOperationState).ToString()
-            Dim Db As String = TxtDataSourceDatabase.Text
-            Dim Tb As String = TxtDataSourceTable.Text
+            Dim Sh As String = DataSourceInfo.Schema
+            Dim Tb As String = DataSourceInfo.Table
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder(InitialStringCapacity)
             Result.Append("SET @DATA_COUNT = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
             Result.Append("IF @DATA_COUNT > 0 THEN ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '").Append(Db).Append("' ) THEN ").Append(Nl)
-            Result.Append("        CREATE DATABASE `").Append(Db).Append("`; ").Append(Nl)
+            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '").Append(Sh).Append("' ) THEN ").Append(Nl)
+            Result.Append("        CREATE DATABASE `").Append(Sh).Append("`; ").Append(Nl)
             Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' ) THEN ").Append(Nl)
-            Result.Append("        CREATE TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
+            Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' ) THEN ").Append(Nl)
+            Result.Append("        CREATE TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ( `ID` INT NOT NULL, `StudentName` TEXT NOT NULL, `Test` DOUBLE NOT NULL, `Quizzes` DOUBLE NOT NULL, `Project` DOUBLE NOT NULL, `Exam` DOUBLE NOT NULL ); ").Append(Nl)
             Result.Append("    END IF; ").Append(Nl)
-            Result.Append("    IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND NOT UPPER (DATA_TYPE) = 'INT' ) THEN ").Append(Nl)
+            Result.Append("    IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND NOT UPPER (DATA_TYPE) = 'INT' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND NOT UPPER (DATA_TYPE) = 'TEXT' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND NOT UPPER (DATA_TYPE) = 'TEXT' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND NOT UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND UPPER (COLUMN_KEY) = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("    ELSEIF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND UPPER (COLUMN_KEY) = 'PRI' AND NOT COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
             Result.Append("        SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("    ELSE ").Append(Nl)
-            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
-            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ADD `ID` INT NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' ) THEN ").Append(Nl)
-            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `StudentName` TEXT NOT NULL; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ADD `StudentName` TEXT NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' ) THEN ").Append(Nl)
-            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Test` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ADD `Test` DOUBLE NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' ) THEN ").Append(Nl)
-            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Quizzes` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ADD `Quizzes` DOUBLE NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' ) THEN ").Append(Nl)
-            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Project` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ADD `Project` DOUBLE NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' ) THEN ").Append(Nl)
-            Result.Append("            ALTER TABLE `").Append(Db).Append("`.`").Append(Tb).Append("` ADD `Exam` DOUBLE NOT NULL; ").Append(Nl)
+            Result.Append("        IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' ) THEN ").Append(Nl)
+            Result.Append("            ALTER TABLE `").Append(Sh).Append("`.`").Append(Tb).Append("` ADD `Exam` DOUBLE NOT NULL; ").Append(Nl)
             Result.Append("        END IF; ").Append(Nl)
-            Result.Append("        IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (COLUMN_KEY) = 'PRI' ) THEN ").Append(Nl)
+            Result.Append("        IF EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (COLUMN_KEY) = 'PRI' ) THEN ").Append(Nl)
             For Each Record In Data
-                Dim StudentName As String = Record.StudentName.Replace("'", "\'")
-                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' ) THEN ").Append(Nl)
-                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+                Dim StudentName As String = Record.StudentName.Replace("'", "\'") '（逃避無效字元）
+                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Sh).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' ) THEN ").Append(Nl)
+                Result.Append("                INSERT INTO `").Append(Sh).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
                 Result.Append("            ELSE ").Append(Nl)
-                Result.Append("                UPDATE `").Append(Db).Append("`.`").Append(Tb).Append("` SET `StudentName` = '").Append(StudentName).Append("', `Test` = '").Append(Record.TestMarks.ToString()).Append("', `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("', `Project` = '").Append(Record.ProjectMarks.ToString()).Append("', `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' WHERE `ID` = '").Append(Record.ID.ToString()).Append("'; ").Append(Nl)
+                Result.Append("                UPDATE `").Append(Sh).Append("`.`").Append(Tb).Append("` SET `StudentName` = '").Append(StudentName).Append("', `Test` = '").Append(Record.TestMarks.ToString()).Append("', `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("', `Project` = '").Append(Record.ProjectMarks.ToString()).Append("', `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' WHERE `ID` = '").Append(Record.ID.ToString()).Append("'; ").Append(Nl)
                 Result.Append("            END IF; ").Append(Nl)
             Next
             Result.Append("            SELECT NULL; ").Append(Nl)
             Result.Append("        ELSE ").Append(Nl)
             For Each Record In Data
-                Dim StudentName As String = Record.StudentName.Replace("'", "\'")
-                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' AND `StudentName` = '").Append(StudentName).Append("' AND `Test` = '").Append(Record.TestMarks.ToString()).Append("' AND `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("' AND `Project` = '").Append(Record.ProjectMarks.ToString()).Append("' AND `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' ) THEN ").Append(Nl)
-                Result.Append("                INSERT INTO `").Append(Db).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
+                Dim StudentName As String = Record.StudentName.Replace("'", "\'") '（逃避無效字元）
+                Result.Append("            IF NOT EXISTS ( SELECT NULL FROM `").Append(Sh).Append("`.`").Append(Tb).Append("` WHERE `ID` = '").Append(Record.ID.ToString()).Append("' AND `StudentName` = '").Append(StudentName).Append("' AND `Test` = '").Append(Record.TestMarks.ToString()).Append("' AND `Quizzes` = '").Append(Record.QuizzesMarks.ToString()).Append("' AND `Project` = '").Append(Record.ProjectMarks.ToString()).Append("' AND `Exam` = '").Append(Record.ExamMarks.ToString()).Append("' ) THEN ").Append(Nl)
+                Result.Append("                INSERT INTO `").Append(Sh).Append("`.`").Append(Tb).Append("` ( `ID`, `StudentName`, `Test`, `Quizzes`, `Project`, `Exam` ) VALUES ( '").Append(Record.ID.ToString()).Append("', '").Append(StudentName).Append("', '").Append(Record.TestMarks.ToString()).Append("', '").Append(Record.QuizzesMarks.ToString()).Append("', '").Append(Record.ProjectMarks.ToString()).Append("', '").Append(Record.ExamMarks.ToString()).Append("' ); ").Append(Nl)
                 Result.Append("            END IF; ").Append(Nl)
             Next
             Result.Append("            SELECT NULL; ").Append(Nl)
@@ -498,31 +489,34 @@ Public Class FrmMain
     ''' </summary>
     Private ReadOnly Property DownloadCmd As String
         Get
+            If DataSourceInfo.Schema.Contains("`") OrElse DataSourceInfo.Table.Contains("`") Then
+                Throw New BranchesShouldNotBeInstantiatedException("Some of the strings contains unacceptable characters!")
+            End If
             Dim OpFT As String = ErrorCodes(ErrorKeys.NonExistFieldWithType).ToString()
             Dim OpST As String = ErrorCodes(ErrorKeys.InvalidSourceAndTable).ToString()
             Dim NoOp As String = ErrorCodes(ErrorKeys.NoOperationState).ToString()
-            Dim Db As String = TxtDataSourceDatabase.Text
-            Dim Tb As String = TxtDataSourceTable.Text
+            Dim Sh As String = DataSourceInfo.Schema
+            Dim Tb As String = DataSourceInfo.Table
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder(InitialStringCapacity)
-            Result.Append("IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND TABLE_TYPE = 'BASE TABLE' ) THEN ").Append(Nl)
+            Result.Append("IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND TABLE_TYPE = 'BASE TABLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (DATA_TYPE) = 'INT' ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (DATA_TYPE) = 'INT' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND UPPER (DATA_TYPE) = 'TEXT' ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'StudentName' AND UPPER (DATA_TYPE) = 'TEXT' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Test' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Quizzes' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Project' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Db).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'Exam' AND UPPER (DATA_TYPE) = 'DOUBLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpFT).Append(" AS ERROR_CODE; ").Append(Nl)
-            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL ) THEN ").Append(Nl)
+            Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM `").Append(Sh).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(NoOp).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSE ").Append(Nl)
-            Result.Append("    SELECT DISTINCT * FROM `").Append(Db).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL; ").Append(Nl)
+            Result.Append("    SELECT DISTINCT * FROM `").Append(Sh).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
             Return Result.ToString()
         End Get
@@ -1156,7 +1150,7 @@ Public Class FrmMain
         State = FormState.Initializing
         LastWindowState = WindowState
         LastSize = Size
-        DataSourceInfo = ("localhost", "root", "")
+        DataSourceInfo = ("localhost", "root", "", "marks", Date.Now.Year.ToString())
         Selector = Selector.Select(
             Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
                 Return (Tuple.Field, True)
@@ -1183,8 +1177,8 @@ Public Class FrmMain
         If Not HaveUniqueNames(Data) Then
             ChkRecords.Checked = True
         End If
-        TxtDataSourceDatabase.Text = "marks"
-        TxtDataSourceTable.Text = Date.Now.Year.ToString()
+        TxtDataSourceSchema.Text = DataSourceInfo.Schema
+        TxtDataSourceTable.Text = DataSourceInfo.Table
         Connection = ConnectState.Disconnected
         DataControlsLock = False
         State = FormState.LoadHasFinish
@@ -1293,7 +1287,7 @@ Public Class FrmMain
         End If
     End Sub
 
-    Private Sub TxtSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtDataSourceDatabase.KeyDown, TxtDataSourceTable.KeyDown
+    Private Sub TxtDataSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtDataSourceSchema.KeyDown, TxtDataSourceTable.KeyDown
         If sender Is Nothing OrElse TypeOf sender IsNot MetroTextBox Then
             Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
@@ -1305,6 +1299,16 @@ Public Class FrmMain
             End If
             e.SuppressKeyPress = True
         End If
+    End Sub
+
+    Private Sub TxtDataSourceSchema_Leave(sender As Object, e As EventArgs) Handles TxtDataSourceSchema.Leave
+        TxtDataSourceSchema.Text = TxtDataSourceSchema.Text.Replace("`", "") '（移除無效字元）
+        DataSourceInfo.Schema = TxtDataSourceSchema.Text
+    End Sub
+
+    Private Sub TxtDataSourceTable_Leave(sender As Object, e As EventArgs) Handles TxtDataSourceTable.Leave
+        TxtDataSourceTable.Text = TxtDataSourceTable.Text.Replace("`", "") '（移除無效字元）
+        DataSourceInfo.Table = TxtDataSourceTable.Text
     End Sub
 
     Private Sub TxtRecordsSearch_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtRecordsSearch.KeyDown

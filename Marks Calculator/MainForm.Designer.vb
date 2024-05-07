@@ -74,9 +74,9 @@ Partial Class FrmMain
         Me.ChkRecordsSearch = New MetroFramework.Controls.MetroCheckBox()
         Me.GrpDataSource = New System.Windows.Forms.GroupBox()
         Me.TxtDataSourceTable = New MetroFramework.Controls.MetroTextBox()
-        Me.TxtDataSourceDatabase = New MetroFramework.Controls.MetroTextBox()
+        Me.TxtDataSourceSchema = New MetroFramework.Controls.MetroTextBox()
         Me.LblDataSourceTable = New MetroFramework.Controls.MetroLabel()
-        Me.LblDataSourceDatabase = New MetroFramework.Controls.MetroLabel()
+        Me.LblDataSourceSchema = New MetroFramework.Controls.MetroLabel()
         Me.BtnDataSourceUpload = New MetroFramework.Controls.MetroButton()
         Me.BtnDataSourceDownload = New MetroFramework.Controls.MetroButton()
         Me.BtnDataSourceConnect = New MetroFramework.Controls.MetroButton()
@@ -575,9 +575,9 @@ Partial Class FrmMain
         Me.GrpDataSource.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.GrpDataSource.Controls.Add(Me.TxtDataSourceTable)
-        Me.GrpDataSource.Controls.Add(Me.TxtDataSourceDatabase)
+        Me.GrpDataSource.Controls.Add(Me.TxtDataSourceSchema)
         Me.GrpDataSource.Controls.Add(Me.LblDataSourceTable)
-        Me.GrpDataSource.Controls.Add(Me.LblDataSourceDatabase)
+        Me.GrpDataSource.Controls.Add(Me.LblDataSourceSchema)
         Me.GrpDataSource.Controls.Add(Me.BtnDataSourceUpload)
         Me.GrpDataSource.Controls.Add(Me.BtnDataSourceDownload)
         Me.GrpDataSource.Controls.Add(Me.BtnDataSourceConnect)
@@ -593,19 +593,19 @@ Partial Class FrmMain
         '
         Me.TxtDataSourceTable.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TxtDataSourceTable.Location = New System.Drawing.Point(75, 76)
+        Me.TxtDataSourceTable.Location = New System.Drawing.Point(67, 76)
         Me.TxtDataSourceTable.Name = "TxtDataSourceTable"
-        Me.TxtDataSourceTable.Size = New System.Drawing.Size(194, 21)
+        Me.TxtDataSourceTable.Size = New System.Drawing.Size(202, 21)
         Me.TxtDataSourceTable.TabIndex = 5
         '
-        'TxtDataSourceDatabase
+        'TxtDataSourceSchema
         '
-        Me.TxtDataSourceDatabase.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
+        Me.TxtDataSourceSchema.Anchor = CType(((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TxtDataSourceDatabase.Location = New System.Drawing.Point(75, 49)
-        Me.TxtDataSourceDatabase.Name = "TxtDataSourceDatabase"
-        Me.TxtDataSourceDatabase.Size = New System.Drawing.Size(194, 21)
-        Me.TxtDataSourceDatabase.TabIndex = 4
+        Me.TxtDataSourceSchema.Location = New System.Drawing.Point(67, 49)
+        Me.TxtDataSourceSchema.Name = "TxtDataSourceSchema"
+        Me.TxtDataSourceSchema.Size = New System.Drawing.Size(202, 21)
+        Me.TxtDataSourceSchema.TabIndex = 4
         '
         'LblDataSourceTable
         '
@@ -616,14 +616,14 @@ Partial Class FrmMain
         Me.LblDataSourceTable.TabIndex = 0
         Me.LblDataSourceTable.Text = "Table"
         '
-        'LblDataSourceDatabase
+        'LblDataSourceSchema
         '
-        Me.LblDataSourceDatabase.AutoSize = True
-        Me.LblDataSourceDatabase.Location = New System.Drawing.Point(6, 50)
-        Me.LblDataSourceDatabase.Name = "LblDataSourceDatabase"
-        Me.LblDataSourceDatabase.Size = New System.Drawing.Size(63, 19)
-        Me.LblDataSourceDatabase.TabIndex = 0
-        Me.LblDataSourceDatabase.Text = "Database"
+        Me.LblDataSourceSchema.AutoSize = True
+        Me.LblDataSourceSchema.Location = New System.Drawing.Point(6, 50)
+        Me.LblDataSourceSchema.Name = "LblDataSourceSchema"
+        Me.LblDataSourceSchema.Size = New System.Drawing.Size(55, 19)
+        Me.LblDataSourceSchema.TabIndex = 0
+        Me.LblDataSourceSchema.Text = "Schema"
         '
         'BtnDataSourceUpload
         '
@@ -748,9 +748,9 @@ Partial Class FrmMain
     Private WithEvents BtnRecordsSquare As MetroFramework.Controls.MetroButton
     Private WithEvents GrpDataSource As GroupBox
     Private WithEvents TxtDataSourceTable As MetroFramework.Controls.MetroTextBox
-    Private WithEvents TxtDataSourceDatabase As MetroFramework.Controls.MetroTextBox
+    Private WithEvents TxtDataSourceSchema As MetroFramework.Controls.MetroTextBox
     Private WithEvents LblDataSourceTable As MetroFramework.Controls.MetroLabel
-    Private WithEvents LblDataSourceDatabase As MetroFramework.Controls.MetroLabel
+    Private WithEvents LblDataSourceSchema As MetroFramework.Controls.MetroLabel
     Private WithEvents BtnDataSourceUpload As MetroFramework.Controls.MetroButton
     Private WithEvents BtnDataSourceDownload As MetroFramework.Controls.MetroButton
     Private WithEvents BtnDataSourceConnect As MetroFramework.Controls.MetroButton

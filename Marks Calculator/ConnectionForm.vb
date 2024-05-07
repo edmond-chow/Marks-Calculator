@@ -110,6 +110,13 @@ Public Class FrmConnect
         End If
     End Sub
 
+    Private Sub TxtSource_Leave(sender As Object, e As EventArgs) Handles TxtHost.Leave, TxtUsername.Leave, TxtPassword.Leave
+        If sender Is Nothing OrElse TypeOf sender IsNot TextBox Then
+            Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
+        End If
+        CType(sender, TextBox).Text = CType(sender, TextBox).Text.Replace("'", "") '（移除無效字元）
+    End Sub
+
     Protected Overrides Sub WndProc(ByRef m As Message)
         Const WM_PAINT As Integer = &HF
         Select Case m.Msg
