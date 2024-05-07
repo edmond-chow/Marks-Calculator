@@ -741,7 +741,14 @@ Public Class FrmMain
                 IsMatched = Data(i).StudentName.Contains(TxtRecordsSearch.Text)
             End If
             If IsMatched Then
-                LstRecords.Items.Add(Data(i).StudentName + If(Not Data(i).IsReal, " (Not in the criteria)", String.Empty))
+                Dim Name As String = Data(i).StudentName
+                If Name = String.Empty Then
+                    LstRecords.Items.Add("[Empty] (Not in the criteria)")
+                ElseIf Data(i).IsReal = False Then
+                    LstRecords.Items.Add(Name + " (Not in the criteria)")
+                Else
+                    LstRecords.Items.Add(Name)
+                End If
                 SearchIndexList.Add(i)
             End If
         Next
@@ -1787,10 +1794,19 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property IsReal As Boolean
             Get
-                Return Test >= 0 AndAlso Test <= 100 AndAlso
-                    Project >= 0 AndAlso Project <= 100 AndAlso
-                    Quizzes >= 0 AndAlso Quizzes <= 100 AndAlso
-                    Exam >= 0 AndAlso Exam <= 100
+                If Name = String.Empty Then
+                    Return False
+                ElseIf Test < 0 OrElse Test > 100 Then
+                    Return False
+                ElseIf Project < 0 OrElse Project > 100 Then
+                    Return False
+                ElseIf Quizzes < 0 OrElse Quizzes > 100 Then
+                    Return False
+                ElseIf Exam < 0 OrElse Exam > 100 Then
+                    Return False
+                Else
+                    Return True
+                End If
             End Get
         End Property
 
