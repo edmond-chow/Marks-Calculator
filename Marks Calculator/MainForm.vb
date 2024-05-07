@@ -984,10 +984,11 @@ Public Class FrmMain
         Dim Nl As String = Environment.NewLine
         Dim BeginBuilder As New StringBuilder(InitialStringCapacity)
         BeginBuilder.Append("CREATE DATABASE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`; ").Append(Nl)
-        BeginBuilder.Append("DELIMITER $ ").Append(Nl)
-        BeginBuilder.Append("CREATE PROCEDURE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` () BEGIN ").Append(Nl)
-        BeginBuilder.Append(Cmd)
-        BeginBuilder.Append("END$ ").Append(Nl)
+        BeginBuilder.Append("DELIMITER $$ ").Append(Nl)
+        BeginBuilder.Append("CREATE PROCEDURE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` () ").Append(Nl)
+        BeginBuilder.Append("BEGIN ").Append(Nl)
+        BeginBuilder.Append(Regex.Replace(Cmd, "^(?=.)", "    ", RegexOptions.Multiline))
+        BeginBuilder.Append("END $$ ").Append(Nl)
         BeginBuilder.Append("DELIMITER ; ").Append(Nl)
         Dim EndBuilder As New StringBuilder(InitialStringCapacity)
         EndBuilder.Append("CALL `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` (); ").Append(Nl)
@@ -1018,7 +1019,7 @@ Public Class FrmMain
             If Not Await DataReader.ReadAsync() Then
                 DataReader.Close()
                 Return
-            ElseIf DataReader.VisibleFieldCount = 1 AndAlso DataReader.GetName(0) = "ERROR_CODE" AndAlso DataReader.GetDataTypeName(0) = "INT" Then
+            ElseIf DataReader.VisibleFieldCount = 1 AndAlso DataReader.GetName(0) = "ERROR_CODE" Then
                 Select Case DataReader("ERROR_CODE")
                     Case ErrorCodes(ErrorKeys.InvalidSourceAndTable)
                         Await ShowMessage(Me, "The primary key should be specified as ""ID"" whenever exists.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -1049,7 +1050,7 @@ Public Class FrmMain
             If Not Await DataReader.ReadAsync() Then
                 DataReader.Close()
                 Return
-            ElseIf DataReader.VisibleFieldCount = 1 AndAlso DataReader.GetName(0) = "ERROR_CODE" AndAlso DataReader.GetDataTypeName(0) = "INT" Then
+            ElseIf DataReader.VisibleFieldCount = 1 AndAlso DataReader.GetName(0) = "ERROR_CODE" Then
                 Select Case DataReader("ERROR_CODE")
                     Case ErrorCodes(ErrorKeys.InvalidSourceAndTable)
                         Await ShowMessage(Me, "The data source or table thereof are missing!", Text, MessageBoxButtons.OK, MessageBoxIcon.Error)
