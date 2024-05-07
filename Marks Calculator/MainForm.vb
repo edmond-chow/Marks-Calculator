@@ -416,8 +416,8 @@ Public Class FrmMain
             Dim Tb As String = DataSourceInfo.Table
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder(InitialStringCapacity)
-            Result.Append("SET @DATA_COUNT = ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
-            Result.Append("IF @DATA_COUNT > 0 THEN ").Append(Nl)
+            Result.Append("DECLARE DATA_COUNT INT DEFAULT ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
+            Result.Append("IF DATA_COUNT > 0 THEN ").Append(Nl)
             Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '").Append(Sh).Append("' ) THEN ").Append(Nl)
             Result.Append("        CREATE DATABASE `").Append(Sh).Append("`; ").Append(Nl)
             Result.Append("    END IF; ").Append(Nl)
@@ -1002,13 +1002,9 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Cmd">Sql 指令片段</param>
     Private Async Function ExecuteQuery(Cmd As String) As Task
-        If DataSourceConnection.ServerVersion.Contains("MariaDB") Then
-            DataReader = Await New MySqlCommand(Cmd, DataSourceConnection).ExecuteReaderAsync()
-        Else
-            Dim Subroutine As (BeginCmd As String, EndCmd As String) = MakeSubroutine(Cmd)
-            Await New MySqlScript(DataSourceConnection, Subroutine.BeginCmd).ExecuteAsync()
-            DataReader = Await New MySqlCommand(Subroutine.EndCmd, DataSourceConnection).ExecuteReaderAsync()
-        End If
+        Dim Subroutine As (BeginCmd As String, EndCmd As String) = MakeSubroutine(Cmd)
+        Await New MySqlScript(DataSourceConnection, Subroutine.BeginCmd).ExecuteAsync()
+        DataReader = Await New MySqlCommand(Subroutine.EndCmd, DataSourceConnection).ExecuteReaderAsync()
     End Function
 
     ''' <summary>
