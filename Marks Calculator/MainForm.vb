@@ -128,7 +128,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 用來存儲資料來源的連接訊息
     ''' </summary>
-    Private DataSourceInfo As (Host As String, Username As String, Password As String, Schema As String, Table As String)
+    Private DataSourceInfo As (Server As String, Port As String, Username As String, Password As String, Schema As String, Table As String)
 
     ''' <summary>
     ''' 用來連接資料來源的執行個體
@@ -165,6 +165,11 @@ Public Class FrmMain
     ''' </summary>
     Private ErrorCodes As Dictionary(Of ErrorKeys, Integer)
 
+    ''' <summary>
+    ''' 表示連線表單的 Schema 欄位處於空置模式
+    ''' </summary>
+    Private IsEmptySchemaMode As Boolean
+
 #End Region
 
 #Region "Constructors"
@@ -177,12 +182,20 @@ Public Class FrmMain
         Data = New List(Of Record)()
         Temp = New Record()
         RandomNumberGenerator = New Random()
+        IsEmptySchemaMode = True
         FrmConnection = New FrmConnect(
-            Function() As (Host As String, Username As String, Password As String)
-                Return (DataSourceInfo.Host, DataSourceInfo.Username, DataSourceInfo.Password)
+            Function() As (Server As String, Port As String, Username As String, Password As String, Schema As String)
+                Return (DataSourceInfo.Server, DataSourceInfo.Port, DataSourceInfo.Username, DataSourceInfo.Password, If(IsEmptySchemaMode, String.Empty, DataSourceInfo.Schema))
             End Function,
-            Sub(Tuple As (Host As String, Username As String, Password As String))
-                DataSourceInfo = (Tuple.Host, Tuple.Username, Tuple.Password, DataSourceInfo.Schema, DataSourceInfo.Table)
+            Sub(Info As (Server As String, Port As String, Username As String, Password As String, Schema As String))
+                If Info.Schema = String.Empty Then
+                    IsEmptySchemaMode = True
+                    DataSourceInfo = (Info.Server, Info.Port, Info.Username, Info.Password, DataSourceInfo.Schema, DataSourceInfo.Table)
+                Else
+                    IsEmptySchemaMode = False
+                    DataSourceInfo = (Info.Server, Info.Port, Info.Username, Info.Password, Info.Schema, DataSourceInfo.Table)
+                    TxtDataSourceSchema.Text = DataSourceInfo.Schema
+                End If
             End Sub
         )
     End Sub
@@ -198,7 +211,7 @@ Public Class FrmMain
         Get
             Return Data.Where(
                 Function(Record As Record) As Boolean
-                    Return Record.IsReal
+                    Return Record.IsRealData
                 End Function
             )
         End Get
@@ -295,9 +308,9 @@ Public Class FrmMain
                 End Function
             )
         End Get
-        Set(Tuples As IEnumerable(Of (Field As FieldInfo, Value As Object)))
-            For Each Tuple As (Field As FieldInfo, Value As Object) In Tuples
-                Tuple.Field.FieldType.GetProperty("Enabled").SetValue(Tuple.Field.GetValue(Me), Tuple.Value)
+        Set(ControlStates As IEnumerable(Of (Field As FieldInfo, Value As Object)))
+            For Each ControlState As (Field As FieldInfo, Value As Object) In ControlStates
+                ControlState.Field.FieldType.GetProperty("Enabled").SetValue(ControlState.Field.GetValue(Me), ControlState.Value)
             Next
         End Set
     End Property
@@ -390,14 +403,22 @@ Public Class FrmMain
     End Property
 
     ''' <summary>
-    ''' 連線至資料庫的 Sql 指令（逃避無效字元）
+    ''' 連線至資料庫的 Sql 指令
     ''' </summary>
     Private ReadOnly Property ConnectionCmd As String
         Get
-            If DataSourceInfo.Host.Contains("'") OrElse DataSourceInfo.Username.Contains("'") OrElse DataSourceInfo.Password.Contains("'") Then
-                Throw New BranchesShouldNotBeInstantiatedException("Some of the strings contains unacceptable characters!")
-            End If
-            Return "DATASOURCE = '" + DataSourceInfo.Host + "'; USERNAME = '" + DataSourceInfo.Username + "'; PASSWORD = '" + DataSourceInfo.Password + "'; ALLOW USER VARIABLES = TRUE; "
+            Dim Builder As New MySqlConnectionStringBuilder()
+            Try
+                Builder.Server = DataSourceInfo.Server
+                Builder.Port = If(DataSourceInfo.Port = String.Empty, Builder.Port, DataSourceInfo.Port)
+                Builder.UserID = DataSourceInfo.Username
+                Builder.Password = DataSourceInfo.Password
+                Builder.Database = If(IsEmptySchemaMode, String.Empty, DataSourceInfo.Schema)
+                Builder.AllowUserVariables = True
+            Catch Exception As Exception
+                Throw New FormatException("Connection string format invalid!", Exception)
+            End Try
+            Return Builder.ConnectionString
         End Get
     End Property
 
@@ -628,8 +649,8 @@ Public Class FrmMain
         Progress = True
         Reserved = Selector.ToList()
         Selector = Selector.Select(
-            Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
-                Return (Tuple.Field, False)
+            Function(ControlState As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
+                Return (ControlState.Field, False)
             End Function
         )
     End Sub
@@ -658,15 +679,16 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Result">表示分數的記錄</param>
     Private Sub ShowResult(Result As Record)
-        If Result.IsReal Then
-            TxtResultCA.Text = Result.CAMarks.ToString()
-            TxtResultModule.Text = Result.ModuleMarks.ToString()
+        Dim Temp As Record = (If(Result.StudentName = String.Empty, "[Empty]", Result.StudentName), Result.TestMarks, Result.QuizzesMarks, Result.ProjectMarks, Result.ExamMarks)
+        If Temp.IsRealData Then
+            TxtResultCA.Text = Temp.CAMarks.ToString()
+            TxtResultModule.Text = Temp.ModuleMarks.ToString()
         Else
             TxtResultCA.Text = NaN
             TxtResultModule.Text = NaN
         End If
-        TxtReusltGrade.Text = Result.ModuleGrade
-        TxtReusltRemarks.Text = Result.Remarks
+        TxtReusltGrade.Text = Temp.ModuleGrade
+        TxtReusltRemarks.Text = Temp.Remarks
     End Sub
 
     ''' <summary>
@@ -744,7 +766,7 @@ Public Class FrmMain
                 Dim Name As String = Data(i).StudentName
                 If Name = String.Empty Then
                     LstRecords.Items.Add("[Empty] (Not in the criteria)")
-                ElseIf Data(i).IsReal = False Then
+                ElseIf Data(i).IsRealData = False Then
                     LstRecords.Items.Add(Name + " (Not in the criteria)")
                 Else
                     LstRecords.Items.Add(Name)
@@ -1153,10 +1175,10 @@ Public Class FrmMain
         State = FormState.Initializing
         LastWindowState = WindowState
         LastSize = Size
-        DataSourceInfo = ("localhost", "root", "", "marks", Date.Now.Year.ToString())
+        DataSourceInfo = ("localhost", "3306", "root", "", "marks", Date.Now.Year.ToString())
         Selector = Selector.Select(
-            Function(Tuple As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
-                Return (Tuple.Field, True)
+            Function(ControlState As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
+                Return (ControlState.Field, True)
             End Function
         )
         Tag = IsResizing.No
@@ -1776,19 +1798,19 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property CAMarks As Double
             Get
-                Return If(IsReal, Test * TestScale + Quizzes * QuizzesScale + Project * ProjectScale, Double.NaN)
+                Return If(IsRealData, Test * TestScale + Quizzes * QuizzesScale + Project * ProjectScale, Double.NaN)
             End Get
         End Property
 
         <JsonIgnore>
         Public ReadOnly Property ModuleMarks As Double
             Get
-                Return If(IsReal, CAMarks * CAScale + Exam * ExamScale, Double.NaN)
+                Return If(IsRealData, CAMarks * CAScale + Exam * ExamScale, Double.NaN)
             End Get
         End Property
 
         <JsonIgnore>
-        Public ReadOnly Property IsReal As Boolean
+        Public ReadOnly Property IsRealData As Boolean
             Get
                 If Name = String.Empty Then
                     Return False
@@ -1809,7 +1831,7 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property ModuleGrade As String
             Get
-                If Not IsReal Then
+                If Not IsRealData Then
                     Return Invalid
                 ElseIf CAMarks < 40 OrElse Exam < 40 Then
                     Return "F"
@@ -1826,7 +1848,7 @@ Public Class FrmMain
         <JsonIgnore>
         Public ReadOnly Property Remarks As String
             Get
-                If Not IsReal Then
+                If Not IsRealData Then
                     Return Invalid
                 ElseIf ModuleGrade <> "F" Then
                     Return "Pass"

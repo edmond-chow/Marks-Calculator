@@ -18,18 +18,18 @@ Public Class FrmConnect
     ''' <summary>
     ''' 表示數據的讀取運算子
     ''' </summary>
-    Private ReadOnly Getter As Func(Of (Host As String, Username As String, Password As String))
+    Private ReadOnly Getter As GetterType
 
     ''' <summary>
     ''' 表示數據的寫入運算子
     ''' </summary>
-    Private ReadOnly Setter As Action(Of (Host As String, Username As String, Password As String))
+    Private ReadOnly Setter As SetterType
 
 #End Region
 
 #Region "Constructors"
 
-    Public Sub New(Getter As Func(Of (Host As String, Username As String, Password As String)), Setter As Action(Of (Host As String, Username As String, Password As String)))
+    Public Sub New(Getter As GetterType, Setter As SetterType)
         ' 設計工具需要此呼叫。
         InitializeComponent()
         ' 在 InitializeComponent() 呼叫之後加入所有初始設定。
@@ -55,10 +55,12 @@ Public Class FrmConnect
 #Region "Handles"
 
     Private Sub FrmConnect_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Dim Data As (Host As String, Username As String, Password As String) = Getter?.Invoke()
-        TxtHost.Text = Data.Host
-        TxtUsername.Text = Data.Username
-        TxtPassword.Text = Data.Password
+        Dim Info As (Server As String, Port As String, Username As String, Password As String, Schema As String) = Getter?.Invoke()
+        TxtServer.Text = Info.Server
+        TxtPort.Text = Info.Port
+        TxtUsername.Text = Info.Username
+        TxtPassword.Text = Info.Password
+        TxtSchema.Text = Info.Schema
         TxtPassword.PasswordChar = PasswordChar
     End Sub
 
@@ -74,7 +76,7 @@ Public Class FrmConnect
         If DialogResult = Nothing Then
             DialogResult = DialogResult.Cancel
         End If
-        Setter?.Invoke((TxtHost.Text, TxtUsername.Text, TxtPassword.Text))
+        Setter?.Invoke((TxtServer.Text, TxtPort.Text, TxtUsername.Text, TxtPassword.Text, TxtSchema.Text))
     End Sub
 
     Private Sub TxtPassword_Enter(sender As Object, e As EventArgs) Handles TxtPassword.Enter
@@ -100,7 +102,7 @@ Public Class FrmConnect
         TxtPassword.PasswordChar = PasswordChar
     End Sub
 
-    Private Sub TxtSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtHost.KeyDown, TxtUsername.KeyDown, TxtPassword.KeyDown
+    Private Sub TxtSource_KeyDown(sender As Object, e As KeyEventArgs) Handles TxtServer.KeyDown, TxtPort.KeyDown, TxtUsername.KeyDown, TxtPassword.KeyDown, TxtSchema.KeyDown
         If sender Is Nothing OrElse TypeOf sender IsNot TextBox Then
             Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
@@ -110,7 +112,7 @@ Public Class FrmConnect
         End If
     End Sub
 
-    Private Sub TxtSource_Leave(sender As Object, e As EventArgs) Handles TxtHost.Leave, TxtUsername.Leave, TxtPassword.Leave
+    Private Sub TxtSource_Leave(sender As Object, e As EventArgs) Handles TxtServer.Leave, TxtPort.Leave, TxtUsername.Leave, TxtPassword.Leave, TxtSchema.Leave
         If sender Is Nothing OrElse TypeOf sender IsNot TextBox Then
             Throw New BranchesShouldNotBeInstantiatedException("Type not matching!")
         End If
@@ -126,6 +128,20 @@ Public Class FrmConnect
                 MyBase.WndProc(m)
         End Select
     End Sub
+
+#End Region
+
+#Region "Delegates"
+
+    ''' <summary>
+    ''' 表示數據的讀取運算子的類型
+    ''' </summary>
+    Public Delegate Function GetterType() As (Server As String, Port As String, Username As String, Password As String, Schema As String)
+
+    ''' <summary>
+    ''' 表示數據的寫入運算子的類型
+    ''' </summary>
+    Public Delegate Sub SetterType(Info As (Server As String, Port As String, Username As String, Password As String, Schema As String))
 
 #End Region
 
