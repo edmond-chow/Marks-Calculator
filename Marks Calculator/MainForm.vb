@@ -437,6 +437,7 @@ Public Class FrmMain
             Dim Tb As String = DataSourceInfo.Table
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder(InitialStringCapacity)
+            Result.Append("BEGIN ").Append(Nl)
             Result.Append("DECLARE DATA_COUNT INT DEFAULT ").Append(Data.Count.ToString()).Append("; ").Append(Nl)
             Result.Append("IF DATA_COUNT > 0 THEN ").Append(Nl)
             Result.Append("    IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '").Append(Sh).Append("' ) THEN ").Append(Nl)
@@ -501,6 +502,7 @@ Public Class FrmMain
             Result.Append("ELSE ").Append(Nl)
             Result.Append("    SELECT ").Append(NoOp).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
+            Result.Append("END ").Append(Nl)
             Return Result.ToString()
         End Get
     End Property
@@ -520,6 +522,7 @@ Public Class FrmMain
             Dim Tb As String = DataSourceInfo.Table
             Dim Nl As String = Environment.NewLine
             Dim Result As New StringBuilder(InitialStringCapacity)
+            Result.Append("BEGIN ").Append(Nl)
             Result.Append("IF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND TABLE_TYPE = 'BASE TABLE' ) THEN ").Append(Nl)
             Result.Append("    SELECT ").Append(OpST).Append(" AS ERROR_CODE; ").Append(Nl)
             Result.Append("ELSEIF NOT EXISTS ( SELECT NULL FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '").Append(Sh).Append("' AND TABLE_NAME = '").Append(Tb).Append("' AND COLUMN_NAME = 'ID' AND UPPER (DATA_TYPE) = 'INT' ) THEN ").Append(Nl)
@@ -539,6 +542,7 @@ Public Class FrmMain
             Result.Append("ELSE ").Append(Nl)
             Result.Append("    SELECT DISTINCT * FROM `").Append(Sh).Append("`.`").Append(Tb).Append("` WHERE `ID` IS NOT NULL AND `StudentName` IS NOT NULL AND `Test` IS NOT NULL AND `Quizzes` IS NOT NULL AND `Project` IS NOT NULL AND `Exam` IS NOT NULL; ").Append(Nl)
             Result.Append("END IF; ").Append(Nl)
+            Result.Append("END ").Append(Nl)
             Return Result.ToString()
         End Get
     End Property
@@ -1009,9 +1013,7 @@ Public Class FrmMain
         BeginBuilder.Append("CREATE DATABASE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`; ").Append(Nl)
         BeginBuilder.Append("DELIMITER $$ ").Append(Nl)
         BeginBuilder.Append("CREATE PROCEDURE `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` () ").Append(Nl)
-        BeginBuilder.Append("BEGIN ").Append(Nl)
-        BeginBuilder.Append(Regex.Replace(Cmd, "^(?=.)", "    ", RegexOptions.Multiline))
-        BeginBuilder.Append("END $$ ").Append(Nl)
+        BeginBuilder.Append(Regex.Replace(Cmd, Nl + "$", "")).Append("$$ ").Append(Nl)
         BeginBuilder.Append("DELIMITER ; ").Append(Nl)
         Dim EndBuilder As New StringBuilder(InitialStringCapacity)
         EndBuilder.Append("CALL `MARKS_CALCULATOR_SCHEMA{").Append(Co).Append("}`.`MODULE_GRADE_SUBROUTINE` (); ").Append(Nl)
