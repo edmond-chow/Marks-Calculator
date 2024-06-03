@@ -1590,10 +1590,13 @@ Public Class FrmMain
     End Sub
 
     Protected Overrides Sub WndProc(ByRef m As Message)
+        Dim Status As New Native.WINDOWPLACEMENT()
+        Status.length = Marshal.SizeOf(Status)
+        Native.GetWindowPlacement(Handle, Status)
         Select Case m.Msg
             Case Native.WM_SIZE
                 Dim MetroFormButtonTags As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-                Resizable = WindowState <> FormWindowState.Maximized
+                Resizable = Status.showCmd <> Native.SW_MAXIMIZE
                 Select Case m.WParam
                     Case Native.SIZE_RESTORED
                         WindowButtonsRequest(
@@ -1602,8 +1605,8 @@ Public Class FrmMain
                             End Sub,
                             MetroFormButtonTags.GetEnumValues()(1)
                         ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
-                        Owner.Show() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去分層視窗之底層陰影的修復）
-                        Activate() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
+                        Native.ShowWindow(Owner.Handle, Native.SW_SHOWNOACTIVATE) '（對於視窗還原會失去分層視窗之底層陰影的修復）
+                        Native.SetForegroundWindow(Handle) '（對於視窗還原會失去焦點的修復）
                     Case Native.SIZE_MINIMIZED
                         Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
                     Case Native.SIZE_MAXIMIZED
@@ -1616,7 +1619,7 @@ Public Class FrmMain
                         Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
                 End Select
             Case Native.WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
-                If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
                     Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
                     Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
                     Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
@@ -1626,7 +1629,7 @@ Public Class FrmMain
                     Params.rgrc(0).right -= XFrame + Border
                     Params.rgrc(0).bottom -= YFrame + Border
                     Marshal.StructureToPtr(Params, m.LParam, True)
-                ElseIf WindowState = FormWindowState.Normal Then
+                ElseIf Status.showCmd = Native.SW_NORMAL Then
                     NormalSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
                 End If
             Case Native.WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制）
@@ -1634,7 +1637,7 @@ Public Class FrmMain
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 Dim BorderX As Integer = 0
                 Dim BorderY As Integer = 0
-                If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
                     Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
                     Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
                     Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
@@ -1647,7 +1650,7 @@ Public Class FrmMain
                 Else
                     If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
                         MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
-                    ElseIf WindowState <> FormWindowState.Maximized OrElse Y - BorderY <= BorderWithTitle Then '（限制在最大化時只能夠在標題列拖放）
+                    ElseIf Status.showCmd <> Native.SW_MAXIMIZE OrElse Y - BorderY <= BorderWithTitle Then '（限制在最大化時只能夠在標題列拖放）
                         m.Result = New IntPtr(Native.HTCAPTION) '（在視窗標題列的部分）
                         Return
                     End If
@@ -1655,7 +1658,7 @@ Public Class FrmMain
             Case Native.WM_NCLBUTTONDBLCLICK '（透過對訊息 WM_NCLBUTTONDBLCLICK 的捕獲，實現視窗非客戶端區域雙擊有效範圍的限制）
                 Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
                 Dim BorderY As Integer = 0
-                If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
+                If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
                     Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
                     Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
                     BorderY = YFrame + Border
@@ -2010,6 +2013,9 @@ Public Class FrmMain
         Public Const SIZE_RESTORED As Integer = 0
         Public Const SIZE_MINIMIZED As Integer = 1
         Public Const SIZE_MAXIMIZED As Integer = 2
+        Public Const SW_NORMAL As Integer = 1
+        Public Const SW_MAXIMIZE As Integer = 3
+        Public Const SW_SHOWNOACTIVATE As Integer = 4
 
 #End Region
 
@@ -2027,6 +2033,18 @@ Public Class FrmMain
         Public Shared Function GetWindowLong(hWnd As IntPtr, nIndex As Integer) As Integer
         End Function
 
+        <DllImport("user32.dll")>
+        Public Shared Function GetWindowPlacement(hWnd As IntPtr, ByRef lpwndpl As WINDOWPLACEMENT) As Boolean
+        End Function
+
+        <DllImport("user32.dll")>
+        Public Shared Function SetForegroundWindow(hWnd As IntPtr) As Boolean
+        End Function
+
+        <DllImport("user32.dll")>
+        Public Shared Function ShowWindow(hWnd As IntPtr, nCmdShow As Integer) As Boolean
+        End Function
+
 #End Region
 
         <StructLayout(LayoutKind.Sequential)>
@@ -2038,6 +2056,18 @@ Public Class FrmMain
             Public top As Integer
             Public right As Integer
             Public bottom As Integer
+
+#End Region
+
+        End Structure
+
+        <StructLayout(LayoutKind.Sequential)>
+        Public Structure POINT
+
+#Region "Fields"
+
+            Public x As Long
+            Public y As Long
 
 #End Region
 
@@ -2068,6 +2098,23 @@ Public Class FrmMain
             <MarshalAs(UnmanagedType.ByValArray, SizeConst:=3)>
             Public rgrc() As RECT
             Public lppos As WINDOWPOS
+
+#End Region
+
+        End Structure
+
+        <StructLayout(LayoutKind.Sequential)>
+        Public Structure WINDOWPLACEMENT
+
+#Region "Fields"
+
+            Public length As Integer
+            Public flags As Integer
+            Public showCmd As Integer
+            Public ptMinPosition As POINT
+            Public ptMaxPosition As POINT
+            Public rcNormalPosition As RECT
+            Public rcDevice As RECT
 
 #End Region
 
