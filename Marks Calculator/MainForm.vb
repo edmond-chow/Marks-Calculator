@@ -111,14 +111,9 @@ Public Class FrmMain
     Private State As FormState
 
     ''' <summary>
-    ''' 表示表單上一個視窗狀態（對於視窗狀態而言：修改標題列的按鈕）
-    ''' </summary>
-    Private LastWindowState As FormWindowState
-
-    ''' <summary>
     ''' 表示表單上一個視窗大小（對於訊息迴圈而言：大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
     ''' </summary>
-    Private LastSize As Size
+    Private NormalSize As Size
 
     ''' <summary>
     ''' 隨機數生成的執行個體
@@ -946,8 +941,8 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
     Private Sub WindowButtonsRequest(Action As Action(Of Control))
-        Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-        WindowButtonsRequest(Action, MetroFormButtonTag.GetEnumValues())
+        Dim MetroFormButtonTags As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+        WindowButtonsRequest(Action, MetroFormButtonTags.GetEnumValues())
     End Sub
 
     ''' <summary>
@@ -1175,8 +1170,7 @@ Public Class FrmMain
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         State = FormState.Initializing
-        LastWindowState = WindowState
-        LastSize = Size
+        NormalSize = Size
         DataSourceInfo = ("localhost", "3306", "root", "", "marks", Date.Now.Year.ToString())
         Selector = Selector.Select(
             Function(ControlState As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
@@ -1595,33 +1589,32 @@ Public Class FrmMain
         )
     End Sub
 
-    Private Sub FrmMain_Resize(sender As Object, e As EventArgs) Handles Me.Resize
-        If LastWindowState <> WindowState Then
-            Dim MetroFormButtonTag As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-            WindowButtonsRequest(
-                Sub(Control As Control)
-                    If WindowState = FormWindowState.Normal Then
-                        Control.Text = "1"
-                    ElseIf WindowState = FormWindowState.Maximized Then
-                        Control.Text = "2"
-                    End If
-                End Sub,
-                MetroFormButtonTag.GetEnumValues()(1)
-            )
-            '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
-            If WindowState = FormWindowState.Normal Then
-                Owner.Show() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去分層視窗之底層陰影的修復）
-                Activate() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
-            Else
-                Size = LastSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
-            End If
-            Resizable = WindowState <> FormWindowState.Maximized
-        End If
-        LastWindowState = WindowState
-    End Sub
-
     Protected Overrides Sub WndProc(ByRef m As Message)
         Select Case m.Msg
+            Case Native.WM_SIZE
+                Dim MetroFormButtonTags As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+                Resizable = WindowState <> FormWindowState.Maximized
+                Select Case m.WParam
+                    Case Native.SIZE_RESTORED
+                        WindowButtonsRequest(
+                            Sub(Control As Control)
+                                Control.Text = "1"
+                            End Sub,
+                            MetroFormButtonTags.GetEnumValues()(1)
+                        ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
+                        Owner.Show() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去分層視窗之底層陰影的修復）
+                        Activate() '（對於視窗由最大化即 Form.WindowState 為 FormWindowState.Maximized 變為一般即 Form.WindowState 為 FormWindowState.Normal 會失去焦點的修復）
+                    Case Native.SIZE_MINIMIZED
+                        Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
+                    Case Native.SIZE_MAXIMIZED
+                        WindowButtonsRequest(
+                            Sub(Control As Control)
+                                Control.Text = "2"
+                            End Sub,
+                            MetroFormButtonTags.GetEnumValues()(1)
+                        ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
+                        Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
+                End Select
             Case Native.WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
                 If WindowState = FormWindowState.Maximized Then '（在最大化模式下補足表單邊界）
                     Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
@@ -1634,7 +1627,7 @@ Public Class FrmMain
                     Params.rgrc(0).bottom -= YFrame + Border
                     Marshal.StructureToPtr(Params, m.LParam, True)
                 ElseIf WindowState = FormWindowState.Normal Then
-                    LastSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
+                    NormalSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
                 End If
             Case Native.WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制）
                 Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
@@ -2006,6 +1999,7 @@ Public Class FrmMain
         Public Const SM_CYSIZEFRAME As Integer = 33
         Public Const SM_CXPADDEDBORDER As Integer = 92
         Public Const GWL_EXSTYLE As Integer = -20
+        Public Const WM_SIZE As Integer = &H5
         Public Const WM_NCCALCSIZE As Integer = &H83
         Public Const WM_NCHITTEST As Integer = &H84
         Public Const WM_NCLBUTTONDBLCLICK As Integer = &HA3
@@ -2013,6 +2007,9 @@ Public Class FrmMain
         Public Const HTCAPTION As Integer = 2
         Public Const WS_MINIMIZEBOX As Integer = &H20000
         Public Const WS_EX_COMPOSITED As Integer = &H2000000
+        Public Const SIZE_RESTORED As Integer = 0
+        Public Const SIZE_MINIMIZED As Integer = 1
+        Public Const SIZE_MAXIMIZED As Integer = 2
 
 #End Region
 
