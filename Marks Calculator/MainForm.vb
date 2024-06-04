@@ -72,6 +72,11 @@ Public Class FrmMain
     Private Const DelayDuration As Integer = 50
 
     ''' <summary>
+    ''' 表示分層視窗之底層陰影會延遲顯示的時間
+    ''' </summary>
+    Private Const BackdropDelay As Integer = 200
+
+    ''' <summary>
     ''' 表示不是數字的值
     ''' </summary>
     Private Const NaN As String = "[NaN]"
@@ -855,6 +860,13 @@ Public Class FrmMain
     End Function
 
     ''' <summary>
+    ''' 在同步上下文中延遲執行代碼片段
+    ''' </summary>
+    Private Sub DelayWithContext(Callback As Action, DelayDuration As Integer)
+        Task.Delay(DelayDuration).ConfigureAwait(True).GetAwaiter().OnCompleted(Callback)
+    End Sub
+
+    ''' <summary>
     ''' 檢查連線狀態是否被強制中斷
     ''' </summary>
     ''' <param name="Capture"></param>
@@ -1604,8 +1616,13 @@ Public Class FrmMain
                             End Sub,
                             MetroFormButtonTags.GetEnumValues()(1)
                         ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
-                        Native.ShowWindow(Owner.Handle, Native.SW_SHOWNOACTIVATE) '（對於視窗還原會失去分層視窗之底層陰影的修復）
                         Native.SetForegroundWindow(Handle) '（對於視窗還原會失去焦點的修復）
+                        DelayWithContext(
+                            Sub()
+                                Native.ShowWindow(Owner.Handle, Native.SW_SHOWNOACTIVATE) '（對於視窗還原會失去分層視窗之底層陰影的修復）
+                            End Sub,
+                            BackdropDelay
+                        )
                     Case Native.SIZE_MINIMIZED
                         Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
                     Case Native.SIZE_MAXIMIZED
