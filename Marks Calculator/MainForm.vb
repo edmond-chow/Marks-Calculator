@@ -1170,7 +1170,6 @@ Public Class FrmMain
 
     Private Async Sub FrmMain_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         State = FormState.Initializing
-        NormalSize = Size
         DataSourceInfo = ("localhost", "3306", "root", "", "marks", Date.Now.Year.ToString())
         Selector = Selector.Select(
             Function(ControlState As (Field As FieldInfo, Value As Object)) As (Field As FieldInfo, Value As Object)
