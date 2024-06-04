@@ -1600,88 +1600,126 @@ Public Class FrmMain
         )
     End Sub
 
-    Protected Overrides Sub WndProc(ByRef m As Message)
+    Private Function GetWindowPlacement() As Native.WINDOWPLACEMENT
         Dim Status As New Native.WINDOWPLACEMENT()
         Status.length = Marshal.SizeOf(Status)
         Native.GetWindowPlacement(Handle, Status)
+        Return Status
+    End Function
+
+    ''' <summary>
+    ''' 透過對訊息 WM_SIZE 的捕獲，實現：視窗按鍵圖示修復；在還原狀態時顯示底層陰影以及獲得視窗焦點；恢復還原狀態原有的大小；在最大化模式上停用 Resizable
+    ''' </summary>
+    Private Sub WmSize(ByRef m As Message)
+        Dim Status As Native.WINDOWPLACEMENT = GetWindowPlacement()
+        Dim MetroFormButtonTags As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
+        Resizable = Status.showCmd <> Native.SW_MAXIMIZE
+        Select Case m.WParam
+            Case Native.SIZE_RESTORED
+                WindowButtonsRequest(
+                    Sub(Control As Control)
+                        Control.Text = "1"
+                    End Sub,
+                    MetroFormButtonTags.GetEnumValues()(1)
+                ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
+                Native.SetForegroundWindow(Handle) '（對於視窗還原會失去焦點的修復）
+                DelayWithContext(
+                    Sub()
+                        If GetWindowPlacement().showCmd = Native.SW_NORMAL Then
+                            Native.ShowWindow(Owner.Handle, Native.SW_SHOWNOACTIVATE) '（對於視窗還原會失去分層視窗之底層陰影的修復）
+                        End If
+                    End Sub,
+                    BackdropDelay
+                )
+            Case Native.SIZE_MINIMIZED
+                Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
+            Case Native.SIZE_MAXIMIZED
+                WindowButtonsRequest(
+                    Sub(Control As Control)
+                        Control.Text = "2"
+                    End Sub,
+                    MetroFormButtonTags.GetEnumValues()(1)
+                ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
+                Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
+        End Select
+    End Sub
+
+    ''' <summary>
+    ''' 透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable
+    ''' </summary>
+    Private Sub WmNccalcsize(ByRef m As Message)
+        Dim Status As Native.WINDOWPLACEMENT = GetWindowPlacement()
+        If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
+            Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
+            Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+            Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
+            Dim Params As Native.NCCALCSIZE_PARAMS = Marshal.PtrToStructure(Of Native.NCCALCSIZE_PARAMS)(m.LParam)
+            Params.rgrc(0).left += XFrame + Border
+            Params.rgrc(0).top += YFrame + Border
+            Params.rgrc(0).right -= XFrame + Border
+            Params.rgrc(0).bottom -= YFrame + Border
+            Marshal.StructureToPtr(Params, m.LParam, True)
+        ElseIf Status.showCmd = Native.SW_NORMAL Then
+            NormalSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' 透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制
+    ''' </summary>
+    Private Sub WmNchittest(ByRef m As Message)
+        Dim Status As Native.WINDOWPLACEMENT = GetWindowPlacement()
+        Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
+        Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
+        Dim BorderX As Integer = 0
+        Dim BorderY As Integer = 0
+        If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
+            Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
+            Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+            Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
+            BorderX = XFrame + Border
+            BorderY = YFrame + Border
+        End If
+        If X - BorderX >= Border AndAlso X < ClientSize.Width - Border AndAlso Y - BorderY >= BorderWithTitle AndAlso Y < ClientSize.Height - Border Then
+            m.Result = New IntPtr(Native.HTNOWHERE) '（在視窗中間的內容部分）
+            Return
+        Else
+            If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
+                MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
+            ElseIf Status.showCmd <> Native.SW_MAXIMIZE OrElse Y - BorderY <= BorderWithTitle Then '（限制在最大化時只能夠在標題列拖放）
+                m.Result = New IntPtr(Native.HTCAPTION) '（在視窗標題列的部分）
+                Return
+            End If
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' 透過對訊息 WM_NCLBUTTONDBLCLICK 的捕獲，實現視窗非客戶端區域雙擊有效範圍的限制
+    ''' </summary>
+    Private Sub WmNclbuttondbclick(ByRef m As Message)
+        Dim Status As Native.WINDOWPLACEMENT = GetWindowPlacement()
+        Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
+        Dim BorderY As Integer = 0
+        If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
+            Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
+            Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
+            BorderY = YFrame + Border
+        End If
+        If Y - BorderY <= BorderWithTitle Then
+            MyBase.WndProc(m)
+        End If
+    End Sub
+
+    Protected Overrides Sub WndProc(ByRef m As Message)
         Select Case m.Msg
             Case Native.WM_SIZE
-                Dim MetroFormButtonTags As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-                Resizable = Status.showCmd <> Native.SW_MAXIMIZE
-                Select Case m.WParam
-                    Case Native.SIZE_RESTORED
-                        WindowButtonsRequest(
-                            Sub(Control As Control)
-                                Control.Text = "1"
-                            End Sub,
-                            MetroFormButtonTags.GetEnumValues()(1)
-                        ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
-                        Native.SetForegroundWindow(Handle) '（對於視窗還原會失去焦點的修復）
-                        DelayWithContext(
-                            Sub()
-                                Native.ShowWindow(Owner.Handle, Native.SW_SHOWNOACTIVATE) '（對於視窗還原會失去分層視窗之底層陰影的修復）
-                            End Sub,
-                            BackdropDelay
-                        )
-                    Case Native.SIZE_MINIMIZED
-                        Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
-                    Case Native.SIZE_MAXIMIZED
-                        WindowButtonsRequest(
-                            Sub(Control As Control)
-                                Control.Text = "2"
-                            End Sub,
-                            MetroFormButtonTags.GetEnumValues()(1)
-                        ) '（修復對於在視窗空白位置雙擊從而改變視窗狀態時，最大化或一般按鈕樣式無法改變樣式的問題）
-                        Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
-                End Select
-            Case Native.WM_NCCALCSIZE '（透過對訊息 WM_NCCALCSIZE 的捕獲，保留視窗狀態變更的動畫，其中屬性 FormBorderStyle 需要被設置為 FormBorderStyle.Sizable）
-                If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
-                    Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
-                    Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
-                    Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
-                    Dim Params As Native.NCCALCSIZE_PARAMS = Marshal.PtrToStructure(Of Native.NCCALCSIZE_PARAMS)(m.LParam)
-                    Params.rgrc(0).left += XFrame + Border
-                    Params.rgrc(0).top += YFrame + Border
-                    Params.rgrc(0).right -= XFrame + Border
-                    Params.rgrc(0).bottom -= YFrame + Border
-                    Marshal.StructureToPtr(Params, m.LParam, True)
-                ElseIf Status.showCmd = Native.SW_NORMAL Then
-                    NormalSize = Size '（大小容易受到多次觸發的改變，基於這種易失性故額外儲存原有大小）
-                End If
-            Case Native.WM_NCHITTEST '（透過對訊息 WM_NCHITTEST 的捕獲，實現視窗非客戶端區域拖放有效範圍的限制）
-                Dim X As Integer = (m.LParam.ToInt32() And &HFFFF) - Location.X '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，低 16 位元代表滑鼠遊標的 x 座標）
-                Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
-                Dim BorderX As Integer = 0
-                Dim BorderY As Integer = 0
-                If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
-                    Dim XFrame As Integer = Native.GetSystemMetrics(Native.SM_CXSIZEFRAME)
-                    Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
-                    Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
-                    BorderX = XFrame + Border
-                    BorderY = YFrame + Border
-                End If
-                If X - BorderX >= Border AndAlso X < ClientSize.Width - Border AndAlso Y - BorderY >= BorderWithTitle AndAlso Y < ClientSize.Height - Border Then
-                    m.Result = New IntPtr(Native.HTNOWHERE) '（在視窗中間的內容部分）
-                    Return
-                Else
-                    If X >= ClientSize.Width - Border AndAlso Y >= ClientSize.Height - Border Then
-                        MyBase.WndProc(m) '（在視窗右下角的大小調整部分）
-                    ElseIf Status.showCmd <> Native.SW_MAXIMIZE OrElse Y - BorderY <= BorderWithTitle Then '（限制在最大化時只能夠在標題列拖放）
-                        m.Result = New IntPtr(Native.HTCAPTION) '（在視窗標題列的部分）
-                        Return
-                    End If
-                End If
-            Case Native.WM_NCLBUTTONDBLCLICK '（透過對訊息 WM_NCLBUTTONDBLCLICK 的捕獲，實現視窗非客戶端區域雙擊有效範圍的限制）
-                Dim Y As Integer = (m.LParam.ToInt32() >> 16) - Location.Y '（Message.LParam，對於 64 位元硬件平台取低 32 位的地址，高 16 位元代表滑鼠遊標的 y 座標）
-                Dim BorderY As Integer = 0
-                If Status.showCmd = Native.SW_MAXIMIZE Then '（在最大化模式下補足表單邊界）
-                    Dim YFrame As Integer = Native.GetSystemMetrics(Native.SM_CYSIZEFRAME)
-                    Dim Border As Integer = Native.GetSystemMetrics(Native.SM_CXPADDEDBORDER)
-                    BorderY = YFrame + Border
-                End If
-                If Y - BorderY <= BorderWithTitle Then
-                    MyBase.WndProc(m)
-                End If
+                WmSize(m)
+            Case Native.WM_NCCALCSIZE
+                WmNccalcsize(m)
+            Case Native.WM_NCHITTEST
+                WmNchittest(m)
+            Case Native.WM_NCLBUTTONDBLCLICK
+                WmNclbuttondbclick(m)
             Case Else
                 MyBase.WndProc(m)
         End Select
