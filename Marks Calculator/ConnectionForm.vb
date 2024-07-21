@@ -1,6 +1,6 @@
 ﻿'   Marks Calculator Project
 '   Purpose: Used to calculate student grades.
-'   Copyright © 2022, Edmond Chow and its contributors, All rights reserved.
+'   Copyright © 2022, Edmond Chow and its contributors. All rights reserved.
 '
 '   This program is free software; you can redistribute it and/or modify
 '   it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 '   with this program; if not, write to the Free Software Foundation, Inc.,
 '   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '
-'   For more information, please contact 69935538chow@gmail.com.
+'   For more information, please contact edmond-chow@outlook.com.
 
 Public Class FrmConnect
 
