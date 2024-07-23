@@ -1,6 +1,7 @@
 Marks Calculator is available under the Apache License 2.0, in which the version
-8.0.31 of MySql.Data grants you an additional permission to link the program and
-your derivative works with the separately licensed software, please see
+8.0.31 of MySql.Data which is under GNU General Public License version 2 grants
+you an additional permission to link the program and your derivative works with
+the separately licensed software. For more information, please see
 https://github.com/mysql/mysql-connector-net/blob/8.0.31/LICENSE.
 
 The full text of the license of this program as follows.
