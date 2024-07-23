@@ -1,2 +1,2 @@
 # Marks-Calculator
-A Marks Calculator
+Used to calculate student grades.
