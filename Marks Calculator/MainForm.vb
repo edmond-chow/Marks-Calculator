@@ -1,21 +1,25 @@
 ﻿'   Marks Calculator Project
 '   Purpose: Used to calculate student grades.
 '   Copyright © 2022, Edmond Chow and its contributors. All rights reserved.
-'
-'   This program is free software; you can redistribute it and/or modify
-'   it under the terms of the GNU General Public License as published by
-'   the Free Software Foundation; either version 2 of the License, or
-'   (at your option) any later version.
-'
-'   This program is distributed in the hope that it will be useful,
-'   but WITHOUT ANY WARRANTY; without even the implied warranty of
-'   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-'   GNU General Public License for more details.
-'
-'   You should have received a copy of the GNU General Public License along
-'   with this program; if not, write to the Free Software Foundation, Inc.,
-'   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'
+'   
+'   Marks Calculator is available under the Apache License 2.0, in which the version
+'   8.0.31 of MySql.Data which is under GNU General Public License version 2 grants
+'   you an additional permission to link the program and your derivative works with
+'   the separately licensed software. For more information, please see
+'   https://github.com/mysql/mysql-connector-net/blob/8.0.31/LICENSE.
+'   
+'   Licensed under the Apache License, Version 2.0 (the "License");
+'   you may not use this file except in compliance with the License.
+'   You may obtain a copy of the License at
+'   
+'   http://www.apache.org/licenses/LICENSE-2.0
+'   
+'   Unless required by applicable law or agreed to in writing, software
+'   distributed under the License is distributed on an "AS IS" BASIS,
+'   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+'   See the License for the specific language governing permissions and
+'   limitations under the License.
+'   
 '   For more information, please contact edmond-chow@outlook.com.
 
 Imports System.IO
