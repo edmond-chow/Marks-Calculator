@@ -770,7 +770,7 @@ Public Class FrmMain
     ''' 在數據列表當中搜尋符合條件的 Record
     ''' </summary>
     ''' <param name="GetSelectedIndex">指定當搜尋程序結束的時候， LstRecords 會選取哪一個項目</param>
-    Private Sub RecordsSearch(GetSelectedIndex As GetSelectedIndex)
+    Private Sub ListSearching(GetSelectedIndex As GetSelectedIndex)
         LstRecords.Items.Clear()
         LstRecords.Items.Add(" -> [Input]")
         SearchIndexList = New List(Of Integer)()
@@ -804,7 +804,7 @@ Public Class FrmMain
     ''' <summary>
     ''' 檢查數據列表是否已經排序
     ''' </summary>
-    Private Function RecordsSorted() As Boolean
+    Private Function ListSorted() As Boolean
         For i As Integer = 0 To Data.Count - 2
             If Data(i).CompareTo(Data(i + 1)) > 0 Then
                 Return False
@@ -883,7 +883,7 @@ Public Class FrmMain
     ''' 在同步上下文中延遲執行代碼片段
     ''' </summary>
     Private Sub DelayWithContext(Callback As Action, DelayDuration As Integer)
-        Task.Delay(DelayDuration).ConfigureAwait(True).GetAwaiter().OnCompleted(Callback)
+        Task.Delay(DelayDuration).GetAwaiter().OnCompleted(Callback)
     End Sub
 
     ''' <summary>
@@ -972,9 +972,9 @@ Public Class FrmMain
     ''' 對於所有視窗按鈕中嘗試執行控制項的操作，如果在 Controls 找不到相應的控制項則會繼續重試，直到找到相應的 Tag 來執行操作
     ''' </summary>
     ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
-    Private Sub WindowButtonsRequest(Action As Action(Of Control))
+    Private Sub WindowButtonRequest(Action As Action(Of Control))
         Dim MetroFormButtonTags As Type = GetType(MetroForm).GetNestedType("WindowButtons", BindingFlags.NonPublic)
-        WindowButtonsRequest(Action, MetroFormButtonTags.GetEnumValues())
+        WindowButtonRequest(Action, MetroFormButtonTags.GetEnumValues())
     End Sub
 
     ''' <summary>
@@ -982,8 +982,8 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
     ''' <param name="Tags">要對於某些給定的視窗按鈕執行操作（在關閉、最大化或者還原、最小化當中選取）</param>
-    Private Sub WindowButtonsRequest(Action As Action(Of Control), ParamArray Tags As Object())
-        WindowButtonsRequest(Action, CType(Tags, Array))
+    Private Sub WindowButtonRequest(Action As Action(Of Control), ParamArray Tags As Object())
+        WindowButtonRequest(Action, CType(Tags, Array))
     End Sub
 
     ''' <summary>
@@ -991,7 +991,7 @@ Public Class FrmMain
     ''' </summary>
     ''' <param name="Action">對於按鈕的控制項本身所執行的操作</param>
     ''' <param name="Tags">要對於某些給定的視窗按鈕執行操作（在關閉、最大化或者還原、最小化當中選取）</param>
-    Private Async Sub WindowButtonsRequest(Action As Action(Of Control), Tags As Array)
+    Private Async Sub WindowButtonRequest(Action As Action(Of Control), Tags As Array)
         Dim MetroFormButtonType As Type = GetType(MetroForm).GetNestedType("MetroFormButton", BindingFlags.NonPublic)
         Dim Exists(Tags.Length - 1) As Boolean
         Dim Takens As Integer = 0
@@ -1213,7 +1213,7 @@ Public Class FrmMain
         FormBorderStyle = FormBorderStyle.Sizable
         LblInputMain.Text = "CA Components: " + Record.CAComponents
         GrpResult.Text += " [" + Record.ModuleResult + "]"
-        WindowButtonsRequest(
+        WindowButtonRequest(
             Sub(Control As Control)
                 Control.TabStop = False
             End Sub
@@ -1221,7 +1221,7 @@ Public Class FrmMain
         '（修改標題列的按鈕即 MetroForm.MetroFormButton 的屬性 Tabstop 為 False，實現對當按下按鍵 Tab 時，略過改變視窗狀態的按鈕）
         Await ReadDataFile()
         ShowStatistics()
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return 0
             End Function
@@ -1412,7 +1412,7 @@ Public Class FrmMain
         End Try
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
         ShowStatistics()
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
@@ -1436,7 +1436,7 @@ Public Class FrmMain
         Data.Add(Temp)
         Temp = New Record()
         ShowStatistics()
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return 0
             End Function
@@ -1447,7 +1447,7 @@ Public Class FrmMain
         Data.Remove(SelectedRecord)
         ShowStatistics()
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
             End Function
@@ -1459,7 +1459,7 @@ Public Class FrmMain
         SelectedPrevRecord = SelectedRecord
         SelectedRecord = Temp
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex - 1
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
@@ -1469,7 +1469,7 @@ Public Class FrmMain
     Private Sub BtnRecordsSquare_Click(sender As Object, e As EventArgs) Handles BtnRecordsSquare.Click
         Data.Sort()
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
@@ -1482,7 +1482,7 @@ Public Class FrmMain
         SelectedNextRecord = SelectedRecord
         SelectedRecord = Temp
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex + 1
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return CaptureIndex
             End Function
@@ -1545,7 +1545,7 @@ Public Class FrmMain
                 BtnRecordsAdd.Enabled = False
                 BtnRecordsRemove.Enabled = True
                 BtnRecordsUp.Enabled = LstRecords.SelectedIndex > 1
-                BtnRecordsSquare.Enabled = Not RecordsSorted()
+                BtnRecordsSquare.Enabled = Not ListSorted()
                 BtnRecordsDown.Enabled = LstRecords.SelectedIndex < LstRecords.Items.Count - 1
                 ChkRecords.Enabled = False
                 TxtName.ReadOnly = True
@@ -1562,7 +1562,7 @@ Public Class FrmMain
 
     Private Sub AnyRecordsSearch_Event(sender As Object, e As EventArgs) Handles TxtRecordsSearch.TextChanged, ChkRecordsSearch.CheckedChanged
         Dim CaptureIndex As Integer = LstRecords.SelectedIndex
-        RecordsSearch(
+        ListSearching(
             Function(Exception As Exception) As Integer
                 Return If(CaptureIndex < LstRecords.Items.Count, CaptureIndex, LstRecords.Items.Count - 1)
             End Function
@@ -1604,7 +1604,7 @@ Public Class FrmMain
 
     Private Sub FrmMain_ResizeBegin(sender As Object, e As EventArgs) Handles Me.ResizeBegin
         Tag = IsResizing.Yes
-        WindowButtonsRequest(
+        WindowButtonRequest(
             Sub(Control As Control)
                 Control.Hide()
             End Sub
@@ -1613,7 +1613,7 @@ Public Class FrmMain
 
     Private Sub FrmMain_ResizeEnd(sender As Object, e As EventArgs) Handles Me.ResizeEnd
         Tag = IsResizing.No
-        WindowButtonsRequest(
+        WindowButtonRequest(
             Sub(Control As Control)
                 Control.Show()
             End Sub
@@ -1636,7 +1636,7 @@ Public Class FrmMain
         Resizable = Status.showCmd <> Native.SW_MAXIMIZE
         Select Case m.WParam
             Case Native.SIZE_RESTORED
-                WindowButtonsRequest(
+                WindowButtonRequest(
                     Sub(Control As Control)
                         Control.Text = "1"
                     End Sub,
@@ -1654,7 +1654,7 @@ Public Class FrmMain
             Case Native.SIZE_MINIMIZED
                 Size = NormalSize '（大小容易受到多次觸發的改變，基於這種易失性故額外恢復原有大小）
             Case Native.SIZE_MAXIMIZED
-                WindowButtonsRequest(
+                WindowButtonRequest(
                     Sub(Control As Control)
                         Control.Text = "2"
                     End Sub,
